@@ -224,7 +224,7 @@ const Retiro: React.FC<RetiroProps> = ({ usuario, setUsuario, cerrarSesion }) =>
         try {
             console.log("💸 Enviando solicitud de retiro...");
             const response = await axios.post(
-                `${API_URL}/transacciones/transacciones/retiro`,
+                `${API_URL}/transacciones/retiro`,
                 {
                     monto: monto,
                     metodo_retiro: metodoRetiro,
