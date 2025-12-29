@@ -2,7 +2,7 @@ import axios from 'axios';
 import type { LoginData, RegisterData } from '../types/auth';
 
 // Obtener API_URL desde variables de entorno, con valor por defecto para desarrollo
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_URL = import.meta.env.VITE_API_URL;
 
 // Asegurarse de que la URL no termine con doble slash
 const cleanApiUrl = API_URL.endsWith('/') ? API_URL.slice(0, -1) : API_URL;
