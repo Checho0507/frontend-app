@@ -25,35 +25,40 @@ interface Usuario {
     verificado_pendiente?: boolean;
 }
 
-const Referidos: React.FC = () => {
+interface ReferidosProps {
+    usuario: Usuario | null;
+    setUsuario: React.Dispatch<React.SetStateAction<Usuario | null>>;
+    cerrarSesion: () => void;
+}
+
+const Referidos: React.FC<ReferidosProps> = ({ usuario, setUsuario, cerrarSesion }) => {
     const navigate = useNavigate();
     const [referidos, setReferidos] = useState<Referido[]>([]);
     const [loading, setLoading] = useState(true);
     const [copiado, setCopiado] = useState(false);
     const [mensaje, setMensaje] = useState<{ text: string; type?: "success" | "error" | "info" } | null>(null);
-    const [usuario, setUsuario] = useState<Usuario | null>(null);
 
     useEffect(() => {
         axios.get(`${API_URL}/me`, {
-                    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
-                })
-                    .then((res) => {
-                        const userData = res.data;
-                        setUsuario({
-                            id: userData.id,
-                            username: userData.username,
-                            saldo: userData.saldo,
-                            verificado: userData.verificado,
-                            nivel: userData.nivel,
-                            verificado_pendiente: userData.verificado_pendiente
-                        });
-                        localStorage.setItem("usuario", JSON.stringify(userData));
-                        setLoading(false);
-                    })
-                    .catch(() => {
-                        setUsuario(null);
-                        setLoading(false);
-                    });
+            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+        })
+            .then((res) => {
+                const userData = res.data;
+                setUsuario({
+                    id: userData.id,
+                    username: userData.username,
+                    saldo: userData.saldo,
+                    verificado: userData.verificado,
+                    nivel: userData.nivel,
+                    verificado_pendiente: userData.verificado_pendiente
+                });
+                localStorage.setItem("usuario", JSON.stringify(userData));
+                setLoading(false);
+            })
+            .catch(() => {
+                setUsuario(null);
+                setLoading(false);
+            });
 
         if (!usuario) {
             const token = localStorage.getItem("token");
@@ -87,7 +92,7 @@ const Referidos: React.FC = () => {
             // Cargar referidos solo si tenemos usuario
             cargarReferidos();
         }
-    });
+    }, [navigate, usuario, setUsuario]);
 
     const cargarReferidos = async () => {
         if (!usuario) return;

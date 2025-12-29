@@ -11,6 +11,7 @@ interface Usuario {
     saldo: number;
     verificado: boolean;
     verificado_pendiente?: boolean;
+    nivel?: string;
 }
 
 interface RetiroBackend {
@@ -56,8 +57,26 @@ const Retiro: React.FC<RetiroProps> = ({ usuario, setUsuario, cerrarSesion }) =>
     useEffect(() => {
         const inicializarComponente = async () => {
             const token = localStorage.getItem("token");
+            axios.get(`${API_URL}/me`, {
+                headers: { Authorization: `Bearer ${token}` }
+            })
+                .then((res) => {
+                    const userData = res.data;
+                    setUsuario({
+                        id: userData.id,
+                        username: userData.username,
+                        saldo: userData.saldo,
+                        verificado: userData.verificado,
+                        nivel: userData.nivel,
+                        verificado_pendiente: userData.verificado_pendiente
+                    });
+                    localStorage.setItem("usuario", JSON.stringify(userData));
+                })
+                .catch(() => {
+                    setUsuario(null);
+                });
             console.log("🔑 Token encontrado:", token ? "Sí" : "No");
-            
+
             // Si no hay token, redirigir inmediatamente
             if (!token) {
                 console.log("❌ No hay token, redirigiendo a login");
@@ -93,22 +112,22 @@ const Retiro: React.FC<RetiroProps> = ({ usuario, setUsuario, cerrarSesion }) =>
             try {
                 console.log("🌐 Obteniendo usuario desde backend...");
                 const response = await axios.get(`${API_URL}/me`, {
-                    headers: { 
+                    headers: {
                         'Authorization': `Bearer ${token}`,
                         'Cache-Control': 'no-cache'
                     }
                 });
-                
+
                 console.log("✅ Usuario obtenido del backend:", response.data.username);
                 const usuarioData = response.data;
                 setUsuario(usuarioData);
                 localStorage.setItem('usuario', JSON.stringify(usuarioData));
                 await cargarHistorialRetiros(token);
                 setCargandoInicial(false);
-                
+
             } catch (error: any) {
                 console.error('❌ Error al cargar usuario del backend:', error);
-                
+
                 if (error.response?.status === 401) {
                     showMsg("Sesión expirada. Por favor, vuelve a iniciar sesión.", "error");
                     setTimeout(() => {
@@ -132,14 +151,14 @@ const Retiro: React.FC<RetiroProps> = ({ usuario, setUsuario, cerrarSesion }) =>
     const cargarHistorialRetiros = async (token?: string) => {
         try {
             const authToken = token || localStorage.getItem("token");
-            
+
             if (!authToken) {
                 console.log("⚠️ No hay token para cargar historial");
                 return;
             }
 
             console.log("📊 Cargando historial de retiros...");
-            
+
             const response = await axios.get(
                 `${API_URL}/transacciones/mis-retiros`,
                 {
@@ -148,14 +167,14 @@ const Retiro: React.FC<RetiroProps> = ({ usuario, setUsuario, cerrarSesion }) =>
                     }
                 }
             );
-            
+
             console.log("✅ Historial cargado:", response.data.length, "retiros");
             setHistorialRetiros(response.data);
             localStorage.setItem('historial_retiros', JSON.stringify(response.data));
-            
+
         } catch (error: any) {
             console.error("❌ Error al cargar historial:", error);
-            
+
             // Intentar cache si hay error
             const cache = localStorage.getItem('historial_retiros');
             if (cache) {
@@ -167,7 +186,7 @@ const Retiro: React.FC<RetiroProps> = ({ usuario, setUsuario, cerrarSesion }) =>
                     console.error("❌ Error al parsear cache:", e);
                 }
             }
-            
+
             // Manejar error de autenticación
             if (error.response?.status === 401) {
                 showMsg("Sesión expirada. Redirigiendo...", "error");
@@ -182,15 +201,15 @@ const Retiro: React.FC<RetiroProps> = ({ usuario, setUsuario, cerrarSesion }) =>
     // Validar formulario
     const validarFormulario = useCallback(() => {
         if (!usuario) return false;
-        
+
         const montoMinimo = 50000;
         const montoMaximo = usuario.verificado ? 1000000 : 1000000;
         const montoValido = monto >= montoMinimo && monto <= montoMaximo;
-        
+
         const saldoSuficiente = monto <= usuario.saldo;
         const metodoValido = metodoRetiro !== "";
         const cuentaValida = cuentaDestino.trim().length >= 8;
-        
+
         return montoValido && saldoSuficiente && metodoValido && cuentaValida;
     }, [monto, metodoRetiro, cuentaDestino, usuario]);
 
@@ -242,7 +261,7 @@ const Retiro: React.FC<RetiroProps> = ({ usuario, setUsuario, cerrarSesion }) =>
 
             const data = response.data;
             console.log("✅ Retiro exitoso:", data);
-            
+
             showMsg(`✅ Retiro solicitado por $${monto.toLocaleString()} COP. Referencia: ${data.referencia}`, "success");
 
             // Actualizar saldo del usuario
@@ -265,9 +284,9 @@ const Retiro: React.FC<RetiroProps> = ({ usuario, setUsuario, cerrarSesion }) =>
 
         } catch (err: any) {
             console.error("❌ Error en retiro:", err);
-            
+
             let mensajeError = "Error al procesar la solicitud";
-            
+
             if (err.response) {
                 if (err.response.status === 401) {
                     mensajeError = "Sesión expirada. Por favor, vuelve a iniciar sesión.";
@@ -279,7 +298,7 @@ const Retiro: React.FC<RetiroProps> = ({ usuario, setUsuario, cerrarSesion }) =>
                     mensajeError = err.response.data.detail;
                 }
             }
-            
+
             showMsg(mensajeError, "error");
         } finally {
             setCargando(false);
@@ -449,13 +468,12 @@ const Retiro: React.FC<RetiroProps> = ({ usuario, setUsuario, cerrarSesion }) =>
                                             />
                                         </div>
                                         <div className="mt-2">
-                                            <p className={`text-sm ${
-                                                monto >= 50000 && 
-                                                monto <= getLimiteMaximo() && 
-                                                usuario && 
-                                                monto <= usuario.saldo ? 
-                                                'text-green-400' : 'text-red-400'
-                                            }`}>
+                                            <p className={`text-sm ${monto >= 50000 &&
+                                                    monto <= getLimiteMaximo() &&
+                                                    usuario &&
+                                                    monto <= usuario.saldo ?
+                                                    'text-green-400' : 'text-red-400'
+                                                }`}>
                                                 {getMensajeValidacionMonto()}
                                             </p>
                                         </div>
@@ -545,7 +563,7 @@ const Retiro: React.FC<RetiroProps> = ({ usuario, setUsuario, cerrarSesion }) =>
                                             `Solicitar retiro de $${monto.toLocaleString()} COP`
                                         )}
                                     </button>
-                                    
+
                                     {!formularioValido && !cargando && (
                                         <p className="text-center text-yellow-400 text-sm mt-3">
                                             ⚠️ Completa todos los campos requeridos para solicitar el retiro

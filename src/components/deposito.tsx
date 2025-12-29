@@ -10,6 +10,7 @@ interface Usuario {
     username: string;
     saldo: number;
     verificado: boolean;
+    nivel?: string;
     verificado_pendiente?: boolean;
 }
 
@@ -45,61 +46,63 @@ const Deposito: React.FC<DepositoProps> = ({ usuario, setUsuario, cerrarSesion }
     const [formularioValido, setFormularioValido] = useState<boolean>(false);
 
     const metodosPago = [
-        { id: "nequi", nombre: "Nequi:", cuenta: "310-527-8029", icon: <svg
-  xmlns="http://www.w3.org/2000/svg"
-  viewBox="0 0 200 200"
-  width="120"
-  height="120"
->
-  <rect
-    x="30"
-    y="30"
-    width="140"
-    height="140"
-    rx="28"
-    fill="#32C8D2"
-    transform="rotate(15 100 100)"
-    opacity="0.9"
-  />
+        {
+            id: "nequi", nombre: "Nequi:", cuenta: "310-527-8029", icon: <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 200 200"
+                width="120"
+                height="120"
+            >
+                <rect
+                    x="30"
+                    y="30"
+                    width="140"
+                    height="140"
+                    rx="28"
+                    fill="#32C8D2"
+                    transform="rotate(15 100 100)"
+                    opacity="0.9"
+                />
 
-  <rect
-    x="30"
-    y="30"
-    width="140"
-    height="140"
-    rx="28"
-    fill="#FF2D7A"
-    transform="rotate(-15 100 100)"
-    opacity="0.9"
-  />
-  <rect
-    x="35"
-    y="35"
-    width="130"
-    height="130"
-    rx="22"
-    fill="#2E0057"
-    transform="rotate(45 100 100)"
-  />
-</svg>
- },
-        { id: "daviplata", nombre: "Daviplata", cuenta: "Próximamente", icon: <svg
-  xmlns="http://www.w3.org/2000/svg"
-  width="120"
-  height="120"
-  viewBox="0 0 120 120"
->
-  <rect
-    x="0"
-    y="0"
-    width="120"
-    height="120"
-    rx="24"
-    fill="#E10600"
-  />
+                <rect
+                    x="30"
+                    y="30"
+                    width="140"
+                    height="140"
+                    rx="28"
+                    fill="#FF2D7A"
+                    transform="rotate(-15 100 100)"
+                    opacity="0.9"
+                />
+                <rect
+                    x="35"
+                    y="35"
+                    width="130"
+                    height="130"
+                    rx="22"
+                    fill="#2E0057"
+                    transform="rotate(45 100 100)"
+                />
+            </svg>
+        },
+        {
+            id: "daviplata", nombre: "Daviplata", cuenta: "Próximamente", icon: <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="120"
+                height="120"
+                viewBox="0 0 120 120"
+            >
+                <rect
+                    x="0"
+                    y="0"
+                    width="120"
+                    height="120"
+                    rx="24"
+                    fill="#E10600"
+                />
 
-  <path
-    d="M42 30
+                <path
+                    d="M42 30
        H64
        C78 30 88 40 88 60
        C88 80 78 90 64 90
@@ -111,10 +114,10 @@ const Deposito: React.FC<DepositoProps> = ({ usuario, setUsuario, cerrarSesion }
        C71 78 76 72 76 60
        C76 48 71 42 63 42
        Z"
-    fill="#FFFFFF"
-  />
-</svg>
- }
+                    fill="#FFFFFF"
+                />
+            </svg>
+        }
     ];
 
     // Validar formulario cada vez que cambien las dependencias
@@ -122,25 +125,41 @@ const Deposito: React.FC<DepositoProps> = ({ usuario, setUsuario, cerrarSesion }
         const validarFormulario = () => {
             // Validar monto mínimo y máximo
             const montoValido = monto >= 10000 && monto <= 5000000;
-            
+
             // Validar método de pago seleccionado
             const metodoValido = metodoPago !== "";
-            
+
             // Validar comprobante según estado de verificación
             let comprobanteValido = true;
             if (usuario?.verificado) {
                 comprobanteValido = comprobante !== null;
             }
-            
+
             return montoValido && metodoValido && comprobanteValido;
         };
-        
+
         setFormularioValido(validarFormulario());
     }, [monto, metodoPago, comprobante, usuario]);
 
     useEffect(() => {
-        console.log('Usuario en Deposito:', usuario);
-        console.log('Token en localStorage:', localStorage.getItem('token'));
+        axios.get(`${API_URL}/me`, {
+                headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+            })
+                .then((res) => {
+                    const userData = res.data;
+                    setUsuario({
+                        id: userData.id,
+                        username: userData.username,
+                        saldo: userData.saldo,
+                        verificado: userData.verificado,
+                        nivel: userData.nivel,
+                        verificado_pendiente: userData.verificado_pendiente
+                    });
+                    localStorage.setItem("usuario", JSON.stringify(userData));
+                })
+                .catch(() => {
+                    setUsuario(null);
+                });
 
         if (!usuario) {
             const token = localStorage.getItem("token");
@@ -167,7 +186,7 @@ const Deposito: React.FC<DepositoProps> = ({ usuario, setUsuario, cerrarSesion }
 
     const cargarHistorialDepositos = async () => {
         if (!usuario) return;
-        
+
         try {
             const token = localStorage.getItem("token");
             const response = await axios.get(
@@ -178,15 +197,15 @@ const Deposito: React.FC<DepositoProps> = ({ usuario, setUsuario, cerrarSesion }
                     }
                 }
             );
-            
+
             setHistorialDepositos(response.data);
-            
+
             // También actualizar localStorage para cache
             localStorage.setItem('historial_depositos', JSON.stringify(response.data));
-            
+
         } catch (error: any) {
             console.error("Error al cargar historial:", error);
-            
+
             // Intentar cargar desde cache si falla la conexión
             const cache = localStorage.getItem('historial_depositos');
             if (cache) {
@@ -196,7 +215,7 @@ const Deposito: React.FC<DepositoProps> = ({ usuario, setUsuario, cerrarSesion }
                     console.error("Error al parsear cache:", e);
                 }
             }
-            
+
             if (error.response?.status === 401) {
                 showMsg("Sesión expirada", "error");
                 setTimeout(() => {
@@ -266,7 +285,7 @@ const Deposito: React.FC<DepositoProps> = ({ usuario, setUsuario, cerrarSesion }
             );
 
             const data = response.data;
-            
+
             // Mostrar mensaje de éxito
             showMsg(`✅ Depósito solicitado por $${monto.toLocaleString()} COP. Referencia: ${data.referencia}`, "success");
 
@@ -412,9 +431,9 @@ const Deposito: React.FC<DepositoProps> = ({ usuario, setUsuario, cerrarSesion }
                                             <p className={`text-sm ${monto >= 10000 && monto <= 5000000 ? 'text-green-400' : 'text-red-400'}`}>
                                                 {monto > 0 && (
                                                     <>
-                                                        {monto < 10000 ? '❌ Monto mínimo: $10,000 COP' : 
-                                                         monto > 5000000 ? '❌ Monto máximo: $5,000,000 COP' : 
-                                                         '✅ Monto válido'}
+                                                        {monto < 10000 ? '❌ Monto mínimo: $10,000 COP' :
+                                                            monto > 5000000 ? '❌ Monto máximo: $5,000,000 COP' :
+                                                                '✅ Monto válido'}
                                                     </>
                                                 )}
                                             </p>
@@ -568,7 +587,7 @@ const Deposito: React.FC<DepositoProps> = ({ usuario, setUsuario, cerrarSesion }
                                             `Depositar $${monto > 0 ? monto.toLocaleString() : ''} COP`
                                         )}
                                     </button>
-                                    
+
                                     {/* Mensaje informativo si el botón está deshabilitado */}
                                     {!formularioValido && !cargando && !comprobante && (
                                         <p className="text-center text-yellow-400 text-sm mt-3">
@@ -684,7 +703,7 @@ const Deposito: React.FC<DepositoProps> = ({ usuario, setUsuario, cerrarSesion }
                                         </div>
                                     )}
                                 </div>
-                                
+
                                 {/* Botón para recargar historial */}
                                 <button
                                     onClick={cargarHistorialDepositos}
