@@ -568,7 +568,7 @@ const Verificate: React.FC = () => {
                                     </div>
                                     <div>
                                         <p className="font-bold text-white">Realiza el depósito</p>
-                                        <p className="text-gray-400 text-sm">Transfiere $10,000 COP a Nequi: <span className="text-yellow-400 font-bold">304 384 7855</span></p>
+                                        <p className="text-gray-400 text-sm">Transfiere $10,000 COP a Nequi: <span className="text-yellow-400 font-bold">310 527 8029</span></p>
                                     </div>
                                 </div>
                                 <div className="flex items-start space-x-3">
