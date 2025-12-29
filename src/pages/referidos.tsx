@@ -34,8 +34,26 @@ const Referidos: React.FC = () => {
     const [usuario, setUsuario] = useState<Usuario | null>(null);
 
     useEffect(() => {
-        console.log('Usuario en Referidos:', usuario);
-        console.log('Token en localStorage:', localStorage.getItem('token'));
+        axios.get(`${API_URL}/me`, {
+                    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+                })
+                    .then((res) => {
+                        const userData = res.data;
+                        setUsuario({
+                            id: userData.id,
+                            username: userData.username,
+                            saldo: userData.saldo,
+                            verificado: userData.verificado,
+                            nivel: userData.nivel,
+                            verificado_pendiente: userData.verificado_pendiente
+                        });
+                        localStorage.setItem("usuario", JSON.stringify(userData));
+                        setLoading(false);
+                    })
+                    .catch(() => {
+                        setUsuario(null);
+                        setLoading(false);
+                    });
 
         if (!usuario) {
             const token = localStorage.getItem("token");
