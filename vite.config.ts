@@ -14,5 +14,8 @@ export default defineConfig({
         assetFileNames: `assets/[name].[hash].[ext]`
       }
     }
+  },
+  preview: {
+    allowedHosts: ['betref.up.railway.app']
   }
 });
