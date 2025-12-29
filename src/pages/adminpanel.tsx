@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type JSX } from "react";
 import axios from "axios";
-import API_URL from "../api/auth"; // Asegúrate de tener esta configuración en un archivo separado
+import {API_URL} from "../api/auth"; // Asegúrate de tener esta configuración en un archivo separado
 
 interface Usuario {
     id: number;
