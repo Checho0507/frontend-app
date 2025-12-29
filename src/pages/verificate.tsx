@@ -314,6 +314,7 @@ const Verificate: React.FC = () => {
             });
         }
     };
+    verificarEstado();
 
     if (loading) {
         return (
