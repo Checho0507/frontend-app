@@ -149,7 +149,7 @@ const Referidos: React.FC<ReferidosProps> = ({ usuario, setUsuario, cerrarSesion
             return;
         }
 
-        const mensaje = `🚀 ¡Únete a BETREF y gana dinero real! 💰\n\n✅ Bono de bienvenida: $5.000\n🎯 Sorteos semanales de $500.000\n⚡ Retiros instantáneos\n\nRegistrate con mi código y ambos ganamos $2.000 extra:\n\nhttps://betref.up.railway.app/register?ref=${usuario.id}`;
+        const mensaje = `🚀 ¡Únete a BETREF y gana dinero real! 💰\n\n✅ Bono de bienvenida: $10.000\n🎯 Sorteos diarios de $500.000\n⚡ Retiros instantáneos\n\nRegistrate con mi código y ambos ganamos $2.000 extra:\n\nhttps://betref.up.railway.app/register?ref=${usuario.id}`;
         window.open(`https://wa.me/?text=${encodeURIComponent(mensaje)}`, '_blank');
     };
 
