@@ -23,43 +23,6 @@ interface Usuario {
   verificado: boolean;
 }
 
-// Wrappers para componentes que necesitan props
-const JuegosWrapper = ({ usuario, cerrarSesion, setUsuario }: any) => (
-  <Juegos usuario={usuario} cerrarSesion={cerrarSesion} setUsuario={setUsuario} />
-);
-
-const RuletaWrapper = ({ usuario, cerrarSesion, setUsuario }: any) => (
-  <Ruleta usuario={usuario} cerrarSesion={cerrarSesion} setUsuario={setUsuario} />
-);
-
-const DadosWrapper = ({ usuario, setUsuario }: any) => (
-  <Dados usuario={usuario} setUsuario={setUsuario} />
-);
-
-const TragamonedasWrapper = ({ usuario, setUsuario }: any) => (
-  <Tragamonedas usuario={usuario} setUsuario={setUsuario} />
-);
-
-const BlackjackWrapper = ({ usuario, setUsuario }: any) => (
-  <Blackjack usuario={usuario} setUsuario={setUsuario} />
-);
-
-const MinasWrapper = ({ usuario, setUsuario }: any) => (
-  <Minas usuario={usuario} setUsuario={setUsuario} />
-);
-
-const DepositoWrapper = ({ usuario, cerrarSesion, setUsuario }: any) => (
-  <Deposito usuario={usuario} cerrarSesion={cerrarSesion} setUsuario={setUsuario} />
-);
-
-const RetiroWrapper = ({ usuario, cerrarSesion, setUsuario }: any) => (
-  <Retiro usuario={usuario} cerrarSesion={cerrarSesion} setUsuario={setUsuario} />
-);
-
-const ReferidosWrapper = ({ usuario, cerrarSesion, setUsuario }: any) => (
-  <Referidos usuario={usuario} cerrarSesion={cerrarSesion} setUsuario={setUsuario} />
-);
-
 const AppRouter = () => {
   const [usuario, setUsuario] = useState<Usuario | null>(null);
   const [mensaje, setMensaje] = useState<{ text: string; type?: "info" | "success" | "error" } | null>(null);
@@ -105,74 +68,15 @@ const AppRouter = () => {
         <Route path="/sorteovip" element={<SorteoVIP />} />
 
         {/* Juegos */}
-        <Route
-          path="/juegos"
-          element={<JuegosWrapper
-            usuario={usuario}
-            cerrarSesion={cerrarSesion} 
-            setUsuario={setUsuario} 
-          />} 
-        />
-        <Route 
-          path="/juegos/ruleta" 
-          element={<RuletaWrapper 
-            usuario={usuario} 
-            cerrarSesion={cerrarSesion} 
-            setUsuario={setUsuario} 
-          />} 
-        />
-        <Route 
-          path="/juegos/dados" 
-          element={<DadosWrapper 
-            usuario={usuario} 
-            setUsuario={setUsuario} 
-          />} 
-        />
-        <Route 
-          path="/juegos/tragamonedas" 
-          element={<TragamonedasWrapper 
-            usuario={usuario} 
-            setUsuario={setUsuario} 
-          />} 
-        />
-        <Route 
-          path="/juegos/blackjack" 
-          element={<BlackjackWrapper 
-            usuario={usuario} 
-            setUsuario={setUsuario} 
-          />} 
-        />
-        <Route 
-          path="/juegos/minas" 
-          element={<MinasWrapper 
-            usuario={usuario} 
-            setUsuario={setUsuario} 
-          />} 
-        />
-        <Route 
-          path="/transacciones/deposito" 
-          element={<DepositoWrapper 
-            usuario={usuario} 
-            cerrarSesion={cerrarSesion} 
-            setUsuario={setUsuario} 
-          />} 
-        />
-        <Route 
-          path="/transacciones/retiro" 
-          element={<RetiroWrapper 
-            usuario={usuario} 
-            cerrarSesion={cerrarSesion} 
-            setUsuario={setUsuario} 
-          />} 
-        />
-        <Route 
-          path="/referidos" 
-          element={<ReferidosWrapper 
-            usuario={usuario} 
-            cerrarSesion={cerrarSesion} 
-            setUsuario={setUsuario}
-          />} 
-        />
+        <Route path="/juegos" element={<Juegos/>} />
+        <Route path="/juegos/ruleta" element={<Ruleta />} />
+        <Route path="/juegos/dados" element={<Dados />} />
+        <Route path="/juegos/tragamonedas" element={<Tragamonedas />} />
+        <Route path="/juegos/blackjack" element={<Blackjack />} />
+        <Route path="/juegos/minas" element={<Minas />} />
+        <Route path="/transacciones/deposito" element={<Deposito usuario={usuario} cerrarSesion={cerrarSesion} setUsuario={setUsuario} />} />
+        <Route path="/transacciones/retiro" element={<Retiro usuario={usuario} cerrarSesion={cerrarSesion} setUsuario={setUsuario} />} />
+        <Route path="/referidos" element={<Referidos usuario={usuario} cerrarSesion={cerrarSesion} setUsuario={setUsuario}/>} />
         <Route path="/transacciones/admin/depositos/pendientes" element={<AdminPanel />} />
         <Route path="/transacciones/admin/depositos/:depositoId/aprobar" element={<AdminPanel />} />
         <Route path="/transacciones/admin/depositos/:depositoId/rechazar" element={<AdminPanel />} />
@@ -180,6 +84,7 @@ const AppRouter = () => {
         <Route path="/transacciones/admin/retiros/:retiroId/aprobar" element={<AdminPanel />} />
         <Route path="/transacciones/admin/retiros/:retiroId/rechazar" element={<AdminPanel />} />
         
+
         {/* Fallback */}
         <Route path="*" element={<Login />} />
       </Routes>
