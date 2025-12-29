@@ -73,28 +73,37 @@ export default function SorteoVIP() {
     }, []);
 
     useEffect(() => {
-            console.log('Usuario en Referidos:', usuario);
-            console.log('Token en localStorage:', localStorage.getItem('token'));
-    
-            if (!usuario) {
-                const token = localStorage.getItem("token");
-                if (!token) {
-                    navigate('/login');
-                    return;
-                }
-                // Si hay token pero usuario es null, intenta cargarlo desde localStorage
-                const usuarioGuardado = localStorage.getItem('usuario');
-                if (usuarioGuardado) {
-                    try {
-                        const usuarioParsed = JSON.parse(usuarioGuardado);
-                        setUsuario(usuarioParsed);
-                        console.log('Usuario cargado desde localStorage:', usuarioParsed);
-                    } catch (error) {
-                        console.error('Error al parsear usuario:', error);
-                    }
-                }
+        console.log('Usuario en Referidos:', usuario);
+        console.log('Token en localStorage:', localStorage.getItem('token'));
+
+        if (!usuario) {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                navigate('/login');
+                return;
             }
-        }, [navigate, usuario, setUsuario]);
+            if (token) {
+                axios.get(`${API_URL}/me`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                })
+                    .then((res) => {
+                        const userData = res.data;
+                        setUsuario({
+                            id: userData.id,
+                            username: userData.username,
+                            saldo: userData.saldo,
+                            verificado: userData.verificado,
+                            nivel: userData.nivel,
+                            verificado_pendiente: userData.verificado_pendiente
+                        });
+                        localStorage.setItem("usuario", JSON.stringify(userData));
+                    })
+                    .catch(() => {
+                        setUsuario(null);
+                    });
+            }
+        }
+    }, [navigate, usuario, setUsuario]);
 
     useEffect(() => {
         let intervalId: NodeJS.Timeout;
@@ -187,7 +196,7 @@ export default function SorteoVIP() {
         localStorage.removeItem('paso_verificacion');
         localStorage.removeItem('ultimo_usuario_id');
         localStorage.removeItem("fecha_envio_comprobante");
-        
+
         setUsuario(null);
         showMsg("Sesión cerrada correctamente", "success");
         setTimeout(() => navigate('/login'), 1500);
@@ -210,10 +219,10 @@ export default function SorteoVIP() {
             {/* Notificación */}
             {notificacion && (
                 <div className={`fixed top-6 right-6 z-50 px-6 py-4 rounded-xl font-bold flex items-center space-x-3 shadow-2xl animate-slideIn ${notificacion.type === "success"
-                        ? "bg-gradient-to-r from-green-900/90 to-green-800/90 border border-green-500/50 text-green-200"
-                        : notificacion.type === "error"
-                            ? "bg-gradient-to-r from-red-900/90 to-red-800/90 border border-red-500/50 text-red-200"
-                            : "bg-gradient-to-r from-blue-900/90 to-blue-800/90 border border-blue-500/50 text-blue-200"
+                    ? "bg-gradient-to-r from-green-900/90 to-green-800/90 border border-green-500/50 text-green-200"
+                    : notificacion.type === "error"
+                        ? "bg-gradient-to-r from-red-900/90 to-red-800/90 border border-red-500/50 text-red-200"
+                        : "bg-gradient-to-r from-blue-900/90 to-blue-800/90 border border-blue-500/50 text-blue-200"
                     }`}>
                     <span className="text-xl">
                         {notificacion.type === "success" ? "✅" : notificacion.type === "error" ? "❌" : "ℹ️"}
@@ -223,7 +232,7 @@ export default function SorteoVIP() {
             )}
 
             {/* Header Component */}
-            <Header 
+            <Header
                 usuario={usuario}
                 cerrarSesion={cerrarSesion}
                 setUsuario={setUsuario}
@@ -307,8 +316,8 @@ export default function SorteoVIP() {
                                             key={monto}
                                             onClick={() => setMontoInversion(monto)}
                                             className={`p-6 rounded-xl border transition-all duration-300 cursor-pointer ${monto === montoInversion
-                                                    ? 'bg-gradient-to-br from-yellow-600/30 to-green-600/30 border-yellow-500 shadow-lg'
-                                                    : 'bg-gray-800/50 border-gray-700 hover:border-yellow-500/50'
+                                                ? 'bg-gradient-to-br from-yellow-600/30 to-green-600/30 border-yellow-500 shadow-lg'
+                                                : 'bg-gray-800/50 border-gray-700 hover:border-yellow-500/50'
                                                 }`}
                                         >
                                             <div className="text-center">
@@ -389,8 +398,8 @@ export default function SorteoVIP() {
                                     onClick={() => participar(montoInversion)}
                                     disabled={usuario.saldo < montoInversion}
                                     className={`px-8 py-4 rounded-xl font-bold text-lg transition-all duration-300 ${usuario.saldo >= montoInversion
-                                            ? 'bg-gradient-to-r from-yellow-600 to-green-600 hover:from-yellow-700 hover:to-green-700 hover:scale-105 shadow-2xl shadow-yellow-500/25'
-                                            : 'bg-gray-600 cursor-not-allowed'
+                                        ? 'bg-gradient-to-r from-yellow-600 to-green-600 hover:from-yellow-700 hover:to-green-700 hover:scale-105 shadow-2xl shadow-yellow-500/25'
+                                        : 'bg-gray-600 cursor-not-allowed'
                                         }`}
                                 >
                                     <span className="flex items-center justify-center space-x-3">
@@ -413,8 +422,8 @@ export default function SorteoVIP() {
 
                                 {mensaje && (
                                     <div className={`mt-4 p-4 rounded-xl ${mensaje.includes("Error")
-                                            ? 'bg-red-900/30 border border-red-500/50 text-red-400'
-                                            : 'bg-green-900/30 border border-green-500/50 text-green-400'
+                                        ? 'bg-red-900/30 border border-red-500/50 text-red-400'
+                                        : 'bg-green-900/30 border border-green-500/50 text-green-400'
                                         }`}>
                                         {mensaje}
                                     </div>

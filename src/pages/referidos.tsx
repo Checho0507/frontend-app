@@ -48,16 +48,27 @@ const Referidos: React.FC<ReferidosProps> = ({ usuario, setUsuario, cerrarSesion
                 navigate('/login');
                 return;
             }
-            // Si hay token pero usuario es null, intenta cargarlo desde localStorage
-            const usuarioGuardado = localStorage.getItem('usuario');
-            if (usuarioGuardado) {
-                try {
-                    const usuarioParsed = JSON.parse(usuarioGuardado);
-                    setUsuario(usuarioParsed);
-                    console.log('Usuario cargado desde localStorage:', usuarioParsed);
-                } catch (error) {
-                    console.error('Error al parsear usuario:', error);
-                }
+            if (token) {
+                axios.get(`${API_URL}/me`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                })
+                    .then((res) => {
+                        const userData = res.data;
+                        setUsuario({
+                            id: userData.id,
+                            username: userData.username,
+                            saldo: userData.saldo,
+                            verificado: userData.verificado,
+                            nivel: userData.nivel,
+                            verificado_pendiente: userData.verificado_pendiente
+                        });
+                        localStorage.setItem("usuario", JSON.stringify(userData));
+                        setLoading(false);
+                    })
+                    .catch(() => {
+                        setUsuario(null);
+                        setLoading(false);
+                    });
             }
         } else {
             // Cargar referidos solo si tenemos usuario
@@ -187,7 +198,7 @@ const Referidos: React.FC<ReferidosProps> = ({ usuario, setUsuario, cerrarSesion
             )}
 
             {/* Header Component */}
-            <Header 
+            <Header
                 usuario={usuario}
                 cerrarSesion={cerrarSesion}
                 setUsuario={setUsuario}

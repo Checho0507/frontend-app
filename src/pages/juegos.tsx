@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../components/header";
 import Footer from "../components/footer";
+import axios from "axios";
+import { API_URL } from "../api/auth";
 
 interface Usuario {
   id: number;
@@ -23,28 +25,37 @@ export default function Juegos() {
   });
 
   useEffect(() => {
-          console.log('Usuario en Referidos:', usuario);
-          console.log('Token en localStorage:', localStorage.getItem('token'));
-  
-          if (!usuario) {
-              const token = localStorage.getItem("token");
-              if (!token) {
-                  navigate('/login');
-                  return;
-              }
-              // Si hay token pero usuario es null, intenta cargarlo desde localStorage
-              const usuarioGuardado = localStorage.getItem('usuario');
-              if (usuarioGuardado) {
-                  try {
-                      const usuarioParsed = JSON.parse(usuarioGuardado);
-                      setUsuario(usuarioParsed);
-                      console.log('Usuario cargado desde localStorage:', usuarioParsed);
-                  } catch (error) {
-                      console.error('Error al parsear usuario:', error);
-                  }
-              }
-          }
-      }, [navigate, usuario, setUsuario]);
+    console.log('Usuario en Referidos:', usuario);
+    console.log('Token en localStorage:', localStorage.getItem('token'));
+
+    if (!usuario) {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+      if (token) {
+        axios.get(`${API_URL}/me`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+          .then((res) => {
+            const userData = res.data;
+            setUsuario({
+              id: userData.id,
+              username: userData.username,
+              saldo: userData.saldo,
+              verificado: userData.verificado,
+              nivel: userData.nivel,
+              verificado_pendiente: userData.verificado_pendiente
+            });
+            localStorage.setItem("usuario", JSON.stringify(userData));
+          })
+          .catch(() => {
+            setUsuario(null);
+          });
+      }
+    }
+  }, [navigate, usuario, setUsuario]);
 
   // Cargar configuración de juegos disponibles
   useEffect(() => {
@@ -55,7 +66,7 @@ export default function Juegos() {
       { nombre: "Blackjack", disponible: true },
       { nombre: "Minas", disponible: true }
     ];
-    
+
     setEstadisticasJuegos({
       totalJuegos: juegosDisponibles.length,
       juegosDisponibles: juegosDisponibles.filter(j => j.disponible).length,
@@ -71,62 +82,62 @@ export default function Juegos() {
   const cerrarSesion = () => {
     // Limpiar localStorage
     const itemsParaMantener = [
-      "historial_blackjack", 
+      "historial_blackjack",
       "estadisticas_acumulativas_blackjack",
       "historial_minas",
       "estadisticas_acumulativas_minas"
     ];
-    
+
     // Eliminar todos los items excepto los de historial
     Object.keys(localStorage).forEach(key => {
       if (!itemsParaMantener.includes(key)) {
         localStorage.removeItem(key);
       }
     });
-    
+
     setUsuario(null);
     showMsg("Sesión cerrada correctamente", "success");
     setTimeout(() => navigate('/login'), 1500);
   };
 
   const juegos = [
-    { 
-      nombre: "Ruleta", 
-      descripcion: "Gira la ruleta y gana grandes premios", 
-      ruta: "/juegos/ruleta", 
-      icono: "🎡", 
+    {
+      nombre: "Ruleta",
+      descripcion: "Gira la ruleta y gana grandes premios",
+      ruta: "/juegos/ruleta",
+      icono: "🎡",
       color: "from-red-500 to-pink-500",
       disponible: true
     },
-    { 
-      nombre: "Dados", 
-      descripcion: "Apuesta y lanza los dados", 
-      ruta: "/juegos/dados", 
-      icono: "🎲", 
+    {
+      nombre: "Dados",
+      descripcion: "Apuesta y lanza los dados",
+      ruta: "/juegos/dados",
+      icono: "🎲",
       color: "from-green-500 to-emerald-500",
       disponible: true
     },
-    { 
-      nombre: "Tragamonedas", 
-      descripcion: "Gira y alinea símbolos para ganar", 
-      ruta: "/juegos/tragamonedas", 
-      icono: "🎰", 
+    {
+      nombre: "Tragamonedas",
+      descripcion: "Gira y alinea símbolos para ganar",
+      ruta: "/juegos/tragamonedas",
+      icono: "🎰",
       color: "from-yellow-500 to-amber-500",
       disponible: true
     },
-    { 
-      nombre: "Blackjack", 
-      descripcion: "Consigue 21 y derrota a la banca", 
-      ruta: "/juegos/blackjack", 
-      icono: "🃏", 
+    {
+      nombre: "Blackjack",
+      descripcion: "Consigue 21 y derrota a la banca",
+      ruta: "/juegos/blackjack",
+      icono: "🃏",
       color: "from-blue-500 to-purple-500",
       disponible: true
     },
-    { 
-      nombre: "Minas", 
-      descripcion: "Encuentra las minas y multiplica tus ganancias", 
-      ruta: "/juegos/minas", 
-      icono: "💣", 
+    {
+      nombre: "Minas",
+      descripcion: "Encuentra las minas y multiplica tus ganancias",
+      ruta: "/juegos/minas",
+      icono: "💣",
       color: "from-orange-500 to-red-500",
       disponible: true
     },
@@ -147,13 +158,12 @@ export default function Juegos() {
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900">
       {/* Notificación */}
       {notificacion && (
-        <div className={`fixed top-6 right-6 z-50 px-6 py-4 rounded-xl font-bold flex items-center space-x-3 shadow-2xl animate-slideIn ${
-          notificacion.type === "success" 
-            ? "bg-gradient-to-r from-green-900/90 to-green-800/90 border border-green-500/50 text-green-200" 
-            : notificacion.type === "error" 
-            ? "bg-gradient-to-r from-red-900/90 to-red-800/90 border border-red-500/50 text-red-200" 
-            : "bg-gradient-to-r from-blue-900/90 to-blue-800/90 border border-blue-500/50 text-blue-200"
-        }`}>
+        <div className={`fixed top-6 right-6 z-50 px-6 py-4 rounded-xl font-bold flex items-center space-x-3 shadow-2xl animate-slideIn ${notificacion.type === "success"
+            ? "bg-gradient-to-r from-green-900/90 to-green-800/90 border border-green-500/50 text-green-200"
+            : notificacion.type === "error"
+              ? "bg-gradient-to-r from-red-900/90 to-red-800/90 border border-red-500/50 text-red-200"
+              : "bg-gradient-to-r from-blue-900/90 to-blue-800/90 border border-blue-500/50 text-blue-200"
+          }`}>
           <span className="text-xl">
             {notificacion.type === "success" ? "✅" : notificacion.type === "error" ? "❌" : "ℹ️"}
           </span>
@@ -162,7 +172,7 @@ export default function Juegos() {
       )}
 
       {/* Header Component */}
-      <Header 
+      <Header
         usuario={usuario}
         cerrarSesion={cerrarSesion}
         setUsuario={setUsuario}
@@ -173,7 +183,7 @@ export default function Juegos() {
         <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/10 to-green-500/10"></div>
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-r from-yellow-500 to-green-500 rounded-full blur-3xl opacity-20"></div>
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-r from-purple-500 to-red-500 rounded-full blur-3xl opacity-20"></div>
-        
+
         <div className="container mx-auto px-4 py-16 md:py-24 relative z-10">
           <div className="text-center max-w-4xl mx-auto">
             <div className="inline-block mb-6">
@@ -181,7 +191,7 @@ export default function Juegos() {
                 🎮 ZONA DE JUEGOS EXCLUSIVA
               </span>
             </div>
-            
+
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
               <span className="bg-gradient-to-r from-yellow-400 via-green-400 to-yellow-400 bg-clip-text text-transparent animate-gradient">
                 Sala de Juegos VIP
@@ -189,12 +199,12 @@ export default function Juegos() {
               <br />
               <span className="text-white">Diversión y Grandes Premios</span>
             </h1>
-            
+
             <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-              Invierte, juega y pon a prueba tu suerte con nuestros juegos exclusivos. 
+              Invierte, juega y pon a prueba tu suerte con nuestros juegos exclusivos.
               <span className="text-yellow-400 font-bold"> ¡Gana hasta {estadisticasJuegos.multiplicadorMaximo} tu inversión!</span>
             </p>
-            
+
             {/* Stats Mini */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl mx-auto">
               <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-4 border border-gray-700/50">
@@ -226,27 +236,26 @@ export default function Juegos() {
             Cada juego ofrece experiencias únicas y oportunidades para multiplicar tu inversión
           </p>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
           {juegos.map((juego, i) => (
             <div
               key={i}
               onClick={() => juego.disponible ? navigate(juego.ruta) : null}
-              className={`group bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border transition-all duration-300 cursor-pointer ${
-                juego.disponible 
-                  ? 'border-gray-700/50 hover:border-yellow-500/50 hover:scale-[1.02]' 
+              className={`group bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border transition-all duration-300 cursor-pointer ${juego.disponible
+                  ? 'border-gray-700/50 hover:border-yellow-500/50 hover:scale-[1.02]'
                   : 'border-gray-700/30 opacity-70 cursor-not-allowed'
-              }`}
+                }`}
             >
               <div className="flex flex-col items-center text-center h-full">
                 <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-4 bg-gradient-to-br ${juego.color} shadow-lg group-hover:shadow-xl group-hover:scale-105 transition-all duration-300`}>
                   <span className="text-4xl">{juego.icono}</span>
                 </div>
-                
+
                 <h3 className="text-xl font-bold text-white mb-2">{juego.nombre}</h3>
-                
+
                 <p className="text-gray-400 text-sm mb-4 flex-grow">{juego.descripcion}</p>
-                
+
                 <div className="w-full mt-auto">
                   {juego.disponible ? (
                     <div className="bg-gradient-to-r from-yellow-600/20 to-green-600/20 border border-yellow-500/30 rounded-xl p-3 group-hover:border-yellow-400/50 transition-colors">
@@ -279,7 +288,7 @@ export default function Juegos() {
               <h4 className="text-lg font-bold text-white mb-2">Apuestas Mínimas</h4>
               <p className="text-gray-300">Desde $100 por juego</p>
             </div>
-            
+
             <div className="text-center">
               <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-xl">⚡</span>
@@ -287,7 +296,7 @@ export default function Juegos() {
               <h4 className="text-lg font-bold text-white mb-2">Retiros Rápidos</h4>
               <p className="text-gray-300">Ganancias disponibles en segundos</p>
             </div>
-            
+
             <div className="text-center">
               <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-xl">🏆</span>
@@ -307,8 +316,8 @@ export default function Juegos() {
             <div>
               <h4 className="text-xl font-bold text-white mb-2">¡Nuevo Juego Disponible!</h4>
               <p className="text-gray-300">
-                Prueba nuestro emocionante juego de <span className="text-yellow-400 font-bold">Minas</span>. 
-                Encuentra las casillas seguras y multiplica tus ganancias. 
+                Prueba nuestro emocionante juego de <span className="text-yellow-400 font-bold">Minas</span>.
+                Encuentra las casillas seguras y multiplica tus ganancias.
                 <span className="text-green-400 font-bold"> ¡Retírate en cualquier momento y conserva tus ganancias!</span>
               </p>
               <button
