@@ -25,18 +25,13 @@ interface Usuario {
     verificado_pendiente?: boolean;
 }
 
-interface ReferidosProps {
-    usuario: Usuario | null;
-    setUsuario: React.Dispatch<React.SetStateAction<Usuario | null>>;
-    cerrarSesion: () => void;
-}
-
-const Referidos: React.FC<ReferidosProps> = ({ usuario, setUsuario, cerrarSesion }) => {
+const Referidos: React.FC = () => {
     const navigate = useNavigate();
     const [referidos, setReferidos] = useState<Referido[]>([]);
     const [loading, setLoading] = useState(true);
     const [copiado, setCopiado] = useState(false);
     const [mensaje, setMensaje] = useState<{ text: string; type?: "success" | "error" | "info" } | null>(null);
+    const [usuario, setUsuario] = useState<Usuario | null>(null);
 
     useEffect(() => {
         console.log('Usuario en Referidos:', usuario);
@@ -74,7 +69,7 @@ const Referidos: React.FC<ReferidosProps> = ({ usuario, setUsuario, cerrarSesion
             // Cargar referidos solo si tenemos usuario
             cargarReferidos();
         }
-    }, [navigate, usuario, setUsuario]);
+    });
 
     const cargarReferidos = async () => {
         if (!usuario) return;
