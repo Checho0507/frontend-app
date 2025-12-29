@@ -136,7 +136,7 @@ const Referidos: React.FC<ReferidosProps> = ({ usuario, setUsuario, cerrarSesion
 
     const copiarCodigo = () => {
         if (usuario && usuario.id !== undefined) {
-            navigator.clipboard.writeText(`https://moneyapp.com/registro?ref=${usuario.id}`);
+            navigator.clipboard.writeText(`https://betref.up.railway.app/register?ref=${usuario.id}`);
             setCopiado(true);
             setTimeout(() => setCopiado(false), 2000);
             showMsg("¡Código copiado al portapapeles!", "success");
@@ -149,7 +149,7 @@ const Referidos: React.FC<ReferidosProps> = ({ usuario, setUsuario, cerrarSesion
             return;
         }
 
-        const mensaje = `🚀 ¡Únete a BETREF y gana dinero real! 💰\n\n✅ Bono de bienvenida: $5.000\n🎯 Sorteos semanales de $500.000\n⚡ Retiros instantáneos\n\nRegistrate con mi código y ambos ganamos $2.000 extra:\n\nhttps://betref.com/registro?ref=${usuario.id}`;
+        const mensaje = `🚀 ¡Únete a BETREF y gana dinero real! 💰\n\n✅ Bono de bienvenida: $5.000\n🎯 Sorteos semanales de $500.000\n⚡ Retiros instantáneos\n\nRegistrate con mi código y ambos ganamos $2.000 extra:\n\nhttps://betref.up.railway.app/register?ref=${usuario.id}`;
         window.open(`https://wa.me/?text=${encodeURIComponent(mensaje)}`, '_blank');
     };
 
@@ -265,7 +265,7 @@ const Referidos: React.FC<ReferidosProps> = ({ usuario, setUsuario, cerrarSesion
                                 <div className="flex flex-col md:flex-row gap-4">
                                     <div className="flex-1 bg-gray-800 px-4 py-3 rounded-xl border border-gray-700">
                                         <div className="text-gray-300 font-mono text-sm truncate">
-                                            https://betref.com/registro?ref={usuario?.id}
+                                            https://betref.up.railway.app/register?ref={usuario?.id}
                                         </div>
                                     </div>
                                     <button
@@ -295,7 +295,7 @@ const Referidos: React.FC<ReferidosProps> = ({ usuario, setUsuario, cerrarSesion
 
                             <button
                                 onClick={() => {
-                                    const texto = `🚀 ¡Únete a BETREF y gana dinero real! Usa mi código: ${usuario?.id} y ambos ganamos $2,000. Link: https://betref.com/registro?ref=${usuario?.id}`;
+                                    const texto = `🚀 ¡Únete a BETREF y gana dinero real! Usa mi código: ${usuario?.id} y ambos ganamos $2,000. Link: https://betref.up.railway.app/register?ref=${usuario?.id}`;
                                     navigator.clipboard.writeText(texto);
                                     showMsg("¡Mensaje copiado! Pégalo en cualquier red social.", "success");
                                 }}
