@@ -15,16 +15,40 @@ import Blackjack from '../pages/blackjack';
 import Minas from '../pages/minas';
 import Deposito from '../components/deposito';
 import Retiro from '../components/retiro';
+import axios from 'axios';
+import { API_URL } from '../api/auth';
 
 interface Usuario {
   id: number;
   username: string;
   saldo: number;
   verificado: boolean;
+  nivel: string;
+  verificado_pendiente: boolean;
 }
 
 const AppRouter = () => {
   const [usuario, setUsuario] = useState<Usuario | null>(null);
+  if (localStorage.getItem("token")) {
+    axios.get(`${API_URL}/me`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+    })
+      .then((res) => {
+        const userData = res.data;
+        setUsuario({
+          id: userData.id,
+          username: userData.username,
+          saldo: userData.saldo,
+          verificado: userData.verificado,
+          nivel: userData.nivel,
+          verificado_pendiente: userData.verificado_pendiente
+        });
+        localStorage.setItem("usuario", JSON.stringify(userData));
+      })
+      .catch(() => {
+        setUsuario(null);
+      });
+  }
   const [mensaje, setMensaje] = useState<{ text: string; type?: "info" | "success" | "error" } | null>(null);
   const navigate = useNavigate();
 
@@ -68,7 +92,7 @@ const AppRouter = () => {
         <Route path="/sorteovip" element={<SorteoVIP />} />
 
         {/* Juegos */}
-        <Route path="/juegos" element={<Juegos/>} />
+        <Route path="/juegos" element={<Juegos />} />
         <Route path="/juegos/ruleta" element={<Ruleta />} />
         <Route path="/juegos/dados" element={<Dados />} />
         <Route path="/juegos/tragamonedas" element={<Tragamonedas />} />
@@ -76,14 +100,14 @@ const AppRouter = () => {
         <Route path="/juegos/minas" element={<Minas />} />
         <Route path="/transacciones/deposito" element={<Deposito usuario={usuario} cerrarSesion={cerrarSesion} setUsuario={setUsuario} />} />
         <Route path="/transacciones/retiro" element={<Retiro usuario={usuario} cerrarSesion={cerrarSesion} setUsuario={setUsuario} />} />
-        <Route path="/referidos" element={<Referidos usuario={usuario} cerrarSesion={cerrarSesion} setUsuario={setUsuario}/>} />
+        <Route path="/referidos" element={<Referidos usuario={usuario} cerrarSesion={cerrarSesion} setUsuario={setUsuario} />} />
         <Route path="/transacciones/admin/depositos/pendientes" element={<AdminPanel />} />
         <Route path="/transacciones/admin/depositos/:depositoId/aprobar" element={<AdminPanel />} />
         <Route path="/transacciones/admin/depositos/:depositoId/rechazar" element={<AdminPanel />} />
         <Route path="/transacciones/admin/retiros/pendientes" element={<AdminPanel />} />
         <Route path="/transacciones/admin/retiros/:retiroId/aprobar" element={<AdminPanel />} />
         <Route path="/transacciones/admin/retiros/:retiroId/rechazar" element={<AdminPanel />} />
-        
+
 
         {/* Fallback */}
         <Route path="*" element={<Login />} />
