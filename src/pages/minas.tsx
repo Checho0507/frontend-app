@@ -106,7 +106,10 @@ export default function Minas() {
     // Configuración del juego
     const [tablero, setTablero] = useState<Casilla[][]>([]);
     const [casillasAbiertas, setCasillasAbiertas] = useState<Array<{ x: number, y: number, minas_cercanas: number }>>([]);
+    const [casillasMarcadas, setCasillasMarcadas] = useState<[number, number][]>([]);
     const [minasRestantes, setMinasRestantes] = useState<number>(5);
+    const [tamanoTablero, setTamanoTablero] = useState<number>(5);
+    const [minasTotales, setMinasTotales] = useState<number>(5);
 
     // Estados para apuestas y dificultad
     const [apuestaSeleccionada, setApuestaSeleccionada] = useState<number>(500);
@@ -141,6 +144,11 @@ export default function Minas() {
     const [notificacion, setNotificacion] = useState<{ text: string; type?: "success" | "error" | "info" } | null>(null);
 
     // Configuración de minas
+    const MINAS_CONFIG = {
+        "facil": { multiplicador_base: 1.05, tamano: 5, minas: 5 },
+        "medio": { multiplicador_base: 1.10, tamano: 6, minas: 10 },
+        "dificil": { multiplicador_base: 1.15, tamano: 7, minas: 20 }
+    };
 
     // Obtener usuario al cargar
     useEffect(() => {
