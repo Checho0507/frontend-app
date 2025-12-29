@@ -24,16 +24,16 @@ axios.interceptors.response.use(
             console.log("🔐 Interceptor: Token expirado o inválido");
             localStorage.removeItem("token");
             localStorage.removeItem("usuario");
-
+            
             if (window.location.pathname.includes("/minas")) {
                 setTimeout(() => window.location.href = "/login", 1000);
             }
         }
-
+        
         if (!error.response) {
             console.error("🌐 Error de red - Verifica tu conexión a internet");
         }
-
+        
         return Promise.reject(error);
     }
 );
@@ -155,24 +155,6 @@ export default function Minas() {
     useEffect(() => {
         const verificarAutenticacion = async () => {
             const token = localStorage.getItem("token");
-            axios.get(`${API_URL}/me`, {
-                headers: { Authorization: `Bearer ${token}` }
-            })
-                .then((res) => {
-                    const userData = res.data;
-                    setUsuario({
-                        id: userData.id,
-                        username: userData.username,
-                        saldo: userData.saldo,
-                        verificado: userData.verificado,
-                        nivel: userData.nivel,
-                        verificado_pendiente: userData.verificado_pendiente
-                    });
-                    localStorage.setItem("usuario", JSON.stringify(userData));
-                })
-                .catch(() => {
-                    setUsuario(null);
-                });
 
             if (!token) {
                 console.log("⚠️ No hay token, redirigiendo a login...");
@@ -207,7 +189,7 @@ export default function Minas() {
 
             } catch (error: any) {
                 console.error("❌ Error al verificar autenticación:", error);
-
+                
                 if (error.response?.status === 401) {
                     console.log("🔓 Token inválido o expirado");
                     localStorage.removeItem("token");
@@ -304,14 +286,14 @@ export default function Minas() {
 
     const actualizarEstadisticas = (nuevaPartida: HistorialPartida) => {
         // Una victoria incluye: ganar el juego O retirarse con ganancias
-        const esVictoria = nuevaPartida.resultado.includes("Retiro") ||
-            nuevaPartida.resultado.includes("ganancia") ||
-            nuevaPartida.resultado.includes("retiraste") ||
-            (nuevaPartida.ganancia > 0 && nuevaPartida.resultado.includes("Victoria"));
-
-        const esDerrota = nuevaPartida.resultado.includes("Mina") ||
-            nuevaPartida.resultado.includes("Boom") ||
-            (nuevaPartida.ganancia === 0 && !nuevaPartida.resultado.includes("Retiro"));
+        const esVictoria = nuevaPartida.resultado.includes("Retiro") || 
+                          nuevaPartida.resultado.includes("ganancia") || 
+                          nuevaPartida.resultado.includes("retiraste") ||
+                          (nuevaPartida.ganancia > 0 && nuevaPartida.resultado.includes("Victoria"));
+        
+        const esDerrota = nuevaPartida.resultado.includes("Mina") || 
+                         nuevaPartida.resultado.includes("Boom") || 
+                         (nuevaPartida.ganancia === 0 && !nuevaPartida.resultado.includes("Retiro"));
 
         // Actualizar estadísticas acumulativas
         setEstadisticasAcumulativas(prev => {
@@ -506,7 +488,7 @@ export default function Minas() {
             setCargando(false);
         }
     };
-
+    
     const abrirCasilla = async (x: number, y: number) => {
         if (!sessionId || estado !== 'jugando') return;
         if (tablero[x][y].abierta || tablero[x][y].marcada) return;
@@ -865,7 +847,7 @@ export default function Minas() {
         localStorage.removeItem("fecha_envio_comprobante");
         localStorage.removeItem("historial_minas");
         localStorage.removeItem("estadisticas_acumulativas_minas");
-
+        
         setUsuario(null);
         showMsg("Sesión cerrada correctamente", "success");
         setTimeout(() => navigate('/login'), 1500);
@@ -877,11 +859,11 @@ export default function Minas() {
             try {
                 const token = localStorage.getItem("token");
                 console.log("🔑 Token:", token ? "Presente" : "Ausente");
-
+                
                 // Probar conexión simple
                 const test = await axios.get(`${API_URL}/juegos/minas/config`);
                 console.log("✅ Configuración obtenida:", test.data);
-
+                
                 // Probar autenticación
                 if (token) {
                     const me = await axios.get(`${API_URL}/me`, {
@@ -893,7 +875,7 @@ export default function Minas() {
                 console.error("❌ Error de conexión:", error);
             }
         };
-
+        
         if (process.env.NODE_ENV === 'development') {
             testConnection();
         }
@@ -931,7 +913,7 @@ export default function Minas() {
             )}
 
             {/* Header - Usando el componente */}
-            <Header
+            <Header 
                 usuario={usuario}
                 cerrarSesion={cerrarSesion}
                 setUsuario={setUsuario}

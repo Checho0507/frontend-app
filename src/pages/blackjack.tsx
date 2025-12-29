@@ -47,7 +47,7 @@ export default function Blackjack() {
     const [sessionId, setSessionId] = useState<string | null>(null);
     const [ganancia, setGanancia] = useState<number>(0);
     const [mostrarCartaBancaOculta, setMostrarCartaBancaOculta] = useState(false);
-
+    
     // Estados para apuestas variables
     const [apuestaSeleccionada, setApuestaSeleccionada] = useState<number>(500);
     const [apuestasPermitidas, setApuestasPermitidas] = useState<number[]>([100, 500, 1000, 2000, 5000]);
@@ -76,45 +76,28 @@ export default function Blackjack() {
 
     // Obtener usuario al cargar
     useEffect(() => {
-        console.log('Usuario en Referidos:', usuario);
-        axios.get(`${API_URL}/me`, {
-            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
-        })
-            .then((res) => {
-                const userData = res.data;
-                setUsuario({
-                    id: userData.id,
-                    username: userData.username,
-                    saldo: userData.saldo,
-                    verificado: userData.verificado,
-                    nivel: userData.nivel,
-                    verificado_pendiente: userData.verificado_pendiente
-                });
-                localStorage.setItem("usuario", JSON.stringify(userData));
-            })
-            .catch(() => {
-                setUsuario(null);
-            });
-
-        if (!usuario) {
-            const token = localStorage.getItem("token");
-            if (!token) {
-                navigate('/login');
-                return;
-            }
-            // Si hay token pero usuario es null, intenta cargarlo desde localStorage
-            const usuarioGuardado = localStorage.getItem('usuario');
-            if (usuarioGuardado) {
-                try {
-                    const usuarioParsed = JSON.parse(usuarioGuardado);
-                    setUsuario(usuarioParsed);
-                    console.log('Usuario cargado desde localStorage:', usuarioParsed);
-                } catch (error) {
-                    console.error('Error al parsear usuario:', error);
+            console.log('Usuario en Referidos:', usuario);
+            
+    
+            if (!usuario) {
+                const token = localStorage.getItem("token");
+                if (!token) {
+                    navigate('/login');
+                    return;
+                }
+                // Si hay token pero usuario es null, intenta cargarlo desde localStorage
+                const usuarioGuardado = localStorage.getItem('usuario');
+                if (usuarioGuardado) {
+                    try {
+                        const usuarioParsed = JSON.parse(usuarioGuardado);
+                        setUsuario(usuarioParsed);
+                        console.log('Usuario cargado desde localStorage:', usuarioParsed);
+                    } catch (error) {
+                        console.error('Error al parsear usuario:', error);
+                    }
                 }
             }
-        }
-    }, [navigate, usuario, setUsuario]);
+        }, [navigate, usuario, setUsuario]);
 
     // Cargar configuración del juego
     useEffect(() => {
@@ -127,7 +110,7 @@ export default function Blackjack() {
                 console.error("Error al cargar configuración:", error);
             }
         };
-
+        
         cargarConfiguracion();
     }, []);
 
@@ -145,7 +128,7 @@ export default function Blackjack() {
         if (statsAcum) {
             const parsedStats = JSON.parse(statsAcum);
             setEstadisticasAcumulativas(parsedStats);
-
+            
             // Calcular estadísticas iniciales basadas en las acumulativas
             const balance = parsedStats.gananciaTotalAcum - parsedStats.gastoTotalAcum;
             setEstadisticas({
@@ -176,12 +159,12 @@ export default function Blackjack() {
     const actualizarEstadisticas = (nuevaPartida: HistorialPartida) => {
         const esVictoria = nuevaPartida.resultado.includes("Ganaste") || nuevaPartida.resultado.includes("Blackjack");
         const esBlackjack = nuevaPartida.resultado.includes("Blackjack");
-
+        
         // Actualizar estadísticas acumulativas
         setEstadisticasAcumulativas(prev => {
             const nuevasPartidasGanadas = prev.partidasGanadasAcum + (esVictoria ? 1 : 0);
             const nuevosBlackjacks = prev.blackjacksObtenidosAcum + (esBlackjack ? 1 : 0);
-
+            
             return {
                 totalPartidasAcum: prev.totalPartidasAcum + 1,
                 gananciaTotalAcum: prev.gananciaTotalAcum + (nuevaPartida.ganancia || 0),
@@ -190,7 +173,7 @@ export default function Blackjack() {
                 blackjacksObtenidosAcum: nuevosBlackjacks
             };
         });
-
+        
         // Actualizar estadísticas visibles
         setEstadisticas(prev => {
             const nuevasPartidasGanadas = prev.partidasGanadas + (esVictoria ? 1 : 0);
@@ -198,7 +181,7 @@ export default function Blackjack() {
             const nuevaGananciaTotal = prev.gananciaTotal + (nuevaPartida.ganancia || 0);
             const nuevoGastoTotal = prev.gastoTotal + nuevaPartida.apuesta;
             const nuevoBalance = nuevaGananciaTotal - nuevoGastoTotal;
-
+            
             return {
                 totalPartidas: prev.totalPartidas + 1,
                 gananciaTotal: nuevaGananciaTotal,
@@ -220,11 +203,11 @@ export default function Blackjack() {
             puntajeJugador,
             puntajeBanca
         };
-
+        
         // Agregar al historial (máximo 10 registros)
         const nuevoHistorial = [nuevaPartida, ...historial.slice(0, 9)];
         setHistorial(nuevoHistorial);
-
+        
         // Actualizar estadísticas
         actualizarEstadisticas(nuevaPartida);
     };
@@ -523,7 +506,7 @@ export default function Blackjack() {
         localStorage.removeItem("fecha_envio_comprobante");
         localStorage.removeItem("historial_blackjack");
         localStorage.removeItem("estadisticas_acumulativas_blackjack");
-
+        
         setUsuario(null);
         showMsg("Sesión cerrada correctamente", "success");
         setTimeout(() => navigate('/login'), 1500);
@@ -544,12 +527,13 @@ export default function Blackjack() {
         <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900">
             {/* Notificación */}
             {notificacion && (
-                <div className={`fixed top-6 right-6 z-50 px-6 py-4 rounded-xl font-bold flex items-center space-x-3 shadow-2xl animate-slideIn ${notificacion.type === "success"
-                        ? "bg-gradient-to-r from-green-900/90 to-green-800/90 border border-green-500/50 text-green-200"
-                        : notificacion.type === "error"
-                            ? "bg-gradient-to-r from-red-900/90 to-red-800/90 border border-red-500/50 text-red-200"
-                            : "bg-gradient-to-r from-blue-900/90 to-blue-800/90 border border-blue-500/50 text-blue-200"
-                    }`}>
+                <div className={`fixed top-6 right-6 z-50 px-6 py-4 rounded-xl font-bold flex items-center space-x-3 shadow-2xl animate-slideIn ${
+                    notificacion.type === "success" 
+                        ? "bg-gradient-to-r from-green-900/90 to-green-800/90 border border-green-500/50 text-green-200" 
+                        : notificacion.type === "error" 
+                        ? "bg-gradient-to-r from-red-900/90 to-red-800/90 border border-red-500/50 text-red-200" 
+                        : "bg-gradient-to-r from-blue-900/90 to-blue-800/90 border border-blue-500/50 text-blue-200"
+                }`}>
                     <span className="text-xl">
                         {notificacion.type === "success" ? "✅" : notificacion.type === "error" ? "❌" : "ℹ️"}
                     </span>
@@ -558,7 +542,7 @@ export default function Blackjack() {
             )}
 
             {/* Header - Usando el componente */}
-            <Header
+            <Header 
                 usuario={usuario}
                 cerrarSesion={cerrarSesion}
                 setUsuario={setUsuario}
@@ -569,7 +553,7 @@ export default function Blackjack() {
                 <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-emerald-500/10"></div>
                 <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full blur-3xl opacity-20"></div>
                 <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full blur-3xl opacity-20"></div>
-
+                
                 <div className="container mx-auto px-4 py-12 relative z-10">
                     <div className="text-center max-w-4xl mx-auto">
                         <div className="inline-block mb-6">
@@ -577,7 +561,7 @@ export default function Blackjack() {
                                 ♠️ BLACKJACK VIP ♣️
                             </span>
                         </div>
-
+                        
                         <h1 className="text-4xl md:text-5xl font-bold mb-6">
                             <span className="bg-gradient-to-r from-green-400 via-emerald-400 to-green-400 bg-clip-text text-transparent">
                                 ¡Blackjack!
@@ -585,7 +569,7 @@ export default function Blackjack() {
                             <br />
                             <span className="text-white">Gana 2.5x con Blackjack</span>
                         </h1>
-
+                        
                         <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
                             Apuesta desde <span className="text-green-400 font-bold">${apuestasPermitidas[0]}</span> hasta <span className="text-green-400 font-bold">${apuestasPermitidas[apuestasPermitidas.length - 1]}</span>.
                             <span className="text-yellow-400 font-bold"> ¡Blackjack paga 2.5x tu apuesta!</span>
@@ -610,12 +594,13 @@ export default function Blackjack() {
                                                 key={apuesta}
                                                 onClick={() => setApuestaSeleccionada(apuesta)}
                                                 disabled={usuario.saldo < apuesta}
-                                                className={`px-4 py-2 rounded-xl font-bold transition-all duration-300 ${apuestaSeleccionada === apuesta
+                                                className={`px-4 py-2 rounded-xl font-bold transition-all duration-300 ${
+                                                    apuestaSeleccionada === apuesta
                                                         ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg scale-105'
                                                         : usuario.saldo < apuesta
-                                                            ? 'bg-gray-800/50 text-gray-500 cursor-not-allowed border border-gray-700'
-                                                            : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/70 hover:text-white border border-gray-700'
-                                                    }`}
+                                                        ? 'bg-gray-800/50 text-gray-500 cursor-not-allowed border border-gray-700'
+                                                        : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/70 hover:text-white border border-gray-700'
+                                                }`}
                                             >
                                                 ${apuesta.toLocaleString()}
                                             </button>
@@ -660,8 +645,8 @@ export default function Blackjack() {
                                     <h3 className="text-xl font-bold text-white mb-4 text-center">
                                         🎯 Jugador: <span className={
                                             puntajeJugador === 21 ? "text-yellow-400" :
-                                                puntajeJugador > 21 ? "text-red-400" :
-                                                    "text-green-400"
+                                            puntajeJugador > 21 ? "text-red-400" :
+                                            "text-green-400"
                                         }>
                                             {puntajeJugador}
                                         </span>
@@ -688,14 +673,15 @@ export default function Blackjack() {
                                         </div>
                                     )}
                                     {mensaje && (
-                                        <div className={`px-4 py-3 rounded-xl font-bold mb-4 ${mensaje.includes("Error") || mensaje.includes("insuficiente")
-                                                ? "bg-gradient-to-r from-red-900/50 to-red-800/50 border border-red-500/50 text-red-200"
+                                        <div className={`px-4 py-3 rounded-xl font-bold mb-4 ${
+                                            mensaje.includes("Error") || mensaje.includes("insuficiente")
+                                                ? "bg-gradient-to-r from-red-900/50 to-red-800/50 border border-red-500/50 text-red-200" 
                                                 : mensaje.includes("Ganaste") || mensaje.includes("Blackjack")
-                                                    ? "bg-gradient-to-r from-green-900/50 to-green-800/50 border border-green-500/50 text-green-200"
-                                                    : mensaje.includes("Empate")
-                                                        ? "bg-gradient-to-r from-yellow-900/50 to-yellow-800/50 border border-yellow-500/50 text-yellow-200"
-                                                        : "bg-gradient-to-r from-gray-900/50 to-gray-800/50 border border-gray-500/50 text-gray-200"
-                                            }`}>
+                                                ? "bg-gradient-to-r from-green-900/50 to-green-800/50 border border-green-500/50 text-green-200"
+                                                : mensaje.includes("Empate")
+                                                ? "bg-gradient-to-r from-yellow-900/50 to-yellow-800/50 border border-yellow-500/50 text-yellow-200"
+                                                : "bg-gradient-to-r from-gray-900/50 to-gray-800/50 border border-gray-500/50 text-gray-200"
+                                        }`}>
                                             {mensaje}
                                             {ganancia > 0 && ganancia !== apuestaActual && (
                                                 <div className="text-lg text-green-400 mt-2">
@@ -705,15 +691,16 @@ export default function Blackjack() {
                                         </div>
                                     )}
                                 </div>
-
+                                
                                 {estado === 'esperando' && (
                                     <button
                                         onClick={iniciarJuego}
                                         disabled={cargando || !usuario || (usuario && usuario.saldo < apuestaSeleccionada)}
-                                        className={`w-full max-w-xs py-4 px-8 rounded-xl font-bold text-lg transition-all duration-300 ${cargando
-                                                ? 'bg-gray-600 cursor-not-allowed opacity-70'
+                                        className={`w-full max-w-xs py-4 px-8 rounded-xl font-bold text-lg transition-all duration-300 ${
+                                            cargando 
+                                                ? 'bg-gray-600 cursor-not-allowed opacity-70' 
                                                 : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 hover:scale-105 active:scale-95'
-                                            } ${(!usuario || (usuario && usuario.saldo < apuestaSeleccionada)) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                        } ${(!usuario || (usuario && usuario.saldo < apuestaSeleccionada)) ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     >
                                         {cargando ? (
                                             <span className="flex items-center justify-center">
@@ -736,10 +723,11 @@ export default function Blackjack() {
                                                 <button
                                                     onClick={pedirCarta}
                                                     disabled={cargando}
-                                                    className={`py-3 px-6 rounded-xl font-bold text-lg transition-all duration-300 ${cargando
-                                                            ? 'bg-gray-600 cursor-not-allowed opacity-70'
+                                                    className={`py-3 px-6 rounded-xl font-bold text-lg transition-all duration-300 ${
+                                                        cargando 
+                                                            ? 'bg-gray-600 cursor-not-allowed opacity-70' 
                                                             : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 hover:scale-105 active:scale-95'
-                                                        }`}
+                                                    }`}
                                                 >
                                                     {cargando ? "..." : "🃏 Pedir Carta"}
                                                 </button>
@@ -748,10 +736,11 @@ export default function Blackjack() {
                                             <button
                                                 onClick={plantarse}
                                                 disabled={cargando}
-                                                className={`py-3 px-6 rounded-xl font-bold text-lg transition-all duration-300 ${cargando
-                                                        ? 'bg-gray-600 cursor-not-allowed opacity-70'
+                                                className={`py-3 px-6 rounded-xl font-bold text-lg transition-all duration-300 ${
+                                                    cargando 
+                                                        ? 'bg-gray-600 cursor-not-allowed opacity-70' 
                                                         : 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 hover:scale-105 active:scale-95'
-                                                    }`}
+                                                }`}
                                             >
                                                 {cargando ? "..." : "✋ Plantarse"}
                                             </button>
@@ -777,7 +766,7 @@ export default function Blackjack() {
                             </div>
                         </div>
                     </div>
-
+                    
                     {/* Panel Lateral */}
                     <div className="space-y-6">
                         {/* Estadísticas */}
@@ -827,15 +816,15 @@ export default function Blackjack() {
                                     <div className="text-center">
                                         <div className="text-sm text-gray-400">Ratio Victorias</div>
                                         <div className="text-xl font-bold text-blue-400">
-                                            {estadisticas.totalPartidas > 0
-                                                ? `${((estadisticas.partidasGanadas / estadisticas.totalPartidas) * 100).toFixed(1)}%`
+                                            {estadisticas.totalPartidas > 0 
+                                                ? `${((estadisticas.partidasGanadas / estadisticas.totalPartidas) * 100).toFixed(1)}%` 
                                                 : '0%'}
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-
+                        
                         {/* Reglas del juego */}
                         <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50">
                             <h3 className="text-xl font-bold text-white mb-4">📖 Reglas del Blackjack</h3>
@@ -866,7 +855,7 @@ export default function Blackjack() {
                                 </div>
                             </div>
                         </div>
-
+                        
                         {/* Historial */}
                         <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50">
                             <div className="flex items-center justify-between mb-4">
@@ -880,7 +869,7 @@ export default function Blackjack() {
                                     </button>
                                 )}
                             </div>
-
+                            
                             {historial.length === 0 ? (
                                 <div className="text-center py-8">
                                     <div className="text-4xl mb-3">🃏</div>
@@ -906,8 +895,8 @@ export default function Blackjack() {
                                                         {partida.ganancia > 0 ? `+$${partida.ganancia}` : '$0'}
                                                     </div>
                                                     <div className="text-xs text-gray-400">
-                                                        {partida.ganancia > 0
-                                                            ? `Neto: $${partida.ganancia - partida.apuesta}`
+                                                        {partida.ganancia > 0 
+                                                            ? `Neto: $${partida.ganancia - partida.apuesta}` 
                                                             : `Pérdida: $${partida.apuesta}`}
                                                     </div>
                                                 </div>
@@ -917,7 +906,7 @@ export default function Blackjack() {
                                 </div>
                             )}
                         </div>
-
+                        
                         {/* Información */}
                         <div className="bg-gradient-to-r from-green-600/20 to-emerald-600/20 border border-green-500/30 rounded-2xl p-6">
                             <h4 className="text-lg font-bold text-white mb-3">💡 Consejos</h4>
