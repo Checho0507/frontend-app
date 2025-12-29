@@ -694,7 +694,7 @@ const Verificate: React.FC = () => {
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between p-3 bg-gray-900/50 rounded-lg">
                                     <span className="text-gray-400">Número de teléfono:</span>
-                                    <span className="text-xl font-bold text-white">304 384 7855</span>
+                                    <span className="text-xl font-bold text-white">310 527 8029</span>
                                 </div>
                                 
                                 <div className="flex items-center justify-between p-3 bg-gray-900/50 rounded-lg">
