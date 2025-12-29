@@ -76,7 +76,7 @@ const AppRouter = () => {
         <Route path="/juegos/minas" element={<Minas />} />
         <Route path="/transacciones/deposito" element={<Deposito usuario={usuario} cerrarSesion={cerrarSesion} setUsuario={setUsuario} />} />
         <Route path="/transacciones/retiro" element={<Retiro usuario={usuario} cerrarSesion={cerrarSesion} setUsuario={setUsuario} />} />
-        <Route path="/referidos" element={<Referidos />} />
+        <Route path="/referidos" element={<Referidos usuario={usuario} cerrarSesion={cerrarSesion} setUsuario={setUsuario}/>} />
         <Route path="/transacciones/admin/depositos/pendientes" element={<AdminPanel />} />
         <Route path="/transacciones/admin/depositos/:depositoId/aprobar" element={<AdminPanel />} />
         <Route path="/transacciones/admin/depositos/:depositoId/rechazar" element={<AdminPanel />} />
