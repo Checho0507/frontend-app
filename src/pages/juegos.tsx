@@ -26,7 +26,24 @@ export default function Juegos() {
 
   useEffect(() => {
     console.log('Usuario en Referidos:', usuario);
-    console.log('Token en localStorage:', localStorage.getItem('token'));
+    axios.get(`${API_URL}/me`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+    })
+      .then((res) => {
+        const userData = res.data;
+        setUsuario({
+          id: userData.id,
+          username: userData.username,
+          saldo: userData.saldo,
+          verificado: userData.verificado,
+          nivel: userData.nivel,
+          verificado_pendiente: userData.verificado_pendiente
+        });
+        localStorage.setItem("usuario", JSON.stringify(userData));
+      })
+      .catch(() => {
+        setUsuario(null);
+      });
 
     if (!usuario) {
       const token = localStorage.getItem("token");
@@ -159,10 +176,10 @@ export default function Juegos() {
       {/* Notificación */}
       {notificacion && (
         <div className={`fixed top-6 right-6 z-50 px-6 py-4 rounded-xl font-bold flex items-center space-x-3 shadow-2xl animate-slideIn ${notificacion.type === "success"
-            ? "bg-gradient-to-r from-green-900/90 to-green-800/90 border border-green-500/50 text-green-200"
-            : notificacion.type === "error"
-              ? "bg-gradient-to-r from-red-900/90 to-red-800/90 border border-red-500/50 text-red-200"
-              : "bg-gradient-to-r from-blue-900/90 to-blue-800/90 border border-blue-500/50 text-blue-200"
+          ? "bg-gradient-to-r from-green-900/90 to-green-800/90 border border-green-500/50 text-green-200"
+          : notificacion.type === "error"
+            ? "bg-gradient-to-r from-red-900/90 to-red-800/90 border border-red-500/50 text-red-200"
+            : "bg-gradient-to-r from-blue-900/90 to-blue-800/90 border border-blue-500/50 text-blue-200"
           }`}>
           <span className="text-xl">
             {notificacion.type === "success" ? "✅" : notificacion.type === "error" ? "❌" : "ℹ️"}
@@ -243,8 +260,8 @@ export default function Juegos() {
               key={i}
               onClick={() => juego.disponible ? navigate(juego.ruta) : null}
               className={`group bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border transition-all duration-300 cursor-pointer ${juego.disponible
-                  ? 'border-gray-700/50 hover:border-yellow-500/50 hover:scale-[1.02]'
-                  : 'border-gray-700/30 opacity-70 cursor-not-allowed'
+                ? 'border-gray-700/50 hover:border-yellow-500/50 hover:scale-[1.02]'
+                : 'border-gray-700/30 opacity-70 cursor-not-allowed'
                 }`}
             >
               <div className="flex flex-col items-center text-center h-full">
