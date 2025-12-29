@@ -324,6 +324,7 @@ export default function AdminPanel(): JSX.Element {
         }
     };
 
+    const rechazarUsuarioDisabled = true;
     const eliminarUsuarioDisabled = true;
 
     const usuariosFiltrados = usuarios.filter(u => {
