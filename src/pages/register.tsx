@@ -14,7 +14,7 @@ interface RegisterForm {
 
 export default function Register() {
   const [searchParams] = useSearchParams();
-
+  
   const [form, setForm] = useState<RegisterForm>({
     id: 0,
     referido_por: "",
@@ -51,7 +51,7 @@ export default function Register() {
     setError("");
     setSuccess(false);
 
-    // Validaciones (mantener igual)
+    // Validaciones
     if (!termsAccepted) {
       setError("Debes aceptar los términos y condiciones para registrarte");
       return;
@@ -70,16 +70,12 @@ export default function Register() {
     setLoading(true);
 
     try {
-      // PREPARAR DATOS CORRECTAMENTE - ¡ESTE ES EL CAMBIO CLAVE!
+      // Preparar datos para envío
       const submitData = {
-        username: form.username,
-        email: form.email,
-        password: form.password,
-        referido_por: form.referido_por || null
-        // NO incluir: id, confirmPassword
+        ...form,
+        referido_por: form.referido_por || null,
+        confirmPassword: undefined // Excluir del envío
       };
-
-      console.log("Enviando datos:", submitData); // Para depuración
 
       const res = await fetch(`${API_URL}/register`, {
         method: "POST",
@@ -87,49 +83,26 @@ export default function Register() {
         body: JSON.stringify(submitData),
       });
 
-      // Manejar respuesta del servidor de manera más robusta
-      if (!res.ok) {
-        // Intentar obtener mensaje de error del backend
-        const errorText = await res.text();
-        let errorMessage = "Error al registrar la cuenta";
-
-        try {
-          const errorData = JSON.parse(errorText);
-          errorMessage = errorData.detail || errorData.message || errorMessage;
-        } catch {
-          // Si no es JSON, usar el texto plano
-          errorMessage = errorText || `Error ${res.status}: ${res.statusText}`;
-        }
-
-        setError(errorMessage);
-        setLoading(false);
-        return;
-      }
-
       const data = await res.json();
-      setSuccess(true);
 
-      // Limpiar formulario
-      setForm({
-        id: 0,
-        referido_por: "",
-        username: "",
-        email: "",
-        password: "",
-        confirmPassword: ""
-      });
-      setTermsAccepted(false);
-
-      console.log("Usuario registrado exitosamente:", data);
-
-      // Redireccionar después de 2 segundos
-      setTimeout(() => {
-        window.location.href = "/login";
-      }, 2000);
-
-    } catch (err: any) {
-      console.error("Error de conexión:", err);
-      setError(err.message || "Error de conexión. Intenta nuevamente.");
+      if (res.ok) {
+        setSuccess(true);
+        setForm({
+          id: 0,
+          referido_por: "",
+          username: "",
+          email: "",
+          password: "",
+          confirmPassword: ""
+        });
+        setTermsAccepted(false);
+        console.log("Usuario registrado:", data);
+      } else {
+        setError(data.detail || "Error al registrar la cuenta");
+      }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (err) {
+      setError("Error de conexión. Intenta nuevamente.");
     } finally {
       setLoading(false);
     }
@@ -142,7 +115,7 @@ export default function Register() {
         <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/10 to-green-500/10 rounded-3xl blur-xl"></div>
         <div className="absolute -top-4 -left-4 w-20 h-20 bg-gradient-to-r from-yellow-500 to-green-500 rounded-full blur-lg opacity-30"></div>
         <div className="absolute -bottom-4 -right-4 w-32 h-32 bg-gradient-to-r from-purple-500 to-red-500 rounded-full blur-lg opacity-20"></div>
-
+        
         {/* Tarjeta principal */}
         <div className="relative bg-gray-900/90 backdrop-blur-lg border border-gray-700/50 shadow-2xl rounded-2xl overflow-hidden">
           {/* Cabecera con patrón de juego */}
@@ -159,7 +132,7 @@ export default function Register() {
             </div>
             <p className="text-center text-gray-300 text-sm">Crear Cuenta - ¡Gana desde el inicio!</p>
           </div>
-
+          
           <div className="p-6 md:p-8">
             {/* Banner de bonificación */}
             <div className="mb-6 p-4 bg-gradient-to-r from-yellow-600/20 to-green-600/20 border border-yellow-500/30 rounded-xl">
@@ -175,7 +148,7 @@ export default function Register() {
                     <p className="text-yellow-300 text-xs">100 créditos gratis + 10% en depósitos</p>
                   </div>
                 </div>
-                <button
+                <button 
                   type="button"
                   onClick={() => setReferralBonusInfo(!referralBonusInfo)}
                   className="text-yellow-400 hover:text-yellow-300 text-sm font-medium"
@@ -183,7 +156,7 @@ export default function Register() {
                   {referralBonusInfo ? "Menos info" : "Más info"}
                 </button>
               </div>
-
+              
               {referralBonusInfo && (
                 <div className="mt-3 pt-3 border-t border-yellow-500/30">
                   <ul className="text-gray-300 text-xs space-y-1">
@@ -239,8 +212,8 @@ export default function Register() {
                   )}
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  {form.referido_por
-                    ? "✓ Código aplicado - Recibirás bonos extras"
+                  {form.referido_por 
+                    ? "✓ Código aplicado - Recibirás bonos extras" 
                     : "Si te refirió alguien, gana ambos bonos extras"
                   }
                 </p>
