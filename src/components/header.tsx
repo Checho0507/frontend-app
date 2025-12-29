@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { API_URL } from "../api/auth";
 
 interface Usuario {
     id: number;
@@ -122,7 +123,7 @@ const Header: React.FC<HeaderProps> = ({ usuario, cerrarSesion, setUsuario }) =>
             }
 
             const response = await axios.post(
-                "http://localhost:8000/bonus-diario/bonus-diario",
+                `${API_URL}/bonus-diario/bonus-diario`,
                 {},
                 {
                     headers: {

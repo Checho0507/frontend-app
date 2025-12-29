@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import Header from './header';
 import Footer from './footer';
+import { API_URL } from "../api/auth";
 
 interface Usuario {
     id: number;
@@ -91,7 +92,7 @@ const Retiro: React.FC<RetiroProps> = ({ usuario, setUsuario, cerrarSesion }) =>
             // Si no hay usuario en localStorage, obtenerlo del backend
             try {
                 console.log("🌐 Obteniendo usuario desde backend...");
-                const response = await axios.get("http://localhost:8000/me", {
+                const response = await axios.get(`${API_URL}/me`, {
                     headers: { 
                         'Authorization': `Bearer ${token}`,
                         'Cache-Control': 'no-cache'
@@ -140,7 +141,7 @@ const Retiro: React.FC<RetiroProps> = ({ usuario, setUsuario, cerrarSesion }) =>
             console.log("📊 Cargando historial de retiros...");
             
             const response = await axios.get(
-                "http://localhost:8000/transacciones/mis-retiros",
+                `${API_URL}/transacciones/mis-retiros`,
                 {
                     headers: {
                         'Authorization': `Bearer ${token}`
@@ -223,7 +224,7 @@ const Retiro: React.FC<RetiroProps> = ({ usuario, setUsuario, cerrarSesion }) =>
         try {
             console.log("💸 Enviando solicitud de retiro...");
             const response = await axios.post(
-                "http://localhost:8000/transacciones/transacciones/retiro",
+                `${API_URL}/transacciones/transacciones/retiro`,
                 {
                     monto: monto,
                     metodo_retiro: metodoRetiro,

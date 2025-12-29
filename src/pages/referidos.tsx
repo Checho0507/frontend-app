@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/header';
 import Footer from '../components/footer';
+import { API_URL } from '../api/auth';
 
 interface SubReferido {
     username: string;
@@ -71,7 +72,7 @@ const Referidos: React.FC<ReferidosProps> = ({ usuario, setUsuario, cerrarSesion
             const token = localStorage.getItem("token");
 
             const response = await axios.get(
-                `http://localhost:8000/referidos?nocache=${Date.now()}`,
+                `${API_URL}/referidos?nocache=${Date.now()}`,
                 {
                     headers: { Authorization: `Bearer ${token}` },
                 }

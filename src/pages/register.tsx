@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { API_URL } from "../api/auth";
 
 // Define el tipo de datos del formulario de registro
 interface RegisterForm {
@@ -76,7 +77,7 @@ export default function Register() {
         confirmPassword: undefined // Excluir del envío
       };
 
-      const res = await fetch("http://127.0.0.1:8000/register", {
+      const res = await fetch(`${API_URL}/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(submitData),

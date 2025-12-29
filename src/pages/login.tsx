@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
+import { API_URL } from "../api/auth";
 
 interface LoginForm {
   username: string;
@@ -35,7 +36,7 @@ export default function Login() {
 
     try {
       // 1. Autenticación
-      const response = await axios.post("http://localhost:8000/login", {
+      const response = await axios.post(`${API_URL}/login`, {
         username: form.username,
         password: form.password
       });
@@ -46,7 +47,7 @@ export default function Login() {
       localStorage.setItem("token", token);
 
       // 3. Obtener info del usuario autenticado
-      const meResponse = await axios.get("http://localhost:8000/me", {
+      const meResponse = await axios.get(`${API_URL}/me`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 

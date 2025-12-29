@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import confetti from "canvas-confetti";
 import Header from '../components/header'; // Añadir esta línea
 import Footer from '../components/footer'; // Añadir esta línea
+import { API_URL } from "../api/auth";
 
 interface Usuario {
     id: number;
@@ -102,7 +103,7 @@ export default function Blackjack() {
     useEffect(() => {
         const cargarConfiguracion = async () => {
             try {
-                const res = await axios.get("http://localhost:8000/juegos/blackjack/juegos/blackjack/apuestas-permitidas");
+                const res = await axios.get(`${API_URL}/juegos/blackjack/juegos/blackjack/apuestas-permitidas`);
                 setApuestasPermitidas(res.data.apuestas_permitidas);
                 setApuestaSeleccionada(res.data.apuestas_permitidas[1] || 500);
             } catch (error) {
@@ -263,7 +264,7 @@ export default function Blackjack() {
         try {
             const token = localStorage.getItem("token");
             const res = await axios.post(
-                `http://localhost:8000/juegos/blackjack/juegos/blackjack/iniciar?apuesta=${apuestaSeleccionada}`,
+                `${API_URL}/juegos/blackjack/juegos/blackjack/iniciar?apuesta=${apuestaSeleccionada}`,
                 {},
                 {
                     headers: { Authorization: `Bearer ${token}` },
@@ -303,7 +304,7 @@ export default function Blackjack() {
         try {
             const token = localStorage.getItem("token");
             const res = await axios.post(
-                `http://localhost:8000/juegos/blackjack/juegos/blackjack/${sessionId}/pedir-carta`,
+                `${API_URL}/juegos/blackjack/juegos/blackjack/${sessionId}/pedir-carta`,
                 {},
                 {
                     headers: { Authorization: `Bearer ${token}` },
@@ -359,7 +360,7 @@ export default function Blackjack() {
         try {
             const token = localStorage.getItem("token");
             const res = await axios.post(
-                `http://localhost:8000/juegos/blackjack/juegos/blackjack/${sessionId}/plantarse`,
+                `${API_URL}/juegos/blackjack/juegos/blackjack/${sessionId}/plantarse`,
                 {},
                 {
                     headers: { Authorization: `Bearer ${token}` },

@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import confetti from "canvas-confetti";
 import Header from '../components/header'; // Añadir esta línea
 import Footer from '../components/footer'; // Añadir esta línea
+import { API_URL } from "../api/auth";
 
 // Configurar interceptor de axios para manejar errores
 axios.interceptors.response.use(
@@ -161,7 +162,7 @@ export default function Minas() {
             }
 
             try {
-                const respuesta = await axios.get(`http://localhost:8000/me`, {
+                const respuesta = await axios.get(`${API_URL}/me`, {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
@@ -221,7 +222,7 @@ export default function Minas() {
     useEffect(() => {
         const cargarConfiguracion = async () => {
             try {
-                const res = await axios.get("http://localhost:8000/juegos/minas/config");
+                const res = await axios.get(`${API_URL}/juegos/minas/config`);
                 console.log("Configuración de minas:", res.data);
                 if (res.data.success) {
                     setApuestasPermitidas(res.data.apuestas_permitidas);
@@ -400,7 +401,7 @@ export default function Minas() {
             });
 
             const res = await axios.post(
-                `http://localhost:8000/juegos/minas/iniciar?apuesta=${apuestaSeleccionada}&dificultad=${dificultadSeleccionada}`,
+                `${API_URL}/juegos/minas/iniciar?apuesta=${apuestaSeleccionada}&dificultad=${dificultadSeleccionada}`,
                 {},
                 {
                     headers: {
@@ -496,7 +497,7 @@ export default function Minas() {
         try {
             const token = localStorage.getItem("token");
             const res = await axios.post(
-                `http://localhost:8000/juegos/minas/${sessionId}/abrir?x=${x}&y=${y}`,
+                `${API_URL}/juegos/minas/${sessionId}/abrir?x=${x}&y=${y}`,
                 {},
                 {
                     headers: { Authorization: `Bearer ${token}` },
@@ -603,7 +604,7 @@ export default function Minas() {
         try {
             const token = localStorage.getItem("token");
             const res = await axios.post(
-                `http://localhost:8000/juegos/minas/${sessionId}/marcar?x=${x}&y=${y}`,
+                `${API_URL}/juegos/minas/${sessionId}/marcar?x=${x}&y=${y}`,
                 {},
                 {
                     headers: { Authorization: `Bearer ${token}` },
@@ -632,7 +633,7 @@ export default function Minas() {
         try {
             const token = localStorage.getItem("token");
             const res = await axios.post(
-                `http://localhost:8000/juegos/minas/${sessionId}/retirarse`,
+                `${API_URL}/juegos/minas/${sessionId}/retirarse`,
                 {},
                 {
                     headers: { Authorization: `Bearer ${token}` },
@@ -683,7 +684,7 @@ export default function Minas() {
         try {
             const token = localStorage.getItem("token");
             const res = await axios.delete(
-                `http://localhost:8000/juegos/minas/${sessionId}`,
+                `${API_URL}/juegos/minas/${sessionId}`,
                 {
                     headers: { Authorization: `Bearer ${token}` },
                 }
@@ -860,12 +861,12 @@ export default function Minas() {
                 console.log("🔑 Token:", token ? "Presente" : "Ausente");
                 
                 // Probar conexión simple
-                const test = await axios.get("http://localhost:8000/juegos/minas/config");
+                const test = await axios.get(`${API_URL}/juegos/minas/config`);
                 console.log("✅ Configuración obtenida:", test.data);
                 
                 // Probar autenticación
                 if (token) {
-                    const me = await axios.get("http://localhost:8000/me", {
+                    const me = await axios.get(`${API_URL}/me`, {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     console.log("✅ Usuario autenticado:", me.data);

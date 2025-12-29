@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import axios from 'axios';
 import Header from '../components/header';
 import Footer from '../components/footer';
+import { API_URL } from '../api/auth';
 
 interface Usuario {
     id: number;
@@ -34,7 +35,7 @@ const Inicio: React.FC = () => {
     useEffect(() => {
         const token = localStorage.getItem("token");
         if (token) {
-            axios.get("http://localhost:8000/me", {
+            axios.get(`${API_URL}/me`, {
                 headers: { Authorization: `Bearer ${token}` }
             })
                 .then((res) => {

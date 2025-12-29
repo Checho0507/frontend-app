@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import confetti from "canvas-confetti";
 import Header from '../components/header'; // Añadir esta línea
 import Footer from '../components/footer'; // Añadir esta línea
+import { API_URL } from "../api/auth";
 
 interface Usuario {
     id: number;
@@ -98,7 +99,7 @@ export default function Tragamonedas() {
     useEffect(() => {
         const cargarConfiguracion = async () => {
             try {
-                const res = await axios.get("http://localhost:8000/juegos/tragamonedas/juegos/tragamonedas/apuestas-permitidas");
+                const res = await axios.get(`${API_URL}/juegos/tragamonedas/juegos/tragamonedas/apuestas-permitidas`);
                 setApuestasPermitidas(res.data.apuestas_permitidas);
                 setApuestaSeleccionada(res.data.apuestas_permitidas[1] || 500);
             } catch (error) {
@@ -258,7 +259,7 @@ export default function Tragamonedas() {
         try {
             const token = localStorage.getItem("token");
             const res = await axios.post(
-                `http://localhost:8000/juegos/tragamonedas/juegos/tragamonedas?apuesta=${apuestaSeleccionada}`,
+                `${API_URL}/juegos/tragamonedas/juegos/tragamonedas?apuesta=${apuestaSeleccionada}`,
                 {},
                 { headers: { Authorization: `Bearer ${token}` } }
             );

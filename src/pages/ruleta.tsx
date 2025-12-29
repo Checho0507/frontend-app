@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import confetti from "canvas-confetti";
 import Header from '../components/header';
 import Footer from '../components/footer';
+import { API_URL } from "../api/auth";
 
 interface Usuario {
     id: number;
@@ -310,7 +311,7 @@ export default function Ruleta() {
         try {
             const token = localStorage.getItem("token");
             const res = await axios.post(
-                "http://localhost:8000/juegos/ruleta/juegos/ruleta",
+                `${API_URL}/juegos/ruleta/juegos/ruleta`,
                 {},
                 { headers: { Authorization: `Bearer ${token}` } }
             );

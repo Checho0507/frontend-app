@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/header';
 import Footer from '../components/footer';
+import { API_URL } from '../api/auth';
 
 interface Usuario {
     id: number;
@@ -40,7 +41,7 @@ const Verificate: React.FC = () => {
             return;
         }
 
-        axios.get("http://localhost:8000/me", {
+        axios.get(`${API_URL}/me`, {
             headers: {
                 Authorization: `Bearer ${token}`
             }
@@ -100,7 +101,7 @@ const Verificate: React.FC = () => {
             const interval = setInterval(() => {
                 const token = localStorage.getItem("token");
                 if (token) {
-                    axios.get("http://localhost:8000/me", {
+                    axios.get(`${API_URL}/me`, {
                         headers: {
                             Authorization: `Bearer ${token}`
                         }
@@ -204,7 +205,7 @@ const Verificate: React.FC = () => {
         setSubiendo(true);
         try {
             const token = localStorage.getItem("token");
-            const response = await axios.post("http://localhost:8000/verificate/verificate", formData, {
+            const response = await axios.post(`${API_URL}/verificate/verificate`, formData, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     "Content-Type": "multipart/form-data",
@@ -239,7 +240,7 @@ const Verificate: React.FC = () => {
 
             // Recargar datos del usuario desde el servidor para confirmar
             setTimeout(() => {
-                axios.get("http://localhost:8000/me", {
+                axios.get(`${API_URL}/me`, {
                     headers: {
                         Authorization: `Bearer ${token}`
                     }
@@ -303,7 +304,7 @@ const Verificate: React.FC = () => {
         // Forzar recarga desde el servidor
         const token = localStorage.getItem("token");
         if (token) {
-            axios.get("http://localhost:8000/me", {
+            axios.get(`${API_URL}/me`, {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }

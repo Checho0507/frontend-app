@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import Header from './header';
 import Footer from './footer';
+import { API_URL } from '../api/auth';
 
 interface Usuario {
     id: number;
@@ -170,7 +171,7 @@ const Deposito: React.FC<DepositoProps> = ({ usuario, setUsuario, cerrarSesion }
         try {
             const token = localStorage.getItem("token");
             const response = await axios.get(
-                "http://localhost:8000/transacciones/mis-depositos",
+                `${API_URL}/transacciones/mis-depositos`,
                 {
                     headers: {
                         'Authorization': `Bearer ${token}`
@@ -254,7 +255,7 @@ const Deposito: React.FC<DepositoProps> = ({ usuario, setUsuario, cerrarSesion }
             }
 
             const response = await axios.post(
-                "http://localhost:8000/transacciones/deposito",
+                `${API_URL}/transacciones/deposito`,
                 formData,
                 {
                     headers: {

@@ -3,6 +3,8 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Header from "../components/header";
 import Footer from "../components/footer";
+import { API_URL } from "../api/auth";
+
 
 interface Ganador {
     id: number;
@@ -53,7 +55,7 @@ export default function SorteoVIP() {
         setErrorResultados("");
 
         try {
-            const response = await axios.get("http://localhost:8000/vip/vip/results");
+            const response = await axios.get(`${API_URL}/vip/vip/results`);
             console.log("Resultados obtenidos:", response.data);
             setResultados(response.data);
         } catch (error: any) {
@@ -97,7 +99,7 @@ export default function SorteoVIP() {
     useEffect(() => {
         let intervalId: NodeJS.Timeout;
 
-        axios.get("http://localhost:8000/vip/vip/next_draw")
+        axios.get(`${API_URL}/vip/vip/next_draw`)
             .then(res => {
                 const fechaSorteo = new Date(res.data.next_draw);
 
@@ -149,7 +151,7 @@ export default function SorteoVIP() {
         try {
             const token = localStorage.getItem("token");
             const res = await axios.post(
-                "http://localhost:8000/vip/vip/participar",
+                `${API_URL}/vip/vip/participar`,
                 { costo },
                 { headers: { Authorization: `Bearer ${token}` } }
             );

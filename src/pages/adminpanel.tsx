@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, type JSX } from "react";
 import axios from "axios";
+import API_URL from "../api/auth"; // Asegúrate de tener esta configuración en un archivo separado
 
 interface Usuario {
     id: number;
@@ -90,7 +91,7 @@ export default function AdminPanel(): JSX.Element {
 
         setLoading(true);
         try {
-            const meRes = await axios.get<Usuario>("http://localhost:8000/me", {
+            const meRes = await axios.get<Usuario>(`${API_URL}/me`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             setMe(meRes.data);
@@ -102,10 +103,10 @@ export default function AdminPanel(): JSX.Element {
             }
 
             const [usersRes, verifsRes, depositosRes, retirosRes] = await Promise.all([
-                axios.get<Usuario[]>("http://localhost:8000/admin/admin/usuarios", { headers: { Authorization: `Bearer ${token}` } }),
-                axios.get<Verificacion[]>("http://localhost:8000/admin/admin/verificaciones", { headers: { Authorization: `Bearer ${token}` } }),
-                axios.get<Deposito[]>("http://localhost:8000/transacciones/admin/depositos/pendientes", { headers: { Authorization: `Bearer ${token}` } }),
-                axios.get<Retiro[]>("http://localhost:8000/transacciones/admin/retiros/pendientes", { headers: { Authorization: `Bearer ${token}` } }),
+                axios.get<Usuario[]>(`${API_URL}/admin/admin/usuarios`, { headers: { Authorization: `Bearer ${token}` } }),
+                axios.get<Verificacion[]>(`${API_URL}/admin/admin/verificaciones`, { headers: { Authorization: `Bearer ${token}` } }),
+                axios.get<Deposito[]>(`${API_URL}/transacciones/admin/depositos/pendientes`, { headers: { Authorization: `Bearer ${token}` } }),
+                axios.get<Retiro[]>(`${API_URL}/transacciones/admin/retiros/pendientes`, { headers: { Authorization: `Bearer ${token}` } }),
             ]);
 
             const usuariosData = usersRes.data;
@@ -175,7 +176,7 @@ export default function AdminPanel(): JSX.Element {
 
         try {
             setProcesandoId(userId);
-            await axios.post(`http://localhost:8000/admin/admin/verificar/${userId}`, null, {
+            await axios.post(`${API_URL}/admin/admin/verificar/${userId}`, null, {
                 headers: { Authorization: `Bearer ${token}` },
             });
 
@@ -199,7 +200,7 @@ export default function AdminPanel(): JSX.Element {
 
         try {
             setProcesandoId(depositoId);
-            await axios.post(`http://localhost:8000/transacciones/admin/depositos/${depositoId}/aprobar`, null, {
+            await axios.post(`${API_URL}/transacciones/admin/depositos/${depositoId}/aprobar`, null, {
                 headers: { Authorization: `Bearer ${token}` },
             });
 
@@ -230,7 +231,7 @@ export default function AdminPanel(): JSX.Element {
         if (!window.confirm("¿Estás seguro de rechazar esta verificación?")) return;
         try {
             setProcesandoId(verificacionId);
-            await axios.post(`http://localhost:8000/admin/admin/rechazar/${verificacionId}`, {
+            await axios.post(`${API_URL}/admin/admin/rechazar/${verificacionId}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             setVerificaciones(prev => prev.filter(v => v.id !== verificacionId));
@@ -250,7 +251,7 @@ export default function AdminPanel(): JSX.Element {
 
         try {
             setProcesandoId(depositoId);
-            await axios.post(`http://localhost:8000/transacciones/admin/depositos/${depositoId}/rechazar`, null, {
+            await axios.post(`${API_URL}/transacciones/admin/depositos/${depositoId}/rechazar`, null, {
                 headers: { Authorization: `Bearer ${token}` },
             });
 
@@ -271,7 +272,7 @@ export default function AdminPanel(): JSX.Element {
 
         try {
             setProcesandoId(retiroId);
-            await axios.post(`http://localhost:8000/transacciones/admin/retiros/${retiroId}/aprobar`, null, {
+            await axios.post(`${API_URL}/transacciones/admin/retiros/${retiroId}/aprobar`, null, {
                 headers: { Authorization: `Bearer ${token}` },
             });
 
@@ -310,7 +311,7 @@ export default function AdminPanel(): JSX.Element {
 
         try {
             setProcesandoId(retiroId);
-            await axios.post(`http://localhost:8000/transacciones/admin/retiros/${retiroId}/rechazar`, null, {
+            await axios.post(`${API_URL}/transacciones/admin/retiros/${retiroId}/rechazar`, null, {
                 headers: { Authorization: `Bearer ${token}` },
             });
 
@@ -841,7 +842,7 @@ export default function AdminPanel(): JSX.Element {
                                                         <td style={styles.td}>
                                                             {d.comprobante_url ? (
                                                                 <a
-                                                                    href={`http://localhost:8000/${d.comprobante_url}`}
+                                                                    href={`${API_URL}/${d.comprobante_url}`}
                                                                     target="_blank"
                                                                     rel="noreferrer"
                                                                     style={styles.link}
@@ -1057,7 +1058,7 @@ export default function AdminPanel(): JSX.Element {
                                                     </td>
                                                     <td style={styles.td}>
                                                         <a
-                                                            href={`http://localhost:8000/${v.archivo_url}`}
+                                                            href={`${API_URL}/${v.archivo_url}`}
                                                             target="_blank"
                                                             rel="noreferrer"
                                                             style={styles.link}

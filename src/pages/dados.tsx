@@ -5,6 +5,7 @@ import {useNavigate } from "react-router-dom";
 import confetti from "canvas-confetti";
 import Header from '../components/header'; // Añadir esta línea
 import Footer from '../components/footer'; // Añadir esta línea
+import { API_URL } from "../api/auth";
 
 interface Usuario {
   id: number;
@@ -80,7 +81,7 @@ export default function Dados() {
   useEffect(() => {
     const cargarConfiguracion = async () => {
       try {
-        const res = await axios.get("http://localhost:8000/juegos/dados/juego/dados/apuestas-permitidas");
+        const res = await axios.get(`${API_URL}/juegos/dados/juego/dados/apuestas-permitidas`);
         setApuestasPermitidas(res.data.apuestas_permitidas);
         setMultiplicadores(res.data.multiplicadores);
         setApuestaSeleccionada(res.data.apuestas_permitidas[1] || 500);
@@ -229,7 +230,7 @@ export default function Dados() {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.post(
-        `http://localhost:8000/juegos/dados/juego/dados?apuesta=${apuestaSeleccionada}`,
+        `${API_URL}/juegos/dados/juego/dados?apuesta=${apuestaSeleccionada}`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
