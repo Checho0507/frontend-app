@@ -33,11 +33,11 @@ export default function Tragamonedas() {
     const [gananciaMostrar, setGananciaMostrar] = useState<number>(0);
     const [efectoGanancia, setEfectoGanancia] = useState(false);
     const [historial, setHistorial] = useState<HistorialGiro[]>([]);
-    
+
     // Nuevos estados para apuestas variables
     const [apuestaSeleccionada, setApuestaSeleccionada] = useState<number>(500);
     const [apuestasPermitidas, setApuestasPermitidas] = useState<number[]>([100, 500, 1000, 2000, 5000]);
-    
+
     // Estados para estadísticas
     const [estadisticas, setEstadisticas] = useState({
         totalTiradas: 0,
@@ -46,16 +46,16 @@ export default function Tragamonedas() {
         balance: 0,
         premiosObtenidos: 0
     });
-    
+
     const [estadisticasAcumulativas, setEstadisticasAcumulativas] = useState({
         totalTiradasAcum: 0,
         gananciaTotalAcum: 0,
         gastoTotalAcum: 0,
         premiosObtenidosAcum: 0
     });
-    
+
     const [notificacion, setNotificacion] = useState<{ text: string; type?: "success" | "error" | "info" } | null>(null);
-    
+
     const reelRefs = useRef<Array<HTMLDivElement | null>>([null, null, null]);
 
     const SYMBOLS = ["🍒", "🍋", "🍊", "🍉", "⭐", "🔔", "🍇", "7️⃣"];
@@ -72,28 +72,45 @@ export default function Tragamonedas() {
 
     // Obtener usuario al cargar
     useEffect(() => {
-            console.log('Usuario en Referidos:', usuario);
-            console.log('Token en localStorage:', localStorage.getItem('token'));
-    
-            if (!usuario) {
-                const token = localStorage.getItem("token");
-                if (!token) {
-                    navigate('/login');
-                    return;
-                }
-                // Si hay token pero usuario es null, intenta cargarlo desde localStorage
-                const usuarioGuardado = localStorage.getItem('usuario');
-                if (usuarioGuardado) {
-                    try {
-                        const usuarioParsed = JSON.parse(usuarioGuardado);
-                        setUsuario(usuarioParsed);
-                        console.log('Usuario cargado desde localStorage:', usuarioParsed);
-                    } catch (error) {
-                        console.error('Error al parsear usuario:', error);
-                    }
+        console.log('Usuario en Referidos:', usuario);
+        axios.get(`${API_URL}/me`, {
+            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+        })
+            .then((res) => {
+                const userData = res.data;
+                setUsuario({
+                    id: userData.id,
+                    username: userData.username,
+                    saldo: userData.saldo,
+                    verificado: userData.verificado,
+                    nivel: userData.nivel,
+                    verificado_pendiente: userData.verificado_pendiente
+                });
+                localStorage.setItem("usuario", JSON.stringify(userData));
+            })
+            .catch(() => {
+                setUsuario(null);
+            });
+
+        if (!usuario) {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                navigate('/login');
+                return;
+            }
+            // Si hay token pero usuario es null, intenta cargarlo desde localStorage
+            const usuarioGuardado = localStorage.getItem('usuario');
+            if (usuarioGuardado) {
+                try {
+                    const usuarioParsed = JSON.parse(usuarioGuardado);
+                    setUsuario(usuarioParsed);
+                    console.log('Usuario cargado desde localStorage:', usuarioParsed);
+                } catch (error) {
+                    console.error('Error al parsear usuario:', error);
                 }
             }
-        }, [navigate, usuario, setUsuario]);
+        }
+    }, [navigate, usuario, setUsuario]);
 
     // Cargar configuración del juego
     useEffect(() => {
@@ -106,7 +123,7 @@ export default function Tragamonedas() {
                 console.error("Error al cargar configuración:", error);
             }
         };
-        
+
         cargarConfiguracion();
     }, []);
 
@@ -124,7 +141,7 @@ export default function Tragamonedas() {
         if (statsAcum) {
             const parsedStats = JSON.parse(statsAcum);
             setEstadisticasAcumulativas(parsedStats);
-            
+
             // Calcular estadísticas iniciales basadas en las acumulativas
             const balance = parsedStats.gananciaTotalAcum - parsedStats.gastoTotalAcum;
             setEstadisticas({
@@ -153,14 +170,14 @@ export default function Tragamonedas() {
 
     const actualizarEstadisticas = (nuevoGiro: HistorialGiro) => {
         const esPremio = nuevoGiro.ganancia > 0;
-        
+
         // Actualizar estadísticas acumulativas
         setEstadisticasAcumulativas(prev => {
             const nuevoTotalTiradas = prev.totalTiradasAcum + 1;
             const nuevaGananciaTotal = prev.gananciaTotalAcum + (nuevoGiro.ganancia || 0);
             const nuevoGastoTotal = prev.gastoTotalAcum + nuevoGiro.apuesta;
             const nuevosPremiosObtenidos = prev.premiosObtenidosAcum + (esPremio ? 1 : 0);
-            
+
             return {
                 totalTiradasAcum: nuevoTotalTiradas,
                 gananciaTotalAcum: nuevaGananciaTotal,
@@ -168,7 +185,7 @@ export default function Tragamonedas() {
                 premiosObtenidosAcum: nuevosPremiosObtenidos
             };
         });
-        
+
         // Actualizar estadísticas visibles
         setEstadisticas(prev => {
             const nuevoTotalTiradas = prev.totalTiradas + 1;
@@ -176,7 +193,7 @@ export default function Tragamonedas() {
             const nuevoGastoTotal = prev.gastoTotal + nuevoGiro.apuesta;
             const nuevosPremiosObtenidos = prev.premiosObtenidos + (esPremio ? 1 : 0);
             const nuevoBalance = nuevaGananciaTotal - nuevoGastoTotal;
-            
+
             return {
                 totalTiradas: nuevoTotalTiradas,
                 gananciaTotal: nuevaGananciaTotal,
@@ -195,11 +212,11 @@ export default function Tragamonedas() {
             apuesta,
             fecha: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         };
-        
+
         // Agregar al historial (máximo 10 registros)
         const nuevoHistorial = [nuevoGiro, ...historial.slice(0, 9)];
         setHistorial(nuevoHistorial);
-        
+
         // Actualizar estadísticas
         actualizarEstadisticas(nuevoGiro);
     };
@@ -276,7 +293,7 @@ export default function Tragamonedas() {
             ];
 
             await Promise.all(promesasAnimacion);
-            
+
             // Mostrar resultado final
             setReels(resultado);
             setGananciaMostrar(ganancia);
@@ -284,16 +301,16 @@ export default function Tragamonedas() {
             setUsuario((prev) =>
                 prev ? { ...prev, saldo: res.data.nuevo_saldo } : prev
             );
-            
+
             // Animación de confetti para premios
             if (ganancia > 0) {
                 setEfectoGanancia(true);
                 animarConfetti();
             }
-            
+
             // Guardar en historial
             agregarAlHistorial(resultado, ganancia, apuestaSeleccionada);
-            
+
             setGirando(false);
         } catch (err: any) {
             console.error("Error al girar las tragamonedas:", err);
@@ -368,7 +385,7 @@ export default function Tragamonedas() {
         localStorage.removeItem("fecha_envio_comprobante");
         localStorage.removeItem("historial_tragamonedas");
         localStorage.removeItem("estadisticas_acumulativas_tragamonedas");
-        
+
         setUsuario(null);
         showMsg("Sesión cerrada correctamente", "success");
         setTimeout(() => navigate('/login'), 1500);
@@ -389,13 +406,12 @@ export default function Tragamonedas() {
         <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900">
             {/* Notificación */}
             {notificacion && (
-                <div className={`fixed top-6 right-6 z-50 px-6 py-4 rounded-xl font-bold flex items-center space-x-3 shadow-2xl animate-slideIn ${
-                    notificacion.type === "success" 
-                        ? "bg-gradient-to-r from-green-900/90 to-green-800/90 border border-green-500/50 text-green-200" 
-                        : notificacion.type === "error" 
-                        ? "bg-gradient-to-r from-red-900/90 to-red-800/90 border border-red-500/50 text-red-200" 
-                        : "bg-gradient-to-r from-blue-900/90 to-blue-800/90 border border-blue-500/50 text-blue-200"
-                }`}>
+                <div className={`fixed top-6 right-6 z-50 px-6 py-4 rounded-xl font-bold flex items-center space-x-3 shadow-2xl animate-slideIn ${notificacion.type === "success"
+                        ? "bg-gradient-to-r from-green-900/90 to-green-800/90 border border-green-500/50 text-green-200"
+                        : notificacion.type === "error"
+                            ? "bg-gradient-to-r from-red-900/90 to-red-800/90 border border-red-500/50 text-red-200"
+                            : "bg-gradient-to-r from-blue-900/90 to-blue-800/90 border border-blue-500/50 text-blue-200"
+                    }`}>
                     <span className="text-xl">
                         {notificacion.type === "success" ? "✅" : notificacion.type === "error" ? "❌" : "ℹ️"}
                     </span>
@@ -404,7 +420,7 @@ export default function Tragamonedas() {
             )}
 
             {/* Header - Usando el componente */}
-            <Header 
+            <Header
                 usuario={usuario}
                 cerrarSesion={cerrarSesion}
                 setUsuario={setUsuario}
@@ -415,7 +431,7 @@ export default function Tragamonedas() {
                 <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 to-orange-500/10"></div>
                 <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-r from-red-500 to-orange-500 rounded-full blur-3xl opacity-20"></div>
                 <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full blur-3xl opacity-20"></div>
-                
+
                 <div className="container mx-auto px-4 py-12 relative z-10">
                     <div className="text-center max-w-4xl mx-auto">
                         <div className="inline-block mb-6">
@@ -423,7 +439,7 @@ export default function Tragamonedas() {
                                 🎰 TRAGAMONEDAS DELUXE
                             </span>
                         </div>
-                        
+
                         <h1 className="text-4xl md:text-5xl font-bold mb-6">
                             <span className="bg-gradient-to-r from-red-400 via-orange-400 to-red-400 bg-clip-text text-transparent">
                                 Gira y Gana
@@ -431,7 +447,7 @@ export default function Tragamonedas() {
                             <br />
                             <span className="text-white">¡Hasta 100x tu apuesta!</span>
                         </h1>
-                        
+
                         <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
                             Apuesta desde <span className="text-red-400 font-bold">${apuestasPermitidas[0]}</span> hasta <span className="text-red-400 font-bold">${apuestasPermitidas[apuestasPermitidas.length - 1]}</span>.
                             <span className="text-green-400 font-bold"> ¡Tres 7️⃣ pagan 100x tu apuesta!</span>
@@ -457,13 +473,12 @@ export default function Tragamonedas() {
                                                     key={apuesta}
                                                     onClick={() => setApuestaSeleccionada(apuesta)}
                                                     disabled={usuario.saldo < apuesta}
-                                                    className={`px-4 py-2 rounded-xl font-bold transition-all duration-300 ${
-                                                        apuestaSeleccionada === apuesta
+                                                    className={`px-4 py-2 rounded-xl font-bold transition-all duration-300 ${apuestaSeleccionada === apuesta
                                                             ? 'bg-gradient-to-r from-red-600 to-orange-600 text-white shadow-lg scale-105'
                                                             : usuario.saldo < apuesta
-                                                            ? 'bg-gray-800/50 text-gray-500 cursor-not-allowed border border-gray-700'
-                                                            : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/70 hover:text-white border border-gray-700'
-                                                    }`}
+                                                                ? 'bg-gray-800/50 text-gray-500 cursor-not-allowed border border-gray-700'
+                                                                : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/70 hover:text-white border border-gray-700'
+                                                        }`}
                                                 >
                                                     ${apuesta.toLocaleString()}
                                                 </button>
@@ -482,9 +497,8 @@ export default function Tragamonedas() {
                                             <div
                                                 key={i}
                                                 ref={el => { reelRefs.current[i] = el }}
-                                                className={`flex items-center justify-center w-24 h-24 bg-gradient-to-br from-gray-900 to-black border-4 border-yellow-500 rounded-xl text-6xl transition-all duration-300 ${
-                                                    efectoGanancia && gananciaMostrar > 0 ? 'animate-pulse shadow-lg shadow-yellow-500/50' : ''
-                                                } ${girando ? 'animate-bounce' : ''}`}
+                                                className={`flex items-center justify-center w-24 h-24 bg-gradient-to-br from-gray-900 to-black border-4 border-yellow-500 rounded-xl text-6xl transition-all duration-300 ${efectoGanancia && gananciaMostrar > 0 ? 'animate-pulse shadow-lg shadow-yellow-500/50' : ''
+                                                    } ${girando ? 'animate-bounce' : ''}`}
                                                 style={{
                                                     animationDelay: i * 100 + 'ms'
                                                 }}
@@ -502,26 +516,24 @@ export default function Tragamonedas() {
                                             Saldo: <span className="text-yellow-400">${usuario?.saldo?.toLocaleString() ?? 0}</span>
                                         </div>
                                         {mensaje && (
-                                            <div className={`px-4 py-3 rounded-xl font-bold mb-4 ${
-                                                mensaje.includes("Error") || mensaje.includes("insuficiente")
-                                                    ? "bg-gradient-to-r from-red-900/50 to-red-800/50 border border-red-500/50 text-red-200" 
+                                            <div className={`px-4 py-3 rounded-xl font-bold mb-4 ${mensaje.includes("Error") || mensaje.includes("insuficiente")
+                                                    ? "bg-gradient-to-r from-red-900/50 to-red-800/50 border border-red-500/50 text-red-200"
                                                     : gananciaMostrar > 0
-                                                    ? "bg-gradient-to-r from-green-900/50 to-green-800/50 border border-green-500/50 text-green-200"
-                                                    : "bg-gradient-to-r from-yellow-900/50 to-yellow-800/50 border border-yellow-500/50 text-yellow-200"
-                                            }`}>
+                                                        ? "bg-gradient-to-r from-green-900/50 to-green-800/50 border border-green-500/50 text-green-200"
+                                                        : "bg-gradient-to-r from-yellow-900/50 to-yellow-800/50 border border-yellow-500/50 text-yellow-200"
+                                                }`}>
                                                 {mensaje}
                                             </div>
                                         )}
                                     </div>
-                                    
+
                                     <button
                                         onClick={girarTragamonedas}
                                         disabled={girando || !usuario || (usuario && usuario.saldo < apuestaSeleccionada)}
-                                        className={`w-full max-w-xs py-4 px-8 rounded-xl font-bold text-lg transition-all duration-300 ${
-                                            girando 
-                                                ? 'bg-gray-600 cursor-not-allowed opacity-70' 
+                                        className={`w-full max-w-xs py-4 px-8 rounded-xl font-bold text-lg transition-all duration-300 ${girando
+                                                ? 'bg-gray-600 cursor-not-allowed opacity-70'
                                                 : 'bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 hover:scale-105 active:scale-95'
-                                        } ${(!usuario || (usuario && usuario.saldo < apuestaSeleccionada)) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                            } ${(!usuario || (usuario && usuario.saldo < apuestaSeleccionada)) ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     >
                                         {girando ? (
                                             <span className="flex items-center justify-center">
@@ -535,7 +547,7 @@ export default function Tragamonedas() {
                                             `🎰 Girar por $${apuestaSeleccionada.toLocaleString()}`
                                         )}
                                     </button>
-                                    
+
                                     {gananciaMostrar > 0 && (
                                         <div className="mt-6 p-6 bg-gradient-to-r from-gray-800/70 to-gray-900/70 border border-green-500/30 rounded-2xl">
                                             <div className="text-2xl font-bold text-white mb-2">¡Premio Ganado!</div>
@@ -551,7 +563,7 @@ export default function Tragamonedas() {
                             </div>
                         </div>
                     </div>
-                    
+
                     {/* Panel Lateral */}
                     <div className="space-y-6">
                         {/* Estadísticas */}
@@ -601,15 +613,15 @@ export default function Tragamonedas() {
                                     <div className="text-center">
                                         <div className="text-sm text-gray-400">Ratio de Premios</div>
                                         <div className="text-xl font-bold text-blue-400">
-                                            {estadisticas.totalTiradas > 0 
-                                                ? `${((estadisticas.premiosObtenidos / estadisticas.totalTiradas) * 100).toFixed(1)}%` 
+                                            {estadisticas.totalTiradas > 0
+                                                ? `${((estadisticas.premiosObtenidos / estadisticas.totalTiradas) * 100).toFixed(1)}%`
                                                 : '0%'}
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        
+
                         {/* Tabla de Pagos */}
                         <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50">
                             <h3 className="text-xl font-bold text-white mb-4">💎 Tabla de Pagos</h3>
@@ -641,7 +653,7 @@ export default function Tragamonedas() {
                                 </div>
                             </div>
                         </div>
-                        
+
                         {/* Historial */}
                         <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50">
                             <div className="flex items-center justify-between mb-4">
@@ -655,7 +667,7 @@ export default function Tragamonedas() {
                                     </button>
                                 )}
                             </div>
-                            
+
                             {historial.length === 0 ? (
                                 <div className="text-center py-8">
                                     <div className="text-4xl mb-3">🎰</div>
@@ -681,8 +693,8 @@ export default function Tragamonedas() {
                                                         {giro.ganancia > 0 ? `+$${giro.ganancia}` : '$0'}
                                                     </div>
                                                     <div className="text-xs text-gray-400">
-                                                        {giro.ganancia > 0 
-                                                            ? `Neto: $${giro.ganancia - giro.apuesta}` 
+                                                        {giro.ganancia > 0
+                                                            ? `Neto: $${giro.ganancia - giro.apuesta}`
                                                             : `Pérdida: $${giro.apuesta}`}
                                                     </div>
                                                 </div>
@@ -692,7 +704,7 @@ export default function Tragamonedas() {
                                 </div>
                             )}
                         </div>
-                        
+
                         {/* Información */}
                         <div className="bg-gradient-to-r from-red-600/20 to-orange-600/20 border border-red-500/30 rounded-2xl p-6">
                             <h4 className="text-lg font-bold text-white mb-3">💡 Consejos</h4>

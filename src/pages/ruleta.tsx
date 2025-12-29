@@ -77,28 +77,45 @@ export default function Ruleta() {
 
     // Obtener usuario al cargar (igual que en la página de juegos)
     useEffect(() => {
-            console.log('Usuario en Referidos:', usuario);
-            console.log('Token en localStorage:', localStorage.getItem('token'));
-    
-            if (!usuario) {
-                const token = localStorage.getItem("token");
-                if (!token) {
-                    navigate('/login');
-                    return;
-                }
-                // Si hay token pero usuario es null, intenta cargarlo desde localStorage
-                const usuarioGuardado = localStorage.getItem('usuario');
-                if (usuarioGuardado) {
-                    try {
-                        const usuarioParsed = JSON.parse(usuarioGuardado);
-                        setUsuario(usuarioParsed);
-                        console.log('Usuario cargado desde localStorage:', usuarioParsed);
-                    } catch (error) {
-                        console.error('Error al parsear usuario:', error);
-                    }
+        console.log('Usuario en Referidos:', usuario);
+        axios.get(`${API_URL}/me`, {
+            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+        })
+            .then((res) => {
+                const userData = res.data;
+                setUsuario({
+                    id: userData.id,
+                    username: userData.username,
+                    saldo: userData.saldo,
+                    verificado: userData.verificado,
+                    nivel: userData.nivel,
+                    verificado_pendiente: userData.verificado_pendiente
+                });
+                localStorage.setItem("usuario", JSON.stringify(userData));
+            })
+            .catch(() => {
+                setUsuario(null);
+            });
+
+        if (!usuario) {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                navigate('/login');
+                return;
+            }
+            // Si hay token pero usuario es null, intenta cargarlo desde localStorage
+            const usuarioGuardado = localStorage.getItem('usuario');
+            if (usuarioGuardado) {
+                try {
+                    const usuarioParsed = JSON.parse(usuarioGuardado);
+                    setUsuario(usuarioParsed);
+                    console.log('Usuario cargado desde localStorage:', usuarioParsed);
+                } catch (error) {
+                    console.error('Error al parsear usuario:', error);
                 }
             }
-        }, [navigate, usuario, setUsuario]);
+        }
+    }, [navigate, usuario, setUsuario]);
 
     // Cargar historial y estadísticas desde localStorage al iniciar
     useEffect(() => {
@@ -142,7 +159,7 @@ export default function Ruleta() {
 
     const actualizarEstadisticas = (nuevoGiro: HistorialGiro) => {
         const esGiroGratis = nuevoGiro.resultado === "Free";
-        
+
         console.log("Actualizando estadísticas. Giro gratis:", esGiroGratis);
         console.log("Nuevo giro:", nuevoGiro);
 
@@ -295,7 +312,7 @@ export default function Ruleta() {
             return;
         }
         if (girando) return;
-        
+
         // 🔴 CORRECCIÓN: Verificar saldo solo para giros normales
         // (El backend debería manejar los giros gratis sin descontar)
         if (usuario.saldo < COSTO) {
@@ -525,7 +542,7 @@ export default function Ruleta() {
             )}
 
             {/* Header */}
-            <Header 
+            <Header
                 usuario={usuario}
                 cerrarSesion={cerrarSesion}
                 setUsuario={setUsuario}

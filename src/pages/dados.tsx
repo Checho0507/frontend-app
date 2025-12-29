@@ -1,7 +1,7 @@
 // src/pages/dados.tsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import {useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import confetti from "canvas-confetti";
 import Header from '../components/header'; // Añadir esta línea
 import Footer from '../components/footer'; // Añadir esta línea
@@ -54,28 +54,45 @@ export default function Dados() {
 
   // Obtener usuario al cargar
   useEffect(() => {
-          console.log('Usuario en Referidos:', usuario);
-          console.log('Token en localStorage:', localStorage.getItem('token'));
-  
-          if (!usuario) {
-              const token = localStorage.getItem("token");
-              if (!token) {
-                  navigate('/login');
-                  return;
-              }
-              // Si hay token pero usuario es null, intenta cargarlo desde localStorage
-              const usuarioGuardado = localStorage.getItem('usuario');
-              if (usuarioGuardado) {
-                  try {
-                      const usuarioParsed = JSON.parse(usuarioGuardado);
-                      setUsuario(usuarioParsed);
-                      console.log('Usuario cargado desde localStorage:', usuarioParsed);
-                  } catch (error) {
-                      console.error('Error al parsear usuario:', error);
-                  }
-              }
-          } 
-      }, [navigate, usuario, setUsuario]);
+    console.log('Usuario en Referidos:', usuario);
+    axios.get(`${API_URL}/me`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+    })
+      .then((res) => {
+        const userData = res.data;
+        setUsuario({
+          id: userData.id,
+          username: userData.username,
+          saldo: userData.saldo,
+          verificado: userData.verificado,
+          nivel: userData.nivel,
+          verificado_pendiente: userData.verificado_pendiente
+        });
+        localStorage.setItem("usuario", JSON.stringify(userData));
+      })
+      .catch(() => {
+        setUsuario(null);
+      });
+
+    if (!usuario) {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+      // Si hay token pero usuario es null, intenta cargarlo desde localStorage
+      const usuarioGuardado = localStorage.getItem('usuario');
+      if (usuarioGuardado) {
+        try {
+          const usuarioParsed = JSON.parse(usuarioGuardado);
+          setUsuario(usuarioParsed);
+          console.log('Usuario cargado desde localStorage:', usuarioParsed);
+        } catch (error) {
+          console.error('Error al parsear usuario:', error);
+        }
+      }
+    }
+  }, [navigate, usuario, setUsuario]);
 
   // Cargar configuración del juego
   useEffect(() => {
@@ -89,7 +106,7 @@ export default function Dados() {
         console.error("Error al cargar configuración:", error);
       }
     };
-    
+
     cargarConfiguracion();
   }, []);
 
@@ -107,7 +124,7 @@ export default function Dados() {
     if (statsAcum) {
       const parsedStats = JSON.parse(statsAcum);
       setEstadisticasAcumulativas(parsedStats);
-      
+
       // Calcular estadísticas iniciales basadas en las acumulativas
       const balance = parsedStats.gananciaTotalAcum - parsedStats.gastoTotalAcum;
       setEstadisticas({
@@ -136,14 +153,14 @@ export default function Dados() {
 
   const actualizarEstadisticas = (nuevoGiro: HistorialGiro) => {
     const esDoble = nuevoGiro.tipo === 'doble_6' || nuevoGiro.tipo === 'doble_otro';
-    
+
     // Actualizar estadísticas acumulativas
     setEstadisticasAcumulativas(prev => {
       const nuevoTotalTiradas = prev.totalTiradasAcum + 1;
       const nuevaGananciaTotal = prev.gananciaTotalAcum + (nuevoGiro.ganancia || 0);
       const nuevoGastoTotal = prev.gastoTotalAcum + nuevoGiro.apuesta;
       const nuevosDoblesObtenidos = prev.doblesObtenidosAcum + (esDoble ? 1 : 0);
-      
+
       return {
         totalTiradasAcum: nuevoTotalTiradas,
         gananciaTotalAcum: nuevaGananciaTotal,
@@ -151,7 +168,7 @@ export default function Dados() {
         doblesObtenidosAcum: nuevosDoblesObtenidos
       };
     });
-    
+
     // Actualizar estadísticas visibles
     setEstadisticas(prev => {
       const nuevoTotalTiradas = prev.totalTiradas + 1;
@@ -159,7 +176,7 @@ export default function Dados() {
       const nuevoGastoTotal = prev.gastoTotal + nuevoGiro.apuesta;
       const nuevosDoblesObtenidos = prev.doblesObtenidos + (esDoble ? 1 : 0);
       const nuevoBalance = nuevaGananciaTotal - nuevoGastoTotal;
-      
+
       return {
         totalTiradas: nuevoTotalTiradas,
         gananciaTotal: nuevaGananciaTotal,
@@ -179,11 +196,11 @@ export default function Dados() {
       tipo,
       fecha: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
-    
+
     // Agregar al historial (máximo 10 registros)
     const nuevoHistorial = [nuevoGiro, ...historial.slice(0, 9)];
     setHistorial(nuevoHistorial);
-    
+
     // Actualizar estadísticas
     actualizarEstadisticas(nuevoGiro);
   };
@@ -254,15 +271,15 @@ export default function Dados() {
           setUsuario((prev) =>
             prev ? { ...prev, saldo: res.data.nuevo_saldo } : prev
           );
-          
+
           // Animación de confetti para premios
           if (tipoResultado !== "sin_premio") {
             animarConfetti(tipoResultado);
           }
-          
+
           // Guardar en historial
           agregarAlHistorial([dado1, dado2], ganancia, apuestaSeleccionada, tipoResultado);
-          
+
           setGirando(false);
         }
       }, 100);
@@ -381,7 +398,7 @@ export default function Dados() {
     localStorage.removeItem("fecha_envio_comprobante");
     localStorage.removeItem("historial_dados");
     localStorage.removeItem("estadisticas_acumulativas_dados");
-    
+
     setUsuario(null);
     showMsg("Sesión cerrada correctamente", "success");
     setTimeout(() => navigate('/login'), 1500);
@@ -402,13 +419,12 @@ export default function Dados() {
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900">
       {/* Notificación */}
       {notificacion && (
-        <div className={`fixed top-6 right-6 z-50 px-6 py-4 rounded-xl font-bold flex items-center space-x-3 shadow-2xl animate-slideIn ${
-          notificacion.type === "success" 
-            ? "bg-gradient-to-r from-green-900/90 to-green-800/90 border border-green-500/50 text-green-200" 
-            : notificacion.type === "error" 
-            ? "bg-gradient-to-r from-red-900/90 to-red-800/90 border border-red-500/50 text-red-200" 
-            : "bg-gradient-to-r from-blue-900/90 to-blue-800/90 border border-blue-500/50 text-blue-200"
-        }`}>
+        <div className={`fixed top-6 right-6 z-50 px-6 py-4 rounded-xl font-bold flex items-center space-x-3 shadow-2xl animate-slideIn ${notificacion.type === "success"
+            ? "bg-gradient-to-r from-green-900/90 to-green-800/90 border border-green-500/50 text-green-200"
+            : notificacion.type === "error"
+              ? "bg-gradient-to-r from-red-900/90 to-red-800/90 border border-red-500/50 text-red-200"
+              : "bg-gradient-to-r from-blue-900/90 to-blue-800/90 border border-blue-500/50 text-blue-200"
+          }`}>
           <span className="text-xl">
             {notificacion.type === "success" ? "✅" : notificacion.type === "error" ? "❌" : "ℹ️"}
           </span>
@@ -417,7 +433,7 @@ export default function Dados() {
       )}
 
       {/* Header - Usando el componente */}
-      <Header 
+      <Header
         usuario={usuario}
         cerrarSesion={cerrarSesion}
         setUsuario={setUsuario}
@@ -428,7 +444,7 @@ export default function Dados() {
         <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-green-500/10"></div>
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-r from-blue-500 to-green-500 rounded-full blur-3xl opacity-20"></div>
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-r from-purple-500 to-red-500 rounded-full blur-3xl opacity-20"></div>
-        
+
         <div className="container mx-auto px-4 py-12 relative z-10">
           <div className="text-center max-w-4xl mx-auto">
             <div className="inline-block mb-6">
@@ -436,7 +452,7 @@ export default function Dados() {
                 🎲 JUEGO DE DADOS VIP
               </span>
             </div>
-            
+
             <h1 className="text-4xl md:text-5xl font-bold mb-6">
               <span className="bg-gradient-to-r from-blue-400 via-green-400 to-blue-400 bg-clip-text text-transparent">
                 Lanza y Gana
@@ -444,7 +460,7 @@ export default function Dados() {
               <br />
               <span className="text-white">¡Hasta {multiplicadores.doble_6}x tu apuesta!</span>
             </h1>
-            
+
             <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
               Apuesta desde <span className="text-blue-400 font-bold">${apuestasPermitidas[0]}</span> hasta <span className="text-blue-400 font-bold">${apuestasPermitidas[apuestasPermitidas.length - 1]}</span>.
               <span className="text-green-400 font-bold"> ¡Doble 6 paga {multiplicadores.doble_6}x, cualquier otro doble {multiplicadores.doble_otro}x!</span>
@@ -469,13 +485,12 @@ export default function Dados() {
                         key={apuesta}
                         onClick={() => setApuestaSeleccionada(apuesta)}
                         disabled={usuario.saldo < apuesta}
-                        className={`px-4 py-2 rounded-xl font-bold transition-all duration-300 ${
-                          apuestaSeleccionada === apuesta
+                        className={`px-4 py-2 rounded-xl font-bold transition-all duration-300 ${apuestaSeleccionada === apuesta
                             ? 'bg-gradient-to-r from-blue-600 to-green-600 text-white shadow-lg scale-105'
                             : usuario.saldo < apuesta
-                            ? 'bg-gray-800/50 text-gray-500 cursor-not-allowed border border-gray-700'
-                            : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/70 hover:text-white border border-gray-700'
-                        }`}
+                              ? 'bg-gray-800/50 text-gray-500 cursor-not-allowed border border-gray-700'
+                              : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/70 hover:text-white border border-gray-700'
+                          }`}
                       >
                         ${apuesta.toLocaleString()}
                       </button>
@@ -496,7 +511,7 @@ export default function Dados() {
                       {renderDado(dados[1])}
                     </div>
                   </div>
-                  
+
                   <style>
                     {`
                       .animation-delay-200 {
@@ -513,24 +528,22 @@ export default function Dados() {
                       Saldo: <span className="text-yellow-400">${usuario?.saldo?.toLocaleString() ?? 0}</span>
                     </div>
                     {mensaje && (
-                      <div className={`px-4 py-3 rounded-xl font-bold mb-4 ${
-                        mensaje.includes("Error") || mensaje.includes("insuficiente")
-                          ? "bg-gradient-to-r from-red-900/50 to-red-800/50 border border-red-500/50 text-red-200" 
+                      <div className={`px-4 py-3 rounded-xl font-bold mb-4 ${mensaje.includes("Error") || mensaje.includes("insuficiente")
+                          ? "bg-gradient-to-r from-red-900/50 to-red-800/50 border border-red-500/50 text-red-200"
                           : "bg-gradient-to-r from-green-900/50 to-green-800/50 border border-green-500/50 text-green-200"
-                      }`}>
+                        }`}>
                         {mensaje}
                       </div>
                     )}
                   </div>
-                  
+
                   <button
                     onClick={lanzarDados}
                     disabled={girando || !usuario || (usuario && usuario.saldo < apuestaSeleccionada)}
-                    className={`w-full max-w-xs py-4 px-8 rounded-xl font-bold text-lg transition-all duration-300 ${
-                      girando 
-                        ? 'bg-gray-600 cursor-not-allowed opacity-70' 
+                    className={`w-full max-w-xs py-4 px-8 rounded-xl font-bold text-lg transition-all duration-300 ${girando
+                        ? 'bg-gray-600 cursor-not-allowed opacity-70'
                         : 'bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-500 hover:to-green-500 hover:scale-105 active:scale-95'
-                    } ${(!usuario || (usuario && usuario.saldo < apuestaSeleccionada)) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      } ${(!usuario || (usuario && usuario.saldo < apuestaSeleccionada)) ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     {girando ? (
                       <span className="flex items-center justify-center">
@@ -544,7 +557,7 @@ export default function Dados() {
                       `🎲 Lanzar por $${apuestaSeleccionada.toLocaleString()}`
                     )}
                   </button>
-                  
+
                   {resultadoText && (
                     <div className="mt-6 p-6 bg-gradient-to-r from-gray-800/70 to-gray-900/70 border border-blue-500/30 rounded-2xl">
                       <div className="text-2xl font-bold text-white mb-2">{resultadoText}</div>
@@ -561,7 +574,7 @@ export default function Dados() {
               </div>
             </div>
           </div>
-          
+
           {/* Panel Lateral */}
           <div className="space-y-6">
             {/* Estadísticas */}
@@ -611,15 +624,15 @@ export default function Dados() {
                   <div className="text-center">
                     <div className="text-sm text-gray-400">Ratio Dobles</div>
                     <div className="text-xl font-bold text-blue-400">
-                      {estadisticas.totalTiradas > 0 
-                        ? `${((estadisticas.doblesObtenidos / estadisticas.totalTiradas) * 100).toFixed(1)}%` 
+                      {estadisticas.totalTiradas > 0
+                        ? `${((estadisticas.doblesObtenidos / estadisticas.totalTiradas) * 100).toFixed(1)}%`
                         : '0%'}
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-            
+
             {/* Premios */}
             <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50">
               <h3 className="text-xl font-bold text-white mb-4">🎯 Premios Disponibles</h3>
@@ -640,7 +653,7 @@ export default function Dados() {
                     <div className="mt-1 text-xs text-gray-500">Probabilidad: 1 en 36 (2.78%)</div>
                   </div>
                 </div>
-                
+
                 <div className="p-4 bg-gray-800/40 rounded-xl border border-green-500/30">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
@@ -657,7 +670,7 @@ export default function Dados() {
                     <div className="mt-1 text-xs text-gray-500">Probabilidad: 5 en 36 (13.89%)</div>
                   </div>
                 </div>
-                
+
                 <div className="p-4 bg-gray-800/40 rounded-xl border border-gray-500/30">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
@@ -677,7 +690,7 @@ export default function Dados() {
                 </div>
               </div>
             </div>
-            
+
             {/* Historial */}
             <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50">
               <div className="flex items-center justify-between mb-4">
@@ -691,7 +704,7 @@ export default function Dados() {
                   </button>
                 )}
               </div>
-              
+
               {historial.length === 0 ? (
                 <div className="text-center py-8">
                   <div className="text-4xl mb-3">🎲</div>
@@ -718,8 +731,8 @@ export default function Dados() {
                           </div>
                           <div className="text-xs text-gray-400">Apuesta: ${giro.apuesta}</div>
                           <div className="text-xs text-gray-500">
-                            {giro.ganancia > 0 
-                              ? `Neto: $${giro.ganancia - giro.apuesta}` 
+                            {giro.ganancia > 0
+                              ? `Neto: $${giro.ganancia - giro.apuesta}`
                               : `Pérdida: $${giro.apuesta}`}
                           </div>
                         </div>
@@ -729,7 +742,7 @@ export default function Dados() {
                 </div>
               )}
             </div>
-            
+
             {/* Información */}
             <div className="bg-gradient-to-r from-blue-600/20 to-green-600/20 border border-blue-500/30 rounded-2xl p-6">
               <h4 className="text-lg font-bold text-white mb-3">💡 Consejos</h4>
