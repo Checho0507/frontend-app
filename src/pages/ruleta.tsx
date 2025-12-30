@@ -41,7 +41,7 @@ const SECTORES: Sector[] = [
     { key: "Sin Premio", label: "—", desc: "Sin premio", color: "#E5E7EB", multiplier: 0 },
     { key: "Premio Doble", label: "2x", desc: "Premio doble", color: "#3B82F6", multiplier: 2 },
     { key: "Sin Premio", label: "—", desc: "Sin premio", color: "#E5E7EB", multiplier: 0 },
-    { key: "Giro Gratis", label: "🎁", desc: "Giro gratis", color: "#10B981", multiplier: -1 },
+    { key: "Free", label: "🎁", desc: "Giro gratis", color: "#10B981", multiplier: -1 },
     { key: "Sin Premio", label: "—", desc: "Sin premio", color: "#E5E7EB", multiplier: 0 },
     { key: "Premio Doble", label: "2x", desc: "Premio doble", color: "#3B82F6", multiplier: 2 },
     { key: "Sin Premio", label: "—", desc: "Sin premio", color: "#E5E7EB", multiplier: 0 },
