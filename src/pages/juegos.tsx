@@ -21,7 +21,7 @@ export default function Juegos() {
   const [estadisticasJuegos, setEstadisticasJuegos] = useState({
     totalJuegos: 0,
     juegosDisponibles: 0,
-    multiplicadorMaximo: "100x"
+    multiplicadorMaximo: "500x"
   });
 
   useEffect(() => {
@@ -88,7 +88,7 @@ export default function Juegos() {
     setEstadisticasJuegos({
       totalJuegos: juegosDisponibles.length,
       juegosDisponibles: juegosDisponibles.filter(j => j.disponible).length,
-      multiplicadorMaximo: "100x"
+      multiplicadorMaximo: "500x"
     });
   }, []);
 
