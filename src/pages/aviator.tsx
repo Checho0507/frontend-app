@@ -197,7 +197,7 @@ export default function Aviator() {
             
             // Verificar si superó el multiplicador de auto-retiro
             if (multiplicadorCalculado >= multiplicadorAuto && multiplicadorAuto > 1.0) {
-                hacerCashout();
+                hacerCashout(multiplicadorAuto);
             }
             
             // Verificar si explotó
@@ -293,14 +293,14 @@ export default function Aviator() {
         return Number((Math.random() * 70.0 + 30.0).toFixed(2));
     };
 
-    const hacerCashout = async () => {
+    const hacerCashout = async (multiplicador: number) => {
         if (!sessionId || estado !== 'vuelo') return;
 
         setCargando(true);
         try {
             const token = localStorage.getItem("token");
             const res = await axios.post(
-                `${API_URL}/juegos/aviator/${sessionId}/cashout?multiplicador_actual=${multiplicadorActual}`,
+                `${API_URL}/juegos/aviator/${sessionId}/cashout?multiplicador_actual=${multiplicador}`,
                 {},
                 {
                     headers: { Authorization: `Bearer ${token}` },
@@ -778,7 +778,7 @@ export default function Aviator() {
                                     {estado === 'vuelo' && (
                                         <>
                                             <button
-                                                onClick={hacerCashout}
+                                                onClick= {() => hacerCashout(multiplicadorActual)}
                                                 disabled={cargando}
                                                 className={`py-3 px-6 rounded-xl font-bold text-lg transition-all duration-300 ${
                                                     cargando 
