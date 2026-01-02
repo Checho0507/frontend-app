@@ -81,7 +81,8 @@ export default function Juegos() {
       { nombre: "Dados", disponible: true },
       { nombre: "Tragamonedas", disponible: true },
       { nombre: "Blackjack", disponible: true },
-      { nombre: "Minas", disponible: true }
+      { nombre: "Minas", disponible: true },
+      { nombre: "Aviator", disponible: true }
     ];
 
     setEstadisticasJuegos({
@@ -158,6 +159,14 @@ export default function Juegos() {
       color: "from-orange-500 to-red-500",
       disponible: true
     },
+    {
+      nombre: "Aviator",
+      descripcion: "Apuesta al vuelo y gana antes de que se estrelle",
+      ruta: "/juegos/aviator",
+      icono: "✈️",
+      color: "from-cyan-500 to-blue-500",
+      disponible: true
+    }
   ];
 
   if (!usuario) {
