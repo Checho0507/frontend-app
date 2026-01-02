@@ -624,7 +624,7 @@ export default function Aviator() {
                         
                         <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
                             Apuesta desde <span className="text-blue-400 font-bold">${apuestasPermitidas[0]}</span> hasta <span className="text-blue-400 font-bold">${apuestasPermitidas[apuestasPermitidas.length - 1]}</span>.
-                            <span className="text-yellow-400 font-bold"> ¡Multiplicadores de hasta 100x!</span>
+                            <span className="text-yellow-400 font-bold"> ¡Multiplicadores de hasta 500x!</span>
                         </p>
                     </div>
                 </div>
