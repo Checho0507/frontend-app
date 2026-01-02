@@ -15,6 +15,7 @@ import Blackjack from '../pages/blackjack';
 import Minas from '../pages/minas';
 import Deposito from '../components/deposito';
 import Retiro from '../components/retiro';
+import Aviator from '../pages/aviator';
 
 interface Usuario {
   id: number;
@@ -74,6 +75,7 @@ const AppRouter = () => {
         <Route path="/juegos/tragamonedas" element={<Tragamonedas />} />
         <Route path="/juegos/blackjack" element={<Blackjack />} />
         <Route path="/juegos/minas" element={<Minas />} />
+        <Route path="/juegos/aviator" element={<Aviator />} />
         <Route path="/transacciones/deposito" element={<Deposito usuario={usuario} cerrarSesion={cerrarSesion} setUsuario={setUsuario} />} />
         <Route path="/transacciones/retiro" element={<Retiro usuario={usuario} cerrarSesion={cerrarSesion} setUsuario={setUsuario} />} />
         <Route path="/referidos" element={<Referidos usuario={usuario} cerrarSesion={cerrarSesion} setUsuario={setUsuario}/>} />
@@ -83,6 +85,7 @@ const AppRouter = () => {
         <Route path="/transacciones/admin/retiros/pendientes" element={<AdminPanel />} />
         <Route path="/transacciones/admin/retiros/:retiroId/aprobar" element={<AdminPanel />} />
         <Route path="/transacciones/admin/retiros/:retiroId/rechazar" element={<AdminPanel />} />
+  
         
 
         {/* Fallback */}
