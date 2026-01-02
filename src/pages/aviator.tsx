@@ -253,7 +253,6 @@ export default function Aviator() {
             const token = localStorage.getItem("token");
             const res = await axios.post(
                 `${API_URL}/juegos/aviator/iniciar?apuesta=${apuestaSeleccionada}`,
-                {},
                 {
                     headers: { Authorization: `Bearer ${token}` },
                 }
