@@ -1121,49 +1121,6 @@ export default function Aviator() {
                             </div>
                         </div>
                         
-                        {/* Historial público */}
-                        <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 shadow-xl">
-                            <h3 className="text-xl font-bold text-white mb-4 flex items-center">
-                                <span className="mr-2">📈</span>
-                                Historial de Crash
-                            </h3>
-                            <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
-                                {historialPublico.map((item) => (
-                                    <div key={item.id} className="p-3 bg-gray-800/40 rounded-lg border border-gray-700/50 hover:bg-gray-800/60 transition-colors">
-                                        <div className="flex justify-between items-center">
-                                            <div className="flex items-center space-x-3">
-                                                <div className={`w-3 h-3 rounded-full ${
-                                                    item.color === 'green' ? 'bg-green-500 shadow-green-500/50' :
-                                                    item.color === 'yellow' ? 'bg-yellow-500 shadow-yellow-500/50' :
-                                                    item.color === 'orange' ? 'bg-orange-500 shadow-orange-500/50' : 
-                                                    'bg-red-500 shadow-red-500/50'
-                                                } shadow-sm`}></div>
-                                                <div>
-                                                    <div className="font-bold text-white">
-                                                        {item.multiplicador.toFixed(2)}x
-                                                    </div>
-                                                    <div className="text-xs text-gray-400">
-                                                        {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className={`text-xl ${
-                                                item.multiplicador > 100 ? 'text-green-400' :
-                                                item.multiplicador > 50 ? 'text-yellow-400' :
-                                                item.multiplicador > 10 ? 'text-blue-400' :
-                                                'text-gray-400'
-                                            }`}>
-                                                {item.multiplicador > 100 ? '🚀' : 
-                                                 item.multiplicador > 50 ? '🔥' : 
-                                                 item.multiplicador > 10 ? '⚡' : 
-                                                 item.multiplicador > 3 ? '✨' : '💥'}
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                        
                         {/* Historial personal */}
                         <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 shadow-xl">
                             <div className="flex items-center justify-between mb-4">
