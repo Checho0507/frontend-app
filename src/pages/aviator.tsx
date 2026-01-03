@@ -85,14 +85,12 @@ export default function Aviator() {
     const [puntosGrafico, setPuntosGrafico] = useState<Array<{x: number, y: number}>>([]);
     const [tiempoTranscurrido, setTiempoTranscurrido] = useState<number>(0);
     const [duracionTotal, setDuracionTotal] = useState<number>(0);
-    const [animacionCompleta, setAnimacionCompleta] = useState<boolean>(false);
     
     // Refs para animación
     const animacionRef = useRef<number | null>(null);
     const tiempoInicioRef = useRef<number>(0);
     const multiplicadorCrashRef = useRef<number>(2.0);
     const duracionTotalRef = useRef<number>(0);
-    const ultimoTiempoRef = useRef<number>(0);
     
     // Notificación
     const [notificacion, setNotificacion] = useState<{ text: string; type?: "success" | "error" | "info" } | null>(null);
@@ -155,26 +153,6 @@ export default function Aviator() {
         }
     };
 
-    // Nueva función para calcular duración exacta
-    const calcularDuracionExacta = (multiplier: number): number => {
-        if (multiplier <= 1.0) return 0.5;
-        if (multiplier <= 1.5) {
-            // De 1.0 a 1.5: 0.5s base + 0.1s por cada 0.1x
-            return 0.5 + (multiplier - 1.0);
-        }
-        
-        // De 1.5 a 500: interpolación lineal de 1.0s a 60s
-        const minDuracion = 1.0; // en 1.5x
-        const maxDuracion = 60.0; // en 500x
-        const minMulti = 1.5;
-        const maxMulti = 500.0;
-        
-        // Interpolación lineal
-        const duracion = minDuracion + ((multiplier - minMulti) / (maxMulti - minMulti)) * (maxDuracion - minDuracion);
-        
-        return Math.max(duracion, minDuracion);
-    };
-
     // Animación del vuelo
     useEffect(() => {
         if (estado === 'vuelo') {
@@ -196,53 +174,39 @@ export default function Aviator() {
 
         detenerAnimacion();
         tiempoInicioRef.current = Date.now();
-        ultimoTiempoRef.current = Date.now();
-        setAnimacionCompleta(false);
+        setPuntosGrafico([]);
         
-        const animar = (tiempoActual: number) => {
+        const animar = (timestamp: number) => {
             if (!tiempoInicioRef.current) return;
             
-            const tiempoTrans = (tiempoActual - tiempoInicioRef.current) / 1000; // Segundos
-            const deltaTiempo = (tiempoActual - ultimoTiempoRef.current) / 1000;
-            ultimoTiempoRef.current = tiempoActual;
-            
+            // Tiempo transcurrido en SEGUNDOS
+            const tiempoTrans = (timestamp - tiempoInicioRef.current) / 1000;
             setTiempoTranscurrido(tiempoTrans);
             
             // Calcular progreso (0 a 1)
             const progreso = Math.min(tiempoTrans / duracionTotalRef.current, 1.0);
             
-            // Calcular multiplicador usando función de easing
-            let multiplicadorCalculado = 1.0;
+            // Aplicar función de easing (easeOutCubic)
+            const progresoEased = 1 - Math.pow(1 - progreso, 3);
             
-            if (progreso < 0.3) {
-                // Inicio rápido
-                const t = progreso / 0.3;
-                multiplicadorCalculado = 1.0 + (multiplicadorCrashRef.current - 1.0) * (t * t);
-            } else if (progreso < 0.7) {
-                // Medio
-                const t = (progreso - 0.3) / 0.4;
-                multiplicadorCalculado = 1.0 + (multiplicadorCrashRef.current - 1.0) * (0.09 + t * 0.91);
-            } else {
-                // Final lento
-                const t = (progreso - 0.7) / 0.3;
-                multiplicadorCalculado = 1.0 + (multiplicadorCrashRef.current - 1.0) * (1.0 - Math.pow(1 - t, 2));
-            }
+            // Calcular multiplicador: de 1.0 al crash
+            const rango = multiplicadorCrashRef.current - 1.0;
+            const multiplicadorCalculado = 1.0 + rango * progresoEased;
             
-            const multiplicadorRedondeado = Math.max(1.0, Math.round(multiplicadorCalculado * 100) / 100);
+            // Redondear a 2 decimales
+            const multiplicadorRedondeado = Math.round(multiplicadorCalculado * 100) / 100;
             
             setMultiplicadorActual(multiplicadorRedondeado);
             
-            // Actualizar gráfico
+            // Actualizar gráfico (mantener últimos 100 puntos)
             setPuntosGrafico(prev => {
                 const nuevoPunto = { x: tiempoTrans, y: multiplicadorRedondeado };
                 const nuevosPuntos = [...prev, nuevoPunto];
-                // Mantener un máximo de 200 puntos para rendimiento
-                return nuevosPuntos.length > 200 ? nuevosPuntos.slice(-200) : nuevosPuntos;
+                return nuevosPuntos.length > 100 ? nuevosPuntos.slice(-100) : nuevosPuntos;
             });
             
             // Verificar si alcanzó el final
             if (progreso >= 1.0) {
-                setAnimacionCompleta(true);
                 setEstado('explosion');
                 setMultiplicadorCrash(multiplicadorCrashRef.current);
                 setMensaje(`¡CRASH! El avión explotó en ${multiplicadorCrashRef.current.toFixed(2)}x`);
@@ -290,7 +254,6 @@ export default function Aviator() {
         setGanancia(0);
         setPuntosGrafico([]);
         setTiempoTranscurrido(0);
-        setAnimacionCompleta(false);
         setApuestaActual(apuestaSeleccionada);
 
         try {
@@ -303,27 +266,23 @@ export default function Aviator() {
                 }
             );
 
-            // Primero configurar todas las referencias
+            // Configurar referencias
             const crashMultiplier = res.data.multiplicador_crash || 2.0;
-            const duracion = res.data.duracion_total || calcularDuracionExacta(crashMultiplier);
+            const duracion = res.data.duracion_total || 5.0;
             
             multiplicadorCrashRef.current = crashMultiplier;
             duracionTotalRef.current = duracion;
-            
-            // Resetear referencias de tiempo
             tiempoInicioRef.current = 0;
-            ultimoTiempoRef.current = 0;
             
-            // Luego establecer los estados
             setSessionId(res.data.session_id);
             setDuracionTotal(duracion);
             
-            // Actualizar saldo usuario
+            // Actualizar saldo
             setUsuario((prev) =>
                 prev ? { ...prev, saldo: res.data.nuevo_saldo } : prev
             );
 
-            // Finalmente cambiar el estado para iniciar animación
+            // Iniciar vuelo
             setEstado('vuelo');
             setMensaje("¡El avión despegó! Retira antes de que explote.");
 
@@ -391,49 +350,6 @@ export default function Aviator() {
         }
     };
 
-    const verificarEstadoVuelo = async () => {
-        if (!sessionId || estado !== 'vuelo') return;
-
-        try {
-            const token = localStorage.getItem("token");
-            const res = await axios.get(
-                `${API_URL}/juegos/aviator/${sessionId}/estado`,
-                {
-                    headers: { Authorization: `Bearer ${token}` },
-                }
-            );
-
-            if (res.data.estado !== 'vuelo') {
-                detenerAnimacion();
-                setEstado(res.data.estado);
-                setMultiplicadorCrash(res.data.multiplicador_crash);
-                setMultiplicadorRetiro(res.data.multiplicador_retiro);
-                
-                if (res.data.estado === 'explosion') {
-                    setMensaje(`¡CRASH! El avión explotó en ${res.data.multiplicador_crash?.toFixed(2)}x`);
-                    agregarAlHistorial('explosion', res.data.multiplicador_crash, null, 0, apuestaActual);
-                    showMsg("¡CRASH! Perdiste tu apuesta", "error");
-                } else if (res.data.estado === 'cashout') {
-                    setGanancia(res.data.ganancia || 0);
-                    setMensaje(res.data.resultado || "Retiro exitoso");
-                    if (res.data.ganancia > apuestaActual) {
-                        animarConfetti();
-                    }
-                    agregarAlHistorial('cashout', res.data.multiplicador_crash, res.data.multiplicador_retiro, res.data.ganancia || 0, apuestaActual);
-                    showMsg(`¡Retiro ${res.data.auto_retiro ? 'automático' : 'manual'}! Ganaste $${(res.data.ganancia || 0).toFixed(2)}`, "success");
-                    
-                    // Actualizar saldo
-                    if (res.data.nuevo_saldo && usuario) {
-                        setUsuario({ ...usuario, saldo: res.data.nuevo_saldo });
-                    }
-                }
-            }
-
-        } catch (error) {
-            console.error("Error al verificar estado:", error);
-        }
-    };
-
     const agregarAlHistorial = (resultado: string, crash: number, retiro: number | null, ganancia: number, apuesta: number) => {
         const nuevoVuelo: Vuelo = {
             id: Date.now(),
@@ -494,13 +410,11 @@ export default function Aviator() {
         setPuntosGrafico([]);
         setTiempoTranscurrido(0);
         setDuracionTotal(0);
-        setAnimacionCompleta(false);
         setApuestaActual(0);
         setAutoRetiroActivo(false);
         multiplicadorCrashRef.current = 2.0;
         duracionTotalRef.current = 0;
         tiempoInicioRef.current = 0;
-        ultimoTiempoRef.current = 0;
     };
 
     const configurarAutoretiro = async () => {
@@ -546,136 +460,72 @@ export default function Aviator() {
         setTimeout(() => navigate('/login'), 1500);
     };
 
-    // Formatear tiempo - MOSTRAR SOLO SEGUNDOS CON DECIMALES
+    // Formatear tiempo en segundos con 1 decimal
     const formatearTiempo = (segundos: number) => {
-        // Mostrar solo segundos con 1 decimal
         return `${segundos.toFixed(1)}s`;
     };
 
     // Renderizar avión animado
     const renderAvion = () => {
         const progreso = duracionTotal > 0 ? Math.min(tiempoTranscurrido / duracionTotal, 1) : 0;
-        const posicionX = progreso * 100;
+        const posicionX = progreso * 90; // Máximo 90% para no salir del contenedor
         
         return (
             <div className="relative w-full h-64 bg-gradient-to-b from-gray-900/50 to-transparent rounded-xl overflow-hidden">
                 {/* Fondo del cielo */}
                 <div className="absolute inset-0 bg-gradient-to-b from-blue-900/20 to-purple-900/10"></div>
                 
-                {/* Nubes */}
+                {/* Nubes decorativas */}
                 <div className="absolute top-4 left-8 w-16 h-8 bg-white/10 rounded-full blur-sm"></div>
                 <div className="absolute top-10 right-12 w-20 h-10 bg-white/15 rounded-full blur-sm"></div>
-                <div className="absolute bottom-16 left-1/4 w-24 h-12 bg-white/20 rounded-full blur-sm"></div>
                 
                 {/* Pista de despegue */}
                 <div className="absolute bottom-0 left-0 right-0 h-2 bg-gradient-to-r from-yellow-500/30 to-yellow-600/40"></div>
-                <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
-                
-                {/* Marcas en la pista */}
-                {[0, 20, 40, 60, 80].map(pos => (
-                    <div 
-                        key={pos}
-                        className="absolute bottom-1 w-4 h-0.5 bg-white/50"
-                        style={{ left: `${pos}%` }}
-                    ></div>
-                ))}
                 
                 {/* Avión */}
                 <div 
-                    className="absolute bottom-2 transform -translate-x-1/2 transition-all duration-300"
-                    style={{ left: `${posicionX}%` }}
+                    className="absolute bottom-4 transform -translate-x-1/2 transition-all duration-300"
+                    style={{ left: `${10 + posicionX}%` }}
                 >
-                    {/* Cuerpo del avión */}
-                    <div className="relative">
-                        {/* Fuselaje */}
-                        <div className="w-16 h-6 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg"></div>
-                        
-                        {/* Ala principal */}
-                        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-24 h-3 bg-gradient-to-r from-blue-600/80 to-blue-700/80 rounded-sm"></div>
-                        
-                        {/* Ala trasera */}
-                        <div className="absolute top-1 left-4 w-8 h-2 bg-gradient-to-r from-blue-700 to-blue-800 rounded-sm"></div>
-                        
-                        {/* Motor */}
-                        <div className="absolute top-1 left-12 w-6 h-4 bg-gradient-to-r from-gray-700 to-gray-800 rounded"></div>
-                        
-                        {/* Ventana */}
-                        <div className="absolute top-1 left-4 w-2 h-2 bg-blue-300 rounded-full"></div>
-                        
-                        {/* Estela */}
-                        <div className="absolute top-1/2 left-full transform -translate-y-1/2">
-                            <div className="w-8 h-1 bg-gradient-to-r from-blue-400/50 to-transparent"></div>
-                        </div>
-                        
-                        {/* Efecto de velocidad */}
-                        {estado === 'vuelo' && (
-                            <div className="absolute top-1/2 left-full transform -translate-y-1/2">
-                                <div className="w-12 h-2 bg-gradient-to-r from-blue-300/30 via-blue-200/20 to-transparent blur-sm"></div>
-                            </div>
-                        )}
-                    </div>
+                    <div className="text-4xl">✈️</div>
                 </div>
                 
-                {/* Indicador de altura (multiplicador) */}
-                <div className="absolute top-4 right-4 bg-black/40 backdrop-blur-sm rounded-lg p-2 border border-blue-500/30">
+                {/* Indicador de multiplicador */}
+                <div className="absolute top-4 right-4 bg-black/40 backdrop-blur-sm rounded-lg p-3 border border-blue-500/30">
                     <div className="text-center">
-                        <div className="text-xs text-gray-400">ALTITUD</div>
-                        <div className={`text-2xl font-bold ${
+                        <div className="text-xs text-gray-400">MULTIPLICADOR</div>
+                        <div className={`text-3xl font-bold ${
                             multiplicadorActual >= 100 ? 'text-green-400 animate-pulse' :
                             multiplicadorActual >= 50 ? 'text-yellow-400' :
                             multiplicadorActual >= 10 ? 'text-blue-400' :
                             'text-white'
                         }`}>
-                            {multiplicadorActual.toFixed(2)}<span className="text-sm">x</span>
-                        </div>
-                        <div className="text-xs text-gray-400 mt-1">
-                            {estado === 'vuelo' ? 'ASCENDIENDO' : estado === 'cashout' ? 'ATERRIZAJE' : '¡EXPLOTÓ!'}
+                            {multiplicadorActual.toFixed(2)}<span className="text-lg">x</span>
                         </div>
                     </div>
                 </div>
                 
-                {/* Barra de progreso */}
-                <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-800/50">
-                    <div 
-                        className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 transition-all duration-300"
-                        style={{ width: `${posicionX}%` }}
-                    ></div>
-                </div>
-                
-                {/* Indicador de crash */}
-                {estado === 'vuelo' && multiplicadorCrashRef.current && (
-                    <div 
-                        className="absolute bottom-2 w-1 h-8 bg-red-500 animate-pulse"
-                        style={{ left: `${100}%` }}
-                    >
-                        <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs text-red-400 font-bold whitespace-nowrap">
-                            CRASH: {multiplicadorCrashRef.current.toFixed(2)}x
-                        </div>
-                    </div>
-                )}
-                
-                {/* Contador de tiempo (arriba a la izquierda) */}
+                {/* Tiempo transcurrido */}
                 <div className="absolute top-2 left-2 bg-black/40 backdrop-blur-sm rounded-lg px-3 py-1 text-xs text-gray-300">
                     Tiempo: {formatearTiempo(tiempoTranscurrido)}
                 </div>
                 
-                {/* Duración total (arriba al centro) */}
-                {duracionTotal > 0 && (
+                {/* Duración total */}
+                {duracionTotal > 0 && estado === 'vuelo' && (
                     <div className="absolute top-2 left-1/2 transform -translate-x-1/2 bg-black/40 backdrop-blur-sm rounded-lg px-3 py-1 text-xs text-gray-300">
-                        Duración total: {formatearTiempo(duracionTotal)}
+                        Duración: {formatearTiempo(duracionTotal)}
                     </div>
                 )}
             </div>
         );
     };
 
-    // Renderizar gráfico mejorado
+    // Renderizar gráfico
     const renderGrafico = () => {
         if (estado === 'esperando') {
             return (
-                <div className="w-full h-64 bg-gradient-to-b from-gray-900/50 to-transparent rounded-xl flex items-center justify-center relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5"></div>
-                    <div className="text-center relative z-10">
+                <div className="w-full h-64 bg-gradient-to-b from-gray-900/50 to-transparent rounded-xl flex items-center justify-center">
+                    <div className="text-center">
                         <div className="text-6xl mb-4 animate-bounce">✈️</div>
                         <p className="text-gray-400 text-lg">Esperando despegue...</p>
                         <p className="text-gray-500 text-sm mt-2">Selecciona tu apuesta y presiona "Iniciar Vuelo"</p>
@@ -689,11 +539,11 @@ export default function Aviator() {
         }
 
         // Calcular escalas
-        const maxX = Math.max(...puntosGrafico.map(p => p.x), duracionTotal || 30);
-        const maxY = Math.max(...puntosGrafico.map(p => p.y), multiplicadorCrashRef.current || 5, multiplicadorAuto);
+        const maxX = Math.max(...puntosGrafico.map(p => p.x), duracionTotal || 10);
+        const maxY = Math.max(...puntosGrafico.map(p => p.y), multiplicadorCrashRef.current || 5);
         
         const escalaX = (x: number) => (x / maxX) * 100;
-        const escalaY = (y: number) => 100 - (y / maxY) * 85; // 15% de margen inferior
+        const escalaY = (y: number) => 100 - ((y - 1) / (maxY - 1)) * 85; // Margen inferior 15%
 
         const puntosSVG = puntosGrafico.map((p, i) => {
             const x = escalaX(p.x);
@@ -703,25 +553,21 @@ export default function Aviator() {
 
         return (
             <div className="w-full h-64 bg-gradient-to-b from-gray-900/50 to-transparent rounded-xl relative overflow-hidden">
-                {/* Fondo de gradiente */}
-                <div className="absolute inset-0 bg-gradient-to-b from-blue-900/10 via-transparent to-purple-900/10"></div>
-                
-                {/* Grid */}
+                {/* Grid horizontal */}
                 <div className="absolute inset-0">
-                    {/* Líneas horizontales */}
                     {[1, 2, 5, 10, 20, 50, 100, 200, 500].filter(y => y <= maxY).map(y => (
                         <div 
                             key={y} 
                             className="absolute left-0 right-0 border-t border-gray-700/30" 
                             style={{ bottom: `${escalaY(y)}%` }}
                         >
-                            <span className="absolute left-2 top-1 text-xs text-gray-500">{y}x</span>
+                            <span className="absolute left-2 -top-3 text-xs text-gray-500">{y}x</span>
                         </div>
                     ))}
                 </div>
                 
                 {/* Línea de auto-retiro */}
-                {autoRetiroActivo && multiplicadorAuto > 1.0 && (
+                {autoRetiroActivo && multiplicadorAuto > 1.0 && multiplicadorAuto <= maxY && (
                     <div 
                         className="absolute left-0 right-0 border-t-2 border-dashed border-yellow-500/70" 
                         style={{ bottom: `${escalaY(multiplicadorAuto)}%` }}
@@ -732,7 +578,7 @@ export default function Aviator() {
                     </div>
                 )}
                 
-                {/* Línea del gráfico */}
+                {/* Gráfico SVG */}
                 <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
                     <defs>
                         <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -740,34 +586,19 @@ export default function Aviator() {
                             <stop offset="50%" stopColor="#3B82F6" stopOpacity="0.8" />
                             <stop offset="100%" stopColor="#8B5CF6" stopOpacity="0.8" />
                         </linearGradient>
-                        <filter id="glow">
-                            <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
-                            <feMerge>
-                                <feMergeNode in="coloredBlur"/>
-                                <feMergeNode in="SourceGraphic"/>
-                            </feMerge>
-                        </filter>
                     </defs>
                     <path 
                         d={puntosSVG} 
                         fill="none" 
                         stroke="url(#lineGradient)" 
-                        strokeWidth="3" 
-                        filter="url(#glow)"
-                    />
-                    <path 
-                        d={puntosSVG} 
-                        fill="none" 
-                        stroke="rgba(59, 130, 246, 0.3)" 
-                        strokeWidth="6" 
-                        strokeLinecap="round"
+                        strokeWidth="2" 
                     />
                 </svg>
                 
-                {/* Punto actual con efecto de luz */}
+                {/* Punto actual */}
                 {puntosGrafico.length > 0 && (
                     <div 
-                        className="absolute w-6 h-6 rounded-full bg-gradient-to-br from-green-400 to-blue-500 border-2 border-white shadow-lg shadow-green-500/50"
+                        className="absolute w-4 h-4 rounded-full bg-gradient-to-br from-green-400 to-blue-500 border-2 border-white"
                         style={{ 
                             left: `${escalaX(puntosGrafico[puntosGrafico.length-1].x)}%`,
                             bottom: `${escalaY(puntosGrafico[puntosGrafico.length-1].y)}%`,
@@ -778,14 +609,9 @@ export default function Aviator() {
                     </div>
                 )}
                 
-                {/* Información de tiempo */}
+                {/* Tiempo */}
                 <div className="absolute bottom-2 left-2 bg-black/40 backdrop-blur-sm rounded-lg px-3 py-1 text-xs text-gray-300">
-                    Tiempo: {formatearTiempo(tiempoTranscurrido)}
-                </div>
-                
-                {/* Información de velocidad */}
-                <div className="absolute top-2 right-2 bg-black/40 backdrop-blur-sm rounded-lg px-3 py-1 text-xs text-gray-300">
-                    Velocidad: {(puntosGrafico.length > 1 ? (puntosGrafico[puntosGrafico.length-1].y - puntosGrafico[puntosGrafico.length-2].y) / 0.016 : 0).toFixed(2)}x/s
+                    {formatearTiempo(tiempoTranscurrido)} / {formatearTiempo(duracionTotal)}
                 </div>
             </div>
         );
@@ -830,8 +656,6 @@ export default function Aviator() {
             {/* Hero Section */}
             <section className="relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-pink-500/10"></div>
-                <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full blur-3xl opacity-20 animate-pulse"></div>
-                <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full blur-3xl opacity-20 animate-pulse"></div>
                 
                 <div className="container mx-auto px-4 py-12 relative z-10">
                     <div className="text-center max-w-4xl mx-auto">
@@ -842,7 +666,7 @@ export default function Aviator() {
                         </div>
                         
                         <h1 className="text-5xl md:text-6xl font-bold mb-6">
-                            <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent animate-gradient">
+                            <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
                                 ¡Aviator Pro!
                             </span>
                             <br />
@@ -866,9 +690,9 @@ export default function Aviator() {
                     {/* Área de juego */}
                     <div className="lg:col-span-2">
                         <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 shadow-2xl">
-                            {/* Gráfico/Avión */}
+                            {/* Gráfico */}
                             <div className="mb-6">
-                                {estado === 'esperando' || estado === 'cashout' || estado === 'explosion' ? renderAvion() : renderGrafico()}
+                                {estado === 'vuelo' ? renderGrafico() : renderAvion()}
                             </div>
 
                             {/* Panel de información */}
@@ -876,10 +700,9 @@ export default function Aviator() {
                                 <div className="bg-gray-800/40 rounded-xl p-4 border border-gray-700/50">
                                     <div className="text-sm text-gray-400">Multiplicador</div>
                                     <div className={`text-3xl font-bold ${
-                                        multiplicadorActual >= 100 ? 'text-green-400 animate-pulse' :
+                                        multiplicadorActual >= 100 ? 'text-green-400' :
                                         multiplicadorActual >= 50 ? 'text-yellow-400' :
                                         multiplicadorActual >= 10 ? 'text-blue-400' :
-                                        multiplicadorActual >= 5 ? 'text-purple-400' :
                                         'text-white'
                                     }`}>
                                         {multiplicadorActual.toFixed(2)}<span className="text-lg">x</span>
@@ -908,7 +731,7 @@ export default function Aviator() {
                                 </div>
                             </div>
 
-                            {/* Selector de apuesta y configuración */}
+                            {/* Selector de apuesta */}
                             {estado === 'esperando' ? (
                                 <div className="mb-8">
                                     <h3 className="text-xl font-bold text-white mb-4 text-center">💰 Selecciona tu apuesta</h3>
@@ -918,12 +741,12 @@ export default function Aviator() {
                                                 key={apuesta}
                                                 onClick={() => setApuestaSeleccionada(apuesta)}
                                                 disabled={usuario.saldo < apuesta}
-                                                className={`px-6 py-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 ${
+                                                className={`px-6 py-3 rounded-xl font-bold transition-all duration-300 ${
                                                     apuestaSeleccionada === apuesta
-                                                        ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg shadow-blue-500/50 scale-105'
+                                                        ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg scale-105'
                                                         : usuario.saldo < apuesta
-                                                        ? 'bg-gray-800/50 text-gray-500 cursor-not-allowed border border-gray-700'
-                                                        : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/70 hover:text-white border border-gray-700 hover:border-blue-500/50'
+                                                        ? 'bg-gray-800/50 text-gray-500 cursor-not-allowed'
+                                                        : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/70'
                                                 }`}
                                             >
                                                 ${apuesta.toLocaleString()}
@@ -940,7 +763,7 @@ export default function Aviator() {
                                             </div>
                                             <button
                                                 onClick={() => setAutoRetiroActivo(!autoRetiroActivo)}
-                                                className={`px-4 py-1 rounded-full text-sm font-bold transition-colors ${
+                                                className={`px-4 py-1 rounded-full text-sm font-bold ${
                                                     autoRetiroActivo
                                                         ? 'bg-green-600 text-white'
                                                         : 'bg-gray-700 text-gray-300'
@@ -950,162 +773,110 @@ export default function Aviator() {
                                             </button>
                                         </div>
                                         
-                                        <div className="mb-4">
+                                        <div>
                                             <label className="block text-gray-400 mb-2 text-sm">
-                                                Multiplicador objetivo: <span className="text-yellow-400">{multiplicadorAuto.toFixed(1)}x</span>
+                                                Multiplicador: <span className="text-yellow-400">{multiplicadorAuto.toFixed(1)}x</span>
                                             </label>
                                             <div className="flex items-center space-x-4">
                                                 <input
                                                     type="range"
                                                     min="1.1"
-                                                    max="500"
+                                                    max="100"
                                                     step="0.1"
                                                     value={multiplicadorAuto}
                                                     onChange={(e) => setMultiplicadorAuto(parseFloat(e.target.value))}
-                                                    className="flex-1 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-yellow-500"
+                                                    className="flex-1 h-2 bg-gray-700 rounded-lg accent-yellow-500"
                                                 />
-                                                <span className="text-white font-bold w-20 text-center bg-gray-800/50 px-3 py-1 rounded-lg">
+                                                <span className="text-white font-bold w-16 text-center bg-gray-800/50 px-3 py-1 rounded-lg">
                                                     {multiplicadorAuto.toFixed(1)}x
                                                 </span>
-                                            </div>
-                                            <div className="flex justify-between text-xs text-gray-500 mt-1">
-                                                <span>1.1x</span>
-                                                <span>250x</span>
-                                                <span>500x</span>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             ) : (
-                                <div className="mb-6">
-                                    <div className="text-center">
-                                        <div className="text-2xl font-bold text-white mb-2">
-                                            Saldo disponible: <span className="text-yellow-400">${usuario?.saldo?.toLocaleString() ?? 0}</span>
-                                        </div>
-                                        {apuestaActual > 0 && (
-                                            <div className="text-lg text-blue-400 font-bold">
-                                                Apostado: ${apuestaActual.toLocaleString()}
-                                            </div>
-                                        )}
-                                        {ganancia > 0 && (
-                                            <div className="text-lg text-green-400 font-bold animate-pulse">
-                                                Ganancia: +${ganancia.toFixed(2)}
-                                            </div>
-                                        )}
+                                <div className="mb-6 text-center">
+                                    <div className="text-xl text-white">
+                                        Saldo: <span className="text-yellow-400 font-bold">${usuario?.saldo?.toFixed(2) ?? '0.00'}</span>
                                     </div>
                                 </div>
                             )}
 
                             {/* Mensajes */}
                             {mensaje && (
-                                <div className={`px-6 py-4 rounded-xl font-bold mb-6 text-center backdrop-blur-sm ${
-                                    mensaje.includes("CRASH") || mensaje.includes("Perdiste")
-                                        ? "bg-gradient-to-r from-red-900/60 to-red-800/60 border border-red-500/50 text-red-200 animate-pulse" 
-                                        : mensaje.includes("Ganaste") || mensaje.includes("éxito")
-                                        ? "bg-gradient-to-r from-green-900/60 to-emerald-800/60 border border-green-500/50 text-green-200"
-                                        : "bg-gradient-to-r from-gray-900/60 to-gray-800/60 border border-gray-500/50 text-gray-200"
+                                <div className={`px-6 py-4 rounded-xl font-bold mb-6 text-center ${
+                                    mensaje.includes("CRASH")
+                                        ? "bg-red-900/60 text-red-200" 
+                                        : mensaje.includes("Ganaste")
+                                        ? "bg-green-900/60 text-green-200"
+                                        : "bg-gray-900/60 text-gray-200"
                                 }`}>
-                                    <div className="flex items-center justify-center space-x-3">
-                                        <span className="text-2xl">
-                                            {mensaje.includes("CRASH") ? "💥" : mensaje.includes("Ganaste") ? "💰" : "✈️"}
-                                        </span>
-                                        <span>{mensaje}</span>
-                                    </div>
+                                    {mensaje}
                                 </div>
                             )}
 
-                            {/* Controles principales */}
+                            {/* Controles */}
                             <div className="text-center">
                                 {estado === 'esperando' && (
                                     <button
                                         onClick={iniciarVuelo}
-                                        disabled={cargando || !usuario || (usuario && usuario.saldo < apuestaSeleccionada)}
-                                        className={`w-full py-5 px-8 rounded-xl font-bold text-xl transition-all duration-300 transform hover:scale-[1.02] active:scale-95 ${
-                                            cargando 
+                                        disabled={cargando || !usuario || usuario.saldo < apuestaSeleccionada}
+                                        className={`w-full py-5 px-8 rounded-xl font-bold text-xl ${
+                                            cargando || !usuario || usuario.saldo < apuestaSeleccionada
                                                 ? 'bg-gray-600 cursor-not-allowed opacity-70' 
-                                                : 'bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-500 hover:via-purple-500 hover:to-pink-500 shadow-lg shadow-blue-500/30'
-                                        } ${(!usuario || (usuario && usuario.saldo < apuestaSeleccionada)) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:scale-105'
+                                        } transition-all duration-300`}
                                     >
-                                        {cargando ? (
-                                            <span className="flex items-center justify-center">
-                                                <svg className="animate-spin h-6 w-6 mr-3 text-white" viewBox="0 0 24 24">
-                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                                                </svg>
-                                                Preparando despegue...
-                                            </span>
-                                        ) : (
-                                            <span className="flex items-center justify-center">
-                                                <span className="mr-3">✈️</span>
-                                                INICIAR VUELO (${apuestaSeleccionada.toLocaleString()})
-                                            </span>
-                                        )}
+                                        {cargando ? 'Preparando...' : `✈️ INICIAR VUELO ($${apuestaSeleccionada.toLocaleString()})`}
                                     </button>
                                 )}
 
-                                <div className="flex flex-col sm:flex-row gap-4 justify-center mt-6">
-                                    {estado === 'vuelo' && (
-                                        <>
-                                            <button
-                                                onClick={() => hacerCashout(multiplicadorActual)}
-                                                disabled={cargando}
-                                                className={`flex-1 py-4 px-6 rounded-xl font-bold text-lg transition-all duration-300 transform hover:scale-105 active:scale-95 ${
-                                                    cargando 
-                                                        ? 'bg-gray-600 cursor-not-allowed opacity-70' 
-                                                        : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 shadow-lg shadow-green-500/30'
-                                                }`}
-                                            >
-                                                <span className="flex items-center justify-center">
-                                                    <span className="mr-2">💰</span>
-                                                    RETIRAR ({multiplicadorActual.toFixed(2)}x)
-                                                </span>
-                                            </button>
+                                {estado === 'vuelo' && (
+                                    <div className="flex gap-4">
+                                        <button
+                                            onClick={() => hacerCashout(multiplicadorActual)}
+                                            disabled={cargando}
+                                            className="flex-1 py-4 px-6 rounded-xl font-bold text-lg bg-gradient-to-r from-green-600 to-emerald-600 hover:scale-105"
+                                        >
+                                            💰 RETIRAR ({multiplicadorActual.toFixed(2)}x)
+                                        </button>
 
-                                            <button
-                                                onClick={configurarAutoretiro}
-                                                disabled={cargando}
-                                                className={`py-4 px-6 rounded-xl font-bold text-lg transition-all duration-300 transform hover:scale-105 active:scale-95 ${
-                                                    cargando 
-                                                        ? 'bg-gray-600 cursor-not-allowed opacity-70' 
-                                                        : autoRetiroActivo
-                                                        ? 'bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-500 hover:to-orange-500'
-                                                        : 'bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-600 hover:to-gray-700'
-                                                }`}
-                                            >
-                                                <span className="flex items-center justify-center">
-                                                    <span className="mr-2">{autoRetiroActivo ? '⚡' : '⚙️'}</span>
-                                                    AUTO: {multiplicadorAuto.toFixed(1)}x
-                                                </span>
-                                            </button>
-                                        </>
-                                    )}
-                                </div>
+                                        <button
+                                            onClick={configurarAutoretiro}
+                                            disabled={cargando}
+                                            className={`py-4 px-6 rounded-xl font-bold ${
+                                                autoRetiroActivo
+                                                    ? 'bg-yellow-600'
+                                                    : 'bg-gray-700'
+                                            }`}
+                                        >
+                                            ⚡ {multiplicadorAuto.toFixed(1)}x
+                                        </button>
+                                    </div>
+                                )}
 
                                 {(estado === 'cashout' || estado === 'explosion') && (
-                                    <div className="space-y-6">
+                                    <div className="space-y-4">
                                         <div className="grid grid-cols-2 gap-4">
-                                            <div className="p-4 bg-gray-800/40 rounded-xl border border-gray-700/50">
-                                                <div className="text-sm text-gray-400">Multiplicador Crash</div>
+                                            <div className="p-4 bg-gray-800/40 rounded-xl">
+                                                <div className="text-sm text-gray-400">Crash</div>
                                                 <div className="text-2xl font-bold text-red-400">
-                                                    {multiplicadorCrash?.toFixed(2) || '0.00'}x
+                                                    {multiplicadorCrash?.toFixed(2)}x
                                                 </div>
                                             </div>
-                                            <div className="p-4 bg-gray-800/40 rounded-xl border border-gray-700/50">
+                                            <div className="p-4 bg-gray-800/40 rounded-xl">
                                                 <div className="text-sm text-gray-400">Tu Retiro</div>
                                                 <div className="text-2xl font-bold text-green-400">
-                                                    {multiplicadorRetiro ? `${multiplicadorRetiro.toFixed(2)}x` : 'No retirado'}
+                                                    {multiplicadorRetiro ? `${multiplicadorRetiro.toFixed(2)}x` : 'N/A'}
                                                 </div>
                                             </div>
                                         </div>
                                         
                                         <button
                                             onClick={reiniciarJuego}
-                                            className="w-full py-5 px-8 rounded-xl font-bold text-xl bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 hover:scale-105 active:scale-95 transition-all duration-300 shadow-lg shadow-blue-500/30"
+                                            className="w-full py-5 rounded-xl font-bold text-xl bg-gradient-to-r from-blue-600 to-purple-600 hover:scale-105"
                                         >
-                                            <span className="flex items-center justify-center">
-                                                <span className="mr-3">✈️</span>
-                                                NUEVO VUELO
-                                            </span>
+                                            ✈️ NUEVO VUELO
                                         </button>
                                     </div>
                                 )}
@@ -1116,60 +887,38 @@ export default function Aviator() {
                     {/* Panel Lateral */}
                     <div className="space-y-6">
                         {/* Estadísticas */}
-                        <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 shadow-xl">
-                            <h3 className="text-xl font-bold text-white mb-4 flex items-center">
-                                <span className="mr-2">📊</span>
-                                Tus Estadísticas
-                            </h3>
-                            <div className="grid grid-cols-2 gap-4 mb-4">
-                                <div className="text-center p-4 bg-gray-800/40 rounded-xl border border-gray-700/50">
-                                    <div className="text-sm text-gray-400">Total Vuelos</div>
+                        <div className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700/50">
+                            <h3 className="text-xl font-bold text-white mb-4">📊 Estadísticas</h3>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="text-center p-4 bg-gray-800/40 rounded-xl">
+                                    <div className="text-sm text-gray-400">Vuelos</div>
                                     <div className="text-2xl font-bold text-blue-400">{estadisticas.total_vuelos}</div>
                                 </div>
-                                <div className="text-center p-4 bg-gray-800/40 rounded-xl border border-gray-700/50">
+                                <div className="text-center p-4 bg-gray-800/40 rounded-xl">
                                     <div className="text-sm text-gray-400">Ganados</div>
                                     <div className="text-2xl font-bold text-green-400">{estadisticas.vuelos_ganados}</div>
                                 </div>
-                                <div className="text-center p-4 bg-gray-800/40 rounded-xl border border-gray-700/50">
+                                <div className="text-center p-4 bg-gray-800/40 rounded-xl">
                                     <div className="text-sm text-gray-400">Balance</div>
                                     <div className={`text-2xl font-bold ${estadisticas.balance >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                                         ${estadisticas.balance.toFixed(2)}
                                     </div>
                                 </div>
-                                <div className="text-center p-4 bg-gray-800/40 rounded-xl border border-gray-700/50">
+                                <div className="text-center p-4 bg-gray-800/40 rounded-xl">
                                     <div className="text-sm text-gray-400">Record</div>
                                     <div className="text-2xl font-bold text-yellow-400">{estadisticas.multiplicador_record.toFixed(2)}x</div>
                                 </div>
                             </div>
-                            <div className="pt-4 border-t border-gray-700/30">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <div className="text-sm text-gray-400">Mayor Ganancia</div>
-                                        <div className="text-lg font-bold text-green-400">${estadisticas.mayor_ganancia.toFixed(2)}</div>
-                                    </div>
-                                    <div>
-                                        <div className="text-sm text-gray-400">Ratio</div>
-                                        <div className="text-lg font-bold text-blue-400">
-                                            {estadisticas.total_vuelos > 0 
-                                                ? `${((estadisticas.vuelos_ganados / estadisticas.total_vuelos) * 100).toFixed(1)}%` 
-                                                : '0%'}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                         
-                        {/* Historial personal */}
-                        <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 shadow-xl">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-xl font-bold text-white flex items-center">
-                                    <span className="mr-2">📝</span>
-                                    Tus Últimos Vuelos
-                                </h3>
+                        {/* Historial */}
+                        <div className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700/50">
+                            <div className="flex justify-between mb-4">
+                                <h3 className="text-xl font-bold text-white">📝 Historial</h3>
                                 {historial.length > 0 && (
                                     <button
                                         onClick={limpiarHistorial}
-                                        className="px-3 py-1 text-sm bg-red-900/30 text-red-300 hover:bg-red-800/40 rounded-lg transition-colors"
+                                        className="text-sm text-red-400 hover:text-red-300"
                                     >
                                         Limpiar
                                     </button>
@@ -1178,136 +927,46 @@ export default function Aviator() {
                             
                             {historial.length === 0 ? (
                                 <div className="text-center py-8">
-                                    <div className="text-4xl mb-3 animate-bounce">✈️</div>
-                                    <p className="text-gray-400">No hay vuelos registrados</p>
-                                    <p className="text-sm text-gray-500 mt-1">Inicia un vuelo para comenzar</p>
+                                    <div className="text-4xl mb-3">✈️</div>
+                                    <p className="text-gray-400">Sin vuelos</p>
                                 </div>
                             ) : (
-                                <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
+                                <div className="space-y-3 max-h-64 overflow-y-auto">
                                     {historial.map((vuelo) => (
-                                        <div key={vuelo.id} className="p-3 bg-gray-800/40 rounded-lg border border-gray-700/50 hover:bg-gray-800/60 transition-colors">
-                                            <div className="flex justify-between items-center">
+                                        <div key={vuelo.id} className="p-3 bg-gray-800/40 rounded-lg">
+                                            <div className="flex justify-between">
                                                 <div>
-                                                    <div className="flex items-center space-x-2">
-                                                        <span className={`text-lg ${
-                                                            vuelo.resultado === 'cashout' ? 'text-green-400' : 'text-red-400'
-                                                        }`}>
-                                                            {vuelo.resultado === 'cashout' ? '💰' : '💥'}
-                                                        </span>
-                                                        <span className={`font-medium ${vuelo.ganancia > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                                            {vuelo.resultado === 'cashout' ? 'Retirado' : 'Crash'}
-                                                        </span>
-                                                    </div>
-                                                    <div className="text-sm text-gray-400">{vuelo.fecha}</div>
-                                                    <div className="text-xs text-gray-500">
-                                                        Crash: {vuelo.multiplicador_crash.toFixed(2)}x
-                                                    </div>
+                                                    <span className={vuelo.ganancia > 0 ? 'text-green-400' : 'text-red-400'}>
+                                                        {vuelo.resultado === 'cashout' ? '💰' : '💥'} {vuelo.resultado === 'cashout' ? 'Ganado' : 'Perdido'}
+                                                    </span>
+                                                    <div className="text-xs text-gray-400">{vuelo.fecha}</div>
                                                 </div>
                                                 <div className="text-right">
                                                     <div className={`font-bold ${vuelo.ganancia > 0 ? 'text-green-400' : 'text-red-400'}`}>
                                                         {vuelo.ganancia > 0 ? `+$${vuelo.ganancia.toFixed(2)}` : `-$${vuelo.apuesta}`}
                                                     </div>
                                                     <div className="text-xs text-gray-400">
-                                                        Apuesta: ${vuelo.apuesta}
+                                                        {vuelo.multiplicador_retiro ? `${vuelo.multiplicador_retiro.toFixed(2)}x` : `Crash: ${vuelo.multiplicador_crash.toFixed(2)}x`}
                                                     </div>
                                                 </div>
                                             </div>
-                                            {vuelo.multiplicador_retiro && (
-                                                <div className="mt-2 text-xs text-blue-400 bg-blue-900/20 px-2 py-1 rounded inline-block">
-                                                    Retiro: {vuelo.multiplicador_retiro.toFixed(2)}x
-                                                </div>
-                                            )}
                                         </div>
                                     ))}
                                 </div>
                             )}
                         </div>
-                        
-                        {/* Reglas del juego */}
-                        <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 shadow-xl">
-                            <h3 className="text-xl font-bold text-white mb-4 flex items-center">
-                                <span className="mr-2">📖</span>
-                                Cómo Jugar
-                            </h3>
-                            <div className="space-y-3 text-gray-300">
-                                <div className="flex items-start space-x-2">
-                                    <span className="text-blue-400">•</span>
-                                    <span><strong>Apuesta:</strong> Elige tu monto y presiona "Iniciar Vuelo"</span>
-                                </div>
-                                <div className="flex items-start space-x-2">
-                                    <span className="text-blue-400">•</span>
-                                    <span><strong>Multiplicador:</strong> Comienza en 1.00x y aumenta exponencialmente</span>
-                                </div>
-                                <div className="flex items-start space-x-2">
-                                    <span className="text-blue-400">•</span>
-                                    <span><strong>Retirar:</strong> Presiona "Retirar" antes del crash para ganar</span>
-                                </div>
-                                <div className="flex items-start space-x-2">
-                                    <span className="text-blue-400">•</span>
-                                    <span><strong>Auto-retiro:</strong> Configura retiro automático en cualquier multiplicador</span>
-                                </div>
-                                <div className="flex items-start space-x-2">
-                                    <span className="text-blue-400">•</span>
-                                    <span><strong>Crash:</strong> Si no retiras a tiempo, pierdes tu apuesta</span>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </section>
 
-            {/* Footer */}
             <Footer />
             
-            {/* Estilos para animaciones */}
             <style>{`
                 @keyframes slideIn {
-                    from {
-                        transform: translateX(100%);
-                        opacity: 0;
-                    }
-                    to {
-                        transform: translateX(0);
-                        opacity: 1;
-                    }
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
                 }
-                
-                @keyframes gradient {
-                    0%, 100% {
-                        background-position: 0% 50%;
-                    }
-                    50% {
-                        background-position: 100% 50%;
-                    }
-                }
-                
-                .animate-slideIn {
-                    animation: slideIn 0.3s ease-out;
-                }
-                
-                .animate-gradient {
-                    background-size: 200% auto;
-                    animation: gradient 3s ease infinite;
-                }
-                
-                /* Scrollbar personalizado */
-                ::-webkit-scrollbar {
-                    width: 6px;
-                }
-                
-                ::-webkit-scrollbar-track {
-                    background: rgba(255, 255, 255, 0.05);
-                    border-radius: 3px;
-                }
-                
-                ::-webkit-scrollbar-thumb {
-                    background: linear-gradient(to bottom, #3B82F6, #8B5CF6);
-                    border-radius: 3px;
-                }
-                
-                ::-webkit-scrollbar-thumb:hover {
-                    background: linear-gradient(to bottom, #2563EB, #7C3AED);
-                }
+                .animate-slideIn { animation: slideIn 0.3s ease-out; }
             `}</style>
         </div>
     );
