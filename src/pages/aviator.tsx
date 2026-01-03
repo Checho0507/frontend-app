@@ -1159,49 +1159,6 @@ export default function Aviator() {
                             </div>
                         </div>
                         
-                        {/* Historial público */}
-                        <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 shadow-xl">
-                            <h3 className="text-xl font-bold text-white mb-4 flex items-center">
-                                <span className="mr-2">📈</span>
-                                Historial de Crash
-                            </h3>
-                            <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
-                                {historialPublico.map((item) => (
-                                    <div key={item.id} className="p-3 bg-gray-800/40 rounded-lg border border-gray-700/50 hover:bg-gray-800/60 transition-colors">
-                                        <div className="flex justify-between items-center">
-                                            <div className="flex items-center space-x-3">
-                                                <div className={`w-3 h-3 rounded-full ${
-                                                    item.color === 'green' ? 'bg-green-500 shadow-green-500/50' :
-                                                    item.color === 'yellow' ? 'bg-yellow-500 shadow-yellow-500/50' :
-                                                    item.color === 'orange' ? 'bg-orange-500 shadow-orange-500/50' : 
-                                                    'bg-red-500 shadow-red-500/50'
-                                                } shadow-sm`}></div>
-                                                <div>
-                                                    <div className="font-bold text-white">
-                                                        {item.multiplicador.toFixed(2)}x
-                                                    </div>
-                                                    <div className="text-xs text-gray-400">
-                                                        {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className={`text-xl ${
-                                                item.multiplicador > 100 ? 'text-green-400' :
-                                                item.multiplicador > 50 ? 'text-yellow-400' :
-                                                item.multiplicador > 10 ? 'text-blue-400' :
-                                                'text-gray-400'
-                                            }`}>
-                                                {item.multiplicador > 100 ? '🚀' : 
-                                                 item.multiplicador > 50 ? '🔥' : 
-                                                 item.multiplicador > 10 ? '⚡' : 
-                                                 item.multiplicador > 3 ? '✨' : '💥'}
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                        
                         {/* Historial personal */}
                         <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 shadow-xl">
                             <div className="flex items-center justify-between mb-4">
@@ -1293,33 +1250,6 @@ export default function Aviator() {
                                     <span className="text-blue-400">•</span>
                                     <span><strong>Crash:</strong> Si no retiras a tiempo, pierdes tu apuesta</span>
                                 </div>
-                            </div>
-                        </div>
-                        
-                        {/* Probabilidades */}
-                        <div className="bg-gradient-to-r from-purple-600/20 to-pink-600/20 border border-purple-500/30 rounded-2xl p-6 shadow-xl">
-                            <h4 className="text-lg font-bold text-white mb-3 flex items-center">
-                                <span className="mr-2">🎯</span>
-                                Probabilidades
-                            </h4>
-                            <div className="space-y-2">
-                                {[
-                                    { range: '1x', prob: '30%', color: 'text-red-400' },
-                                    { range: 'Hasta 1.5x', prob: '30%', color: 'text-orange-400' },
-                                    { range: 'Hasta 10x', prob: '20%', color: 'text-yellow-400' },
-                                    { range: 'Hasta 50x', prob: '10%', color: 'text-green-400' },
-                                    { range: 'Hasta 100x', prob: '5%', color: 'text-blue-400' },
-                                    { range: 'Hasta 200x', prob: '3%', color: 'text-purple-400' },
-                                    { range: 'Hasta 250x', prob: '1%', color: 'text-pink-400' },
-                                    { range: 'Hasta 300x', prob: '0.5%', color: 'text-indigo-400' },
-                                    { range: 'Hasta 400x', prob: '0.4%', color: 'text-teal-400' },
-                                    { range: 'Hasta 500x', prob: '0.1%', color: 'text-yellow-300' },
-                                ].map((item, i) => (
-                                    <div key={i} className="flex justify-between items-center">
-                                        <span className="text-gray-300">{item.range}</span>
-                                        <span className={`font-bold ${item.color}`}>{item.prob}</span>
-                                    </div>
-                                ))}
                             </div>
                         </div>
                     </div>
