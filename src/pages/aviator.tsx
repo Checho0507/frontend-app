@@ -90,7 +90,7 @@ export default function Aviator() {
     // Refs para animación
     const animacionRef = useRef<number | null>(null);
     const tiempoInicioRef = useRef<number>(0);
-    const multiplicadorCrashRef = useRef<number | null>(null);
+    const multiplicadorCrashRef = useRef<number>(2.0); // Cambiado a number (no null)
     const duracionTotalRef = useRef<number>(0);
     
     // Notificación
@@ -114,7 +114,7 @@ export default function Aviator() {
                 }
             }
         }
-    }, [navigate, usuario, setUsuario]);
+    }, [navigate, usuario]);
 
     // Cargar configuración del juego
     useEffect(() => {
@@ -145,8 +145,12 @@ export default function Aviator() {
     const cargarHistorialPersonal = () => {
         const historialGuardado = localStorage.getItem('historial_aviator');
         if (historialGuardado) {
-            const historialParsed = JSON.parse(historialGuardado);
-            setHistorial(historialParsed);
+            try {
+                const historialParsed = JSON.parse(historialGuardado);
+                setHistorial(historialParsed);
+            } catch (error) {
+                console.error('Error al parsear historial:', error);
+            }
         }
     };
 
@@ -179,7 +183,7 @@ export default function Aviator() {
         setAnimacionCompleta(false);
         
         const animar = () => {
-            if (!tiempoInicioRef.current || !multiplicadorCrashRef.current) return;
+            if (!tiempoInicioRef.current) return;
             
             const ahora = Date.now();
             const tiempoTrans = (ahora - tiempoInicioRef.current) / 1000; // Segundos
@@ -284,11 +288,13 @@ export default function Aviator() {
 
             setSessionId(res.data.session_id);
             setEstado('vuelo');
-            setDuracionTotal(res.data.duracion_total || calcularDuracionAnimacion(2.0));
+            const duracion = res.data.duracion_total || calcularDuracionAnimacion(2.0);
+            setDuracionTotal(duracion);
             
             // Guardar referencia del multiplicador crash
-            multiplicadorCrashRef.current = res.data.multiplicador_crash || 2.0;
-            duracionTotalRef.current = res.data.duracion_total || calcularDuracionAnimacion(multiplicadorCrashRef.current);
+            const crashMultiplier = res.data.multiplicador_crash || 2.0;
+            multiplicadorCrashRef.current = crashMultiplier;
+            duracionTotalRef.current = res.data.duracion_total || calcularDuracionAnimacion(crashMultiplier);
 
             // Actualizar saldo usuario
             setUsuario((prev) =>
@@ -471,6 +477,7 @@ export default function Aviator() {
         setAnimacionCompleta(false);
         setApuestaActual(0);
         setAutoRetiroActivo(false);
+        multiplicadorCrashRef.current = 2.0; // Resetear a valor por defecto
     };
 
     const configurarAutoretiro = async () => {
@@ -614,7 +621,7 @@ export default function Aviator() {
                 </div>
                 
                 {/* Indicador de crash */}
-                {multiplicadorCrashRef.current && (
+                {estado === 'vuelo' && (
                     <div 
                         className="absolute bottom-2 w-1 h-8 bg-red-500 animate-pulse"
                         style={{ left: `${100}%` }}
@@ -1049,7 +1056,7 @@ export default function Aviator() {
                                             <div className="p-4 bg-gray-800/40 rounded-xl border border-gray-700/50">
                                                 <div className="text-sm text-gray-400">Multiplicador Crash</div>
                                                 <div className="text-2xl font-bold text-red-400">
-                                                    {multiplicadorCrash?.toFixed(2)}x
+                                                    {multiplicadorCrash?.toFixed(2) || '0.00'}x
                                                 </div>
                                             </div>
                                             <div className="p-4 bg-gray-800/40 rounded-xl border border-gray-700/50">
@@ -1118,6 +1125,49 @@ export default function Aviator() {
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                        
+                        {/* Historial público */}
+                        <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 shadow-xl">
+                            <h3 className="text-xl font-bold text-white mb-4 flex items-center">
+                                <span className="mr-2">📈</span>
+                                Historial de Crash
+                            </h3>
+                            <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
+                                {historialPublico.map((item) => (
+                                    <div key={item.id} className="p-3 bg-gray-800/40 rounded-lg border border-gray-700/50 hover:bg-gray-800/60 transition-colors">
+                                        <div className="flex justify-between items-center">
+                                            <div className="flex items-center space-x-3">
+                                                <div className={`w-3 h-3 rounded-full ${
+                                                    item.color === 'green' ? 'bg-green-500 shadow-green-500/50' :
+                                                    item.color === 'yellow' ? 'bg-yellow-500 shadow-yellow-500/50' :
+                                                    item.color === 'orange' ? 'bg-orange-500 shadow-orange-500/50' : 
+                                                    'bg-red-500 shadow-red-500/50'
+                                                } shadow-sm`}></div>
+                                                <div>
+                                                    <div className="font-bold text-white">
+                                                        {item.multiplicador.toFixed(2)}x
+                                                    </div>
+                                                    <div className="text-xs text-gray-400">
+                                                        {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className={`text-xl ${
+                                                item.multiplicador > 100 ? 'text-green-400' :
+                                                item.multiplicador > 50 ? 'text-yellow-400' :
+                                                item.multiplicador > 10 ? 'text-blue-400' :
+                                                'text-gray-400'
+                                            }`}>
+                                                {item.multiplicador > 100 ? '🚀' : 
+                                                 item.multiplicador > 50 ? '🔥' : 
+                                                 item.multiplicador > 10 ? '⚡' : 
+                                                 item.multiplicador > 3 ? '✨' : '💥'}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                         
