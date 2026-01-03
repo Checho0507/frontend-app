@@ -1221,33 +1221,6 @@ export default function Aviator() {
                                 </div>
                             </div>
                         </div>
-                        
-                        {/* Probabilidades */}
-                        <div className="bg-gradient-to-r from-purple-600/20 to-pink-600/20 border border-purple-500/30 rounded-2xl p-6 shadow-xl">
-                            <h4 className="text-lg font-bold text-white mb-3 flex items-center">
-                                <span className="mr-2">🎯</span>
-                                Probabilidades
-                            </h4>
-                            <div className="space-y-2">
-                                {[
-                                    { range: '1x', prob: '30%', color: 'text-red-400' },
-                                    { range: 'Hasta 1.5x', prob: '30%', color: 'text-orange-400' },
-                                    { range: 'Hasta 10x', prob: '20%', color: 'text-yellow-400' },
-                                    { range: 'Hasta 50x', prob: '10%', color: 'text-green-400' },
-                                    { range: 'Hasta 100x', prob: '5%', color: 'text-blue-400' },
-                                    { range: 'Hasta 200x', prob: '3%', color: 'text-purple-400' },
-                                    { range: 'Hasta 250x', prob: '1%', color: 'text-pink-400' },
-                                    { range: 'Hasta 300x', prob: '0.5%', color: 'text-indigo-400' },
-                                    { range: 'Hasta 400x', prob: '0.4%', color: 'text-teal-400' },
-                                    { range: 'Hasta 500x', prob: '0.1%', color: 'text-yellow-300' },
-                                ].map((item, i) => (
-                                    <div key={i} className="flex justify-between items-center">
-                                        <span className="text-gray-300">{item.range}</span>
-                                        <span className={`font-bold ${item.color}`}>{item.prob}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
                     </div>
                 </div>
             </section>
