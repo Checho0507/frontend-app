@@ -90,8 +90,9 @@ export default function Aviator() {
     // Refs para animación
     const animacionRef = useRef<number | null>(null);
     const tiempoInicioRef = useRef<number>(0);
-    const multiplicadorCrashRef = useRef<number>(2.0); // Cambiado a number (no null)
+    const multiplicadorCrashRef = useRef<number>(2.0);
     const duracionTotalRef = useRef<number>(0);
+    const ultimoTiempoRef = useRef<number>(0);
     
     // Notificación
     const [notificacion, setNotificacion] = useState<{ text: string; type?: "success" | "error" | "info" } | null>(null);
@@ -154,9 +155,29 @@ export default function Aviator() {
         }
     };
 
+    // Nueva función para calcular duración exacta
+    const calcularDuracionExacta = (multiplier: number): number => {
+        if (multiplier <= 1.0) return 0.5;
+        if (multiplier <= 1.5) {
+            // De 1.0 a 1.5: 0.5s base + 0.1s por cada 0.1x
+            return 0.5 + (multiplier - 1.0);
+        }
+        
+        // De 1.5 a 500: interpolación lineal de 1.0s a 60s
+        const minDuracion = 1.0; // en 1.5x
+        const maxDuracion = 60.0; // en 500x
+        const minMulti = 1.5;
+        const maxMulti = 500.0;
+        
+        // Interpolación lineal
+        const duracion = minDuracion + ((multiplier - minMulti) / (maxMulti - minMulti)) * (maxDuracion - minDuracion);
+        
+        return Math.max(duracion, minDuracion);
+    };
+
     // Animación del vuelo
     useEffect(() => {
-        if (estado === 'vuelo' && tiempoInicioRef.current) {
+        if (estado === 'vuelo') {
             iniciarAnimacion();
         } else {
             detenerAnimacion();
@@ -167,78 +188,74 @@ export default function Aviator() {
         };
     }, [estado]);
 
-    const calcularDuracionAnimacion = (multiplier: number): number => {
-        if (multiplier <= 1.0) return 0.5;
-        if (multiplier <= 1.5) {
-            return 0.5 + (multiplier - 1.0) * 1.0;
-        }
-        // Interpolación lineal desde 1.0s en 1.5x hasta 60s en 500x
-        const base = 1.0;
-        const slope = (60.0 - 1.0) / (500.0 - 1.5);
-        return base + (multiplier - 1.5) * slope;
-    };
-
     const iniciarAnimacion = () => {
+        if (!duracionTotalRef.current || duracionTotalRef.current <= 0) {
+            console.error("Duración total no válida");
+            return;
+        }
+
+        detenerAnimacion();
         tiempoInicioRef.current = Date.now();
+        ultimoTiempoRef.current = Date.now();
         setAnimacionCompleta(false);
         
-        const animar = () => {
+        const animar = (tiempoActual: number) => {
             if (!tiempoInicioRef.current) return;
             
-            const ahora = Date.now();
-            const tiempoTrans = (ahora - tiempoInicioRef.current) / 1000; // Segundos
+            const tiempoTrans = (tiempoActual - tiempoInicioRef.current) / 1000; // Segundos
+            const deltaTiempo = (tiempoActual - ultimoTiempoRef.current) / 1000;
+            ultimoTiempoRef.current = tiempoActual;
             
             setTiempoTranscurrido(tiempoTrans);
             
-            // Calcular progreso basado en tiempo
-            const t = duracionTotalRef.current > 0 ? Math.min(tiempoTrans / duracionTotalRef.current, 1.0) : 0;
+            // Calcular progreso (0 a 1)
+            const progreso = Math.min(tiempoTrans / duracionTotalRef.current, 1.0);
             
-            // Función de easing para curva natural
-            let progreso = 0;
-            if (t < 0.7) {
-                // Crecimiento rápido al inicio
-                progreso = 1 - Math.pow(1 - t, 2);
+            // Calcular multiplicador usando función de easing
+            let multiplicadorCalculado = 1.0;
+            
+            if (progreso < 0.3) {
+                // Inicio rápido
+                const t = progreso / 0.3;
+                multiplicadorCalculado = 1.0 + (multiplicadorCrashRef.current - 1.0) * (t * t);
+            } else if (progreso < 0.7) {
+                // Medio
+                const t = (progreso - 0.3) / 0.4;
+                multiplicadorCalculado = 1.0 + (multiplicadorCrashRef.current - 1.0) * (0.09 + t * 0.91);
             } else {
-                // Desaceleración al final
-                const base = 1 - Math.pow(1 - 0.7, 2); // ~0.91
-                progreso = base + ((t - 0.7) / 0.3) * (1 - base);
+                // Final lento
+                const t = (progreso - 0.7) / 0.3;
+                multiplicadorCalculado = 1.0 + (multiplicadorCrashRef.current - 1.0) * (1.0 - Math.pow(1 - t, 2));
             }
             
-            // Calcular multiplicador actual
-            const multiplicadorCalculado = 1.0 + (multiplicadorCrashRef.current - 1.0) * progreso;
-            const multiplicadorRedondeado = Math.round(multiplicadorCalculado * 100) / 100;
+            const multiplicadorRedondeado = Math.max(1.0, Math.round(multiplicadorCalculado * 100) / 100);
             
             setMultiplicadorActual(multiplicadorRedondeado);
             
-            // Actualizar gráfico (más puntos para animación suave)
+            // Actualizar gráfico
             setPuntosGrafico(prev => {
                 const nuevoPunto = { x: tiempoTrans, y: multiplicadorRedondeado };
                 const nuevosPuntos = [...prev, nuevoPunto];
-                // Mantener puntos en función de la duración
-                if (nuevosPuntos.length > 200) {
-                    return nuevosPuntos.slice(-200);
-                }
-                return nuevosPuntos;
+                // Mantener un máximo de 200 puntos para rendimiento
+                return nuevosPuntos.length > 200 ? nuevosPuntos.slice(-200) : nuevosPuntos;
             });
             
             // Verificar si alcanzó el final
-            if (t >= 1.0) {
+            if (progreso >= 1.0) {
                 setAnimacionCompleta(true);
                 setEstado('explosion');
                 setMultiplicadorCrash(multiplicadorCrashRef.current);
                 setMensaje(`¡CRASH! El avión explotó en ${multiplicadorCrashRef.current.toFixed(2)}x`);
                 agregarAlHistorial('explosion', multiplicadorCrashRef.current, null, 0, apuestaActual);
                 showMsg("¡CRASH! Perdiste tu apuesta", "error");
-                
-                if (animacionRef.current) {
-                    cancelAnimationFrame(animacionRef.current);
-                }
+                detenerAnimacion();
                 return;
             }
             
             // Verificar retiro automático
             if (autoRetiroActivo && multiplicadorRedondeado >= multiplicadorAuto && multiplicadorAuto > 1.0) {
                 hacerCashout(multiplicadorAuto);
+                return;
             }
             
             animacionRef.current = requestAnimationFrame(animar);
@@ -286,21 +303,24 @@ export default function Aviator() {
                 }
             );
 
+            // Primero configurar todas las referencias
+            const crashMultiplier = res.data.multiplicador_crash || 2.0;
+            const duracion = res.data.duracion_total || calcularDuracionExacta(crashMultiplier);
+            
+            multiplicadorCrashRef.current = crashMultiplier;
+            duracionTotalRef.current = duracion;
+            
+            // Luego establecer los estados
             setSessionId(res.data.session_id);
-            setEstado('vuelo');
-            const duracion = res.data.duracion_total || calcularDuracionAnimacion(2.0);
             setDuracionTotal(duracion);
             
-            // Guardar referencia del multiplicador crash
-            const crashMultiplier = res.data.multiplicador_crash || 2.0;
-            multiplicadorCrashRef.current = crashMultiplier;
-            duracionTotalRef.current = res.data.duracion_total || calcularDuracionAnimacion(crashMultiplier);
-
             // Actualizar saldo usuario
             setUsuario((prev) =>
                 prev ? { ...prev, saldo: res.data.nuevo_saldo } : prev
             );
 
+            // Finalmente cambiar el estado para iniciar animación
+            setEstado('vuelo');
             setMensaje("¡El avión despegó! Retira antes de que explote.");
 
         } catch (error: any) {
@@ -403,10 +423,6 @@ export default function Aviator() {
                         setUsuario({ ...usuario, saldo: res.data.nuevo_saldo });
                     }
                 }
-            } else {
-                // Actualizar multiplicador actual desde el backend
-                setMultiplicadorActual(res.data.multiplicador_actual || 1.0);
-                setTiempoTranscurrido(res.data.tiempo_transcurrido || 0);
             }
 
         } catch (error) {
@@ -477,7 +493,10 @@ export default function Aviator() {
         setAnimacionCompleta(false);
         setApuestaActual(0);
         setAutoRetiroActivo(false);
-        multiplicadorCrashRef.current = 2.0; // Resetear a valor por defecto
+        multiplicadorCrashRef.current = 2.0;
+        duracionTotalRef.current = 0;
+        tiempoInicioRef.current = 0;
+        ultimoTiempoRef.current = 0;
     };
 
     const configurarAutoretiro = async () => {
@@ -621,7 +640,7 @@ export default function Aviator() {
                 </div>
                 
                 {/* Indicador de crash */}
-                {estado === 'vuelo' && (
+                {estado === 'vuelo' && multiplicadorCrashRef.current && (
                     <div 
                         className="absolute bottom-2 w-1 h-8 bg-red-500 animate-pulse"
                         style={{ left: `${100}%` }}
@@ -753,9 +772,6 @@ export default function Aviator() {
                 <div className="absolute top-2 right-2 bg-black/40 backdrop-blur-sm rounded-lg px-3 py-1 text-xs text-gray-300">
                     Velocidad: {(puntosGrafico.length > 1 ? (puntosGrafico[puntosGrafico.length-1].y - puntosGrafico[puntosGrafico.length-2].y) / 0.016 : 0).toFixed(2)}x/s
                 </div>
-                
-                {/* Avión en el gráfico */}
-                {renderAvion()}
             </div>
         );
     };
@@ -837,7 +853,7 @@ export default function Aviator() {
                         <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 shadow-2xl">
                             {/* Gráfico/Avión */}
                             <div className="mb-6">
-                                {renderGrafico()}
+                                {estado === 'esperando' || estado === 'cashout' || estado === 'explosion' ? renderAvion() : renderGrafico()}
                             </div>
 
                             {/* Panel de información */}
