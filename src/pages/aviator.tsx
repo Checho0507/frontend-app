@@ -86,9 +86,10 @@ export default function Aviator() {
     const [tiempoTranscurrido, setTiempoTranscurrido] = useState<number>(0);
     const [duracionTotal, setDuracionTotal] = useState<number>(0);
     
-    // Refs para animación
+    // Refs para animación - CORREGIDOS
     const animacionRef = useRef<number | null>(null);
     const tiempoInicioRef = useRef<number>(0);
+    const tiempoUltimoFrameRef = useRef<number>(0);
     const multiplicadorCrashRef = useRef<number>(2.0);
     const duracionTotalRef = useRef<number>(0);
     
@@ -153,7 +154,7 @@ export default function Aviator() {
         }
     };
 
-    // Animación del vuelo
+    // Animación del vuelo - FUNCIÓN CORREGIDA
     useEffect(() => {
         if (estado === 'vuelo') {
             iniciarAnimacion();
@@ -173,14 +174,16 @@ export default function Aviator() {
         }
 
         detenerAnimacion();
-        tiempoInicioRef.current = Date.now();
+        tiempoInicioRef.current = performance.now(); // Usar performance.now() para mayor precisión
+        tiempoUltimoFrameRef.current = tiempoInicioRef.current;
         setPuntosGrafico([]);
+        setTiempoTranscurrido(0);
         
-        const animar = (timestamp: number) => {
+        const animar = (currentTime: number) => {
             if (!tiempoInicioRef.current) return;
             
             // Tiempo transcurrido en SEGUNDOS
-            const tiempoTrans = (timestamp + tiempoInicioRef.current * 1000);
+            const tiempoTrans = (currentTime - tiempoInicioRef.current) / 1000;
             setTiempoTranscurrido(tiempoTrans);
             
             // Calcular progreso (0 a 1)
@@ -233,6 +236,8 @@ export default function Aviator() {
             cancelAnimationFrame(animacionRef.current);
             animacionRef.current = null;
         }
+        tiempoInicioRef.current = 0;
+        tiempoUltimoFrameRef.current = 0;
     };
 
     const iniciarVuelo = async () => {
@@ -266,29 +271,37 @@ export default function Aviator() {
                 }
             );
 
-            // Configurar referencias
-            const crashMultiplier = res.data.multiplicador_crash || 2.0;
-            const duracion = res.data.duracion_total || 5.0;
+            // Validar datos recibidos
+            if (!res.data || typeof res.data.duracion_total !== 'number' || 
+                typeof res.data.multiplicador_crash !== 'number') {
+                throw new Error("Datos inválidos recibidos del servidor");
+            }
+
+            // Configurar referencias - CON VALIDACIÓN
+            const crashMultiplier = Math.max(1.0, Math.min(res.data.multiplicador_crash || 2.0, 500.0));
+            const duracion = Math.max(0.5, Math.min(res.data.duracion_total || 5.0, 30.0));
             
             multiplicadorCrashRef.current = crashMultiplier;
             duracionTotalRef.current = duracion;
-            tiempoInicioRef.current = 0;
             
             setSessionId(res.data.session_id);
             setDuracionTotal(duracion);
             
             // Actualizar saldo
-            setUsuario((prev) =>
-                prev ? { ...prev, saldo: res.data.nuevo_saldo } : prev
-            );
+            if (usuario && res.data.nuevo_saldo) {
+                setUsuario(prev => prev ? { ...prev, saldo: res.data.nuevo_saldo } : prev);
+            }
 
             // Iniciar vuelo
             setEstado('vuelo');
             setMensaje("¡El avión despegó! Retira antes de que explote.");
 
         } catch (error: any) {
+            console.error("Error al iniciar vuelo:", error);
             setMensaje(
-                error.response?.data?.detail || "Error al iniciar el vuelo."
+                error.response?.data?.detail || 
+                error.message || 
+                "Error al iniciar el vuelo. Por favor, intenta nuevamente."
             );
             setEstado('esperando');
         } finally {
@@ -320,9 +333,9 @@ export default function Aviator() {
                 setMensaje(res.data.resultado);
                 
                 // Actualizar saldo
-                setUsuario((prev) =>
-                    prev ? { ...prev, saldo: res.data.nuevo_saldo } : prev
-                );
+                if (usuario && res.data.nuevo_saldo) {
+                    setUsuario(prev => prev ? { ...prev, saldo: res.data.nuevo_saldo } : prev);
+                }
 
                 // Animación de confetti
                 if (res.data.ganancia > apuestaActual) {
@@ -342,8 +355,9 @@ export default function Aviator() {
             }
 
         } catch (error: any) {
+            console.error("Error al retirar:", error);
             setMensaje(
-                error.response?.data?.detail || "Error al retirar."
+                error.response?.data?.detail || "Error al retirar. Por favor, intenta nuevamente."
             );
         } finally {
             setCargando(false);
@@ -415,6 +429,7 @@ export default function Aviator() {
         multiplicadorCrashRef.current = 2.0;
         duracionTotalRef.current = 0;
         tiempoInicioRef.current = 0;
+        tiempoUltimoFrameRef.current = 0;
     };
 
     const configurarAutoretiro = async () => {
@@ -462,7 +477,8 @@ export default function Aviator() {
 
     // Formatear tiempo en segundos con 1 decimal
     const formatearTiempo = (segundos: number) => {
-        return `${segundos.toFixed(1)}s`;
+        if (segundos < 0) return "0.0s"; // Evitar tiempos negativos
+        return `${Math.max(0, segundos).toFixed(1)}s`;
     };
 
     // Renderizar avión animado
@@ -538,12 +554,12 @@ export default function Aviator() {
             return renderAvion();
         }
 
-        // Calcular escalas
-        const maxX = Math.max(...puntosGrafico.map(p => p.x), duracionTotal || 10);
-        const maxY = Math.max(...puntosGrafico.map(p => p.y), multiplicadorCrashRef.current || 5);
+        // Calcular escalas con límites razonables
+        const maxX = Math.max(Math.min(Math.max(...puntosGrafico.map(p => p.x), duracionTotal || 10), 30), 1);
+        const maxY = Math.max(Math.min(Math.max(...puntosGrafico.map(p => p.y), multiplicadorCrashRef.current || 5), 500), 2);
         
-        const escalaX = (x: number) => (x / maxX) * 100;
-        const escalaY = (y: number) => 100 - ((y - 1) / (maxY - 1)) * 85; // Margen inferior 15%
+        const escalaX = (x: number) => (Math.min(x, maxX) / maxX) * 100;
+        const escalaY = (y: number) => 100 - ((Math.min(y, maxY) - 1) / (maxY - 1)) * 85;
 
         const puntosSVG = puntosGrafico.map((p, i) => {
             const x = escalaX(p.x);
