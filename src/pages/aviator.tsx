@@ -180,7 +180,7 @@ export default function Aviator() {
             if (!tiempoInicioRef.current) return;
             
             // Tiempo transcurrido en SEGUNDOS
-            const tiempoTrans = (timestamp - tiempoInicioRef.current) / 1000;
+            const tiempoTrans = (timestamp) / 1000;
             setTiempoTranscurrido(tiempoTrans);
             
             // Calcular progreso (0 a 1)
