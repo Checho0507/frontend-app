@@ -16,6 +16,7 @@ import Minas from '../pages/minas';
 import Deposito from '../components/deposito';
 import Retiro from '../components/retiro';
 import Aviator from '../pages/aviator';
+import Inversion from '../pages/inversion';
 
 interface Usuario {
   id: number;
@@ -85,6 +86,7 @@ const AppRouter = () => {
         <Route path="/transacciones/admin/retiros/pendientes" element={<AdminPanel />} />
         <Route path="/transacciones/admin/retiros/:retiroId/aprobar" element={<AdminPanel />} />
         <Route path="/transacciones/admin/retiros/:retiroId/rechazar" element={<AdminPanel />} />
+        <Route path="/inversiones" element={<Inversion />} />
   
         
 

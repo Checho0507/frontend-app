@@ -51,7 +51,7 @@ interface HistorialInversion {
     retiros: Retiro[];
 }
 
-export default function InversionExponencial() {
+export default function Inversion() {
     const navigate = useNavigate();
     const [usuario, setUsuario] = useState<Usuario | null>(null);
     const [montoDeposito, setMontoDeposito] = useState<number>(50000);
