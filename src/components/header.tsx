@@ -342,7 +342,7 @@ const Header: React.FC<HeaderProps> = ({ usuario, cerrarSesion, setUsuario }) =>
                             )}
                             {usuario?.verificado && (
                                 <Link to="/inversiones" className="text-green-400 hover:text-yellow-300 transition-colors flex items-center space-x-2 font-bold">
-                                    <span>🎟</span>
+                                    <span>📈</span>
                                     <span className="hidden md:inline">Inversiones</span>
                                 </Link>
                             )}
