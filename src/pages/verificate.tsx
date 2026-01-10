@@ -625,8 +625,8 @@ const Verificate: React.FC = () => {
 
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                         {[
-                            { paso: 1, titulo: 'Toma una foto', subtitulo: 'Toma una foto de tu documento de identidad', color: 'yellow' },
-                            { paso: 2, titulo: 'Sube la foto', subtitulo: 'Sube la foto de tu documento de identidad', color: 'yellow' },
+                            { paso: 1, titulo: 'Toma una foto', subtitulo: 'Toma una foto de tu documento', color: 'yellow' },
+                            { paso: 2, titulo: 'Sube la foto', subtitulo: 'Sube la foto de tu documento', color: 'yellow' },
                             { paso: 3, titulo: 'Revisión', subtitulo: 'Validando datos', color: 'blue' },
                             { paso: 4, titulo: '¡Premium!', subtitulo: 'Cuenta verificada', color: 'green' }
                         ].map(({ paso, titulo, subtitulo, color }) => (
@@ -702,7 +702,7 @@ const Verificate: React.FC = () => {
                     <div className="bg-gray-800/30 backdrop-blur-sm rounded-2xl p-8 border border-yellow-500/30 mb-8">
                         <h3 className="text-xl font-bold text-white mb-6 flex items-center">
                             <span className="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center mr-3">2</span>
-                            Subir Comprobante
+                            Subir la foto de tu documento de identidad
                         </h3>
                         
                         <div 
@@ -728,12 +728,12 @@ const Verificate: React.FC = () => {
                                 
                                 <div>
                                     <h3 className="text-xl font-bold text-white mb-2">
-                                        {archivo ? '✅ Archivo Listo' : 'Sube tu Comprobante'}
+                                        {archivo ? '✅ Archivo Listo' : 'Sube tu foto o PDF del documento'}
                                     </h3>
                                     <p className="text-gray-400 mb-4">
                                         {archivo 
                                             ? `${archivo.name} - ${(archivo.size / 1024).toFixed(2)} KB`
-                                            : 'Arrastra o haz clic para seleccionar tu comprobante'
+                                            : 'Arrastra o haz clic para seleccionar tu foto o PDF del documento'
                                         }
                                     </p>
                                 </div>
@@ -806,7 +806,7 @@ const Verificate: React.FC = () => {
                                         <span className="text-2xl">⏳</span>
                                     </div>
                                     <div>
-                                        <h4 className="text-xl font-bold text-white">Comprobante en Revisión</h4>
+                                        <h4 className="text-xl font-bold text-white">Documento en Revisión</h4>
                                         <p className="text-gray-400">Tu documento está siendo verificado por nuestro equipo</p>
                                     </div>
                                 </div>
@@ -829,7 +829,7 @@ const Verificate: React.FC = () => {
                                     <span className="text-blue-400">👁️</span>
                                     <div>
                                         <p className="font-bold text-white">¿Qué estamos verificando?</p>
-                                        <p className="text-gray-400 text-sm">• Monto correcto • Número de referencia • Fecha y hora</p>
+                                        <p className="text-gray-400 text-sm">Que la foto del documento de identidad sea clara y legible</p>
                                     </div>
                                 </div>
                                 
