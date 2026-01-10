@@ -567,8 +567,8 @@ const Verificate: React.FC = () => {
                                         <span className="font-bold">1</span>
                                     </div>
                                     <div>
-                                        <p className="font-bold text-white">Realiza el depósito</p>
-                                        <p className="text-gray-400 text-sm">Transfiere $10,000 COP a Nequi: <span className="text-yellow-400 font-bold">310 527 8029</span></p>
+                                        <p className="font-bold text-white">Toma una foto</p>
+                                        <p className="text-gray-400 text-sm">Toma una foto clara de tu documento de identidad</p>
                                     </div>
                                 </div>
                                 <div className="flex items-start space-x-3">
@@ -576,8 +576,8 @@ const Verificate: React.FC = () => {
                                         <span className="font-bold">2</span>
                                     </div>
                                     <div>
-                                        <p className="font-bold text-white">Captura el comprobante</p>
-                                        <p className="text-gray-400 text-sm">Toma una foto clara o screenshot del recibo de transferencia</p>
+                                        <p className="font-bold text-white">Sube una foto</p>
+                                        <p className="text-gray-400 text-sm">Sube la foto de tu documento de identidad</p>
                                     </div>
                                 </div>
                                 <div className="flex items-start space-x-3">
@@ -586,7 +586,7 @@ const Verificate: React.FC = () => {
                                     </div>
                                     <div>
                                         <p className="font-bold text-white">Revisión manual</p>
-                                        <p className="text-gray-400 text-sm">Nuestro equipo verificará tu comprobante en 24-48 horas</p>
+                                        <p className="text-gray-400 text-sm">Nuestro equipo verificará tu documento en 24-48 horas</p>
                                     </div>
                                 </div>
                                 <div className="flex items-start space-x-3">
@@ -672,42 +672,12 @@ const Verificate: React.FC = () => {
                     <div className="bg-gray-800/30 backdrop-blur-sm rounded-2xl p-8 border border-yellow-500/30 mb-8">
                         <h3 className="text-xl font-bold text-white mb-6 flex items-center">
                             <span className="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center mr-3">1</span>
-                            Realiza el depósito
+                            Toma una foto de tu documento de identidad
                         </h3>
-                        
-                        <div className="bg-black/40 rounded-xl p-6 mb-6 border border-gray-700">
-                            <div className="flex items-center justify-between mb-4">
-                                <div className="flex items-center space-x-3">
-                                    <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
-                                        <span className="text-xl">📱</span>
-                                    </div>
-                                    <div>
-                                        <h4 className="text-lg font-bold text-white">Nequi</h4>
-                                        <p className="text-gray-400 text-sm">Transferencia bancaria</p>
-                                    </div>
-                                </div>
-                                <span className="px-3 py-1 bg-yellow-900/50 text-yellow-400 rounded-full text-sm font-bold">
-                                    RECOMENDADO
-                                </span>
-                            </div>
+
+                        <p className='text-gray-400'>
                             
-                            <div className="space-y-4">
-                                <div className="flex items-center justify-between p-3 bg-gray-900/50 rounded-lg">
-                                    <span className="text-gray-400">Número de teléfono:</span>
-                                    <span className="text-xl font-bold text-white">310 527 8029</span>
-                                </div>
-                                
-                                <div className="flex items-center justify-between p-3 bg-gray-900/50 rounded-lg">
-                                    <span className="text-gray-400">Monto a transferir:</span>
-                                    <span className="text-2xl font-bold text-yellow-400">$10,000 COP</span>
-                                </div>
-                                
-                                <div className="flex items-center justify-between p-3 bg-gray-900/50 rounded-lg">
-                                    <span className="text-gray-400">Concepto:</span>
-                                    <span className="font-bold text-white">Verificación de cuenta</span>
-                                </div>
-                            </div>
-                        </div>
+                        </p>
                         
                         <div className="flex items-center justify-between p-4 bg-gradient-to-r from-yellow-600/20 to-green-600/20 rounded-xl border border-yellow-500/30">
                             <div className="flex items-center space-x-3">

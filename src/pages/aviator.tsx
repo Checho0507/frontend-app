@@ -209,6 +209,7 @@ export default function Aviator() {
             });
             
             // Verificar si alcanzó el final
+            
             if (progreso >= 1.0) {
                 setEstado('explosion');
                 setMultiplicadorCrash(multiplicadorCrashRef.current);
