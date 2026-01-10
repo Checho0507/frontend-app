@@ -99,7 +99,7 @@ export default function Inversion() {
     const cargarEstado = async () => {
         try {
             const token = localStorage.getItem("token");
-            const response = await axios.get(`${API_URL}/inversion/estado`, {
+            const response = await axios.get(`${API_URL}/inversiones/inversion/estado`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setEstado(response.data);
@@ -111,7 +111,7 @@ export default function Inversion() {
     const cargarHistorial = async () => {
         try {
             const token = localStorage.getItem("token");
-            const response = await axios.get(`${API_URL}/inversion/historial`, {
+            const response = await axios.get(`${API_URL}/inversiones/inversion/historial`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setHistorial(response.data.historial || []);
@@ -140,7 +140,7 @@ export default function Inversion() {
         try {
             const token = localStorage.getItem("token");
             const response = await axios.post(
-                `${API_URL}/inversion/depositar`,
+                `${API_URL}/inversiones/inversion/depositar`,
                 { monto: montoDeposito },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -164,7 +164,7 @@ export default function Inversion() {
         try {
             const token = localStorage.getItem("token");
             const response = await axios.post(
-                `${API_URL}/inversion/retirar/intereses`,
+                `${API_URL}/inversiones/inversion/retirar/intereses`,
                 { inversion_id: inversionId },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -187,7 +187,7 @@ export default function Inversion() {
         try {
             const token = localStorage.getItem("token");
             const response = await axios.post(
-                `${API_URL}/inversion/retirar/capital`,
+                `${API_URL}/inversiones/inversion/retirar/capital`,
                 { inversion_id: inversionId },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
