@@ -625,8 +625,8 @@ const Verificate: React.FC = () => {
 
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                         {[
-                            { paso: 1, titulo: 'Depósito', subtitulo: 'Realiza el depósito', color: 'yellow' },
-                            { paso: 2, titulo: 'Comprobante', subtitulo: 'Sube el archivo', color: 'yellow' },
+                            { paso: 1, titulo: 'Toma una foto', subtitulo: 'Toma una foto de tu documento de identidad', color: 'yellow' },
+                            { paso: 2, titulo: 'Sube la foto', subtitulo: 'Sube la foto de tu documento de identidad', color: 'yellow' },
                             { paso: 3, titulo: 'Revisión', subtitulo: 'Validando datos', color: 'blue' },
                             { paso: 4, titulo: '¡Premium!', subtitulo: 'Cuenta verificada', color: 'green' }
                         ].map(({ paso, titulo, subtitulo, color }) => (
@@ -676,14 +676,14 @@ const Verificate: React.FC = () => {
                         </h3>
 
                         <p className='text-gray-400'>
-                            
+
                         </p>
                         
                         <div className="flex items-center justify-between p-4 bg-gradient-to-r from-yellow-600/20 to-green-600/20 rounded-xl border border-yellow-500/30">
                             <div className="flex items-center space-x-3">
                                 <span className="text-2xl">💡</span>
                                 <div>
-                                    <p className="font-bold text-white">¿Ya realizaste el depósito?</p>
+                                    <p className="font-bold text-white">¿Ya tomaste la foto?</p>
                                     <p className="text-gray-400 text-sm">Continúa con el siguiente paso</p>
                                 </div>
                             </div>
