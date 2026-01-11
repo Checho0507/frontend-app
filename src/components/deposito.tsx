@@ -721,8 +721,6 @@ const Deposito: React.FC<DepositoProps> = ({ usuario, setUsuario, cerrarSesion }
                                         <h4 className="font-bold text-blue-300">Información importante</h4>
                                         <ul className="text-sm text-blue-200/80 space-y-2 mt-2">
                                             <li>• Los depósitos se procesan en 1-24 horas</li>
-                                            <li>• Usuarios <span className="font-bold">verificados</span> no necesitan comprobante</li>
-                                            <li>• Usuarios <span className="font-bold">no verificados</span> deben subir comprobante</li>
                                             <li>• Mantén tu comprobante por seguridad</li>
                                             <li>• Para ayuda, contacta a soporte</li>
                                         </ul>
