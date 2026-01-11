@@ -432,7 +432,7 @@ const Deposito: React.FC<DepositoProps> = ({ usuario, setUsuario, cerrarSesion }
                                                 {monto > 0 && (
                                                     <>
                                                         {monto < 10000 ? '❌ Monto mínimo: $10,000 COP' :
-                                                            monto > 5000000 ? '❌ Monto máximo: $5,000,000 COP' :
+                                                            monto > 1000000 ? '❌ Monto máximo: $1,000,000 COP' :
                                                                 '✅ Monto válido'}
                                                     </>
                                                 )}
