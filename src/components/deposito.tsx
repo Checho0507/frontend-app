@@ -124,7 +124,7 @@ const Deposito: React.FC<DepositoProps> = ({ usuario, setUsuario, cerrarSesion }
     useEffect(() => {
         const validarFormulario = () => {
             // Validar monto mínimo y máximo
-            const montoValido = monto >= 10000 && monto <= 5000000;
+            const montoValido = monto >= 10000 && monto <= 1000000;
 
             // Validar método de pago seleccionado
             const metodoValido = metodoPago !== "";
@@ -422,13 +422,13 @@ const Deposito: React.FC<DepositoProps> = ({ usuario, setUsuario, cerrarSesion }
                                                 className="w-full pl-10 pr-4 py-4 bg-gray-900/50 border border-gray-700 rounded-xl text-white text-lg focus:outline-none focus:border-yellow-500 transition"
                                                 placeholder="Ej: 100000"
                                                 min="10000"
-                                                max="5000000"
+                                                max="1000000"
                                                 step="1000"
                                                 required
                                             />
                                         </div>
                                         <div className="mt-2">
-                                            <p className={`text-sm ${monto >= 10000 && monto <= 5000000 ? 'text-green-400' : 'text-red-400'}`}>
+                                            <p className={`text-sm ${monto >= 10000 && monto <= 1000000 ? 'text-green-400' : 'text-red-400'}`}>
                                                 {monto > 0 && (
                                                     <>
                                                         {monto < 10000 ? '❌ Monto mínimo: $10,000 COP' :
@@ -552,7 +552,7 @@ const Deposito: React.FC<DepositoProps> = ({ usuario, setUsuario, cerrarSesion }
                                             </span>
                                         </div>
                                         <ul className="text-sm space-y-1 text-gray-400">
-                                            <li className={monto >= 10000 && monto <= 5000000 ? 'text-green-400' : 'text-gray-500'}>
+                                            <li className={monto >= 10000 && monto <= 1000000 ? 'text-green-400' : 'text-gray-500'}>
                                                 • Monto válido (entre $10,000 y $5,000,000 COP)
                                             </li>
                                             <li className={metodoPago ? 'text-green-400' : 'text-gray-500'}>
