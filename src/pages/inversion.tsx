@@ -127,7 +127,7 @@ export default function Inversion() {
         }
 
         if (montoDeposito < 50000 || montoDeposito > 1000000) {
-            showMsg("El monto debe estar entre $50,000 y $5,000,000", "error");
+            showMsg("El monto debe estar entre $50,000 y $1,000,000", "error");
             return;
         }
 
