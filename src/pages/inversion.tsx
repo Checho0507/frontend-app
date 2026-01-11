@@ -126,7 +126,7 @@ export default function Inversion() {
             return;
         }
 
-        if (montoDeposito < 50000 || montoDeposito > 5000000) {
+        if (montoDeposito < 50000 || montoDeposito > 1000000) {
             showMsg("El monto debe estar entre $50,000 y $5,000,000", "error");
             return;
         }
@@ -348,14 +348,14 @@ export default function Inversion() {
                                                 <input
                                                     type="number"
                                                     min="50000"
-                                                    max="5000000"
+                                                    max="1000000"
                                                     step="1000"
                                                     value={montoDeposito}
                                                     onChange={(e) => setMontoDeposito(Number(e.target.value))}
                                                     className="flex-1 bg-gray-800 border border-teal-500/50 rounded-xl px-6 py-4 text-white text-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                                                 />
                                                 <button
-                                                    onClick={() => setMontoDeposito(5000000)}
+                                                    onClick={() => setMontoDeposito(1000000)}
                                                     className="px-4 py-2 bg-gradient-to-r from-teal-600 to-blue-600 rounded-xl text-white font-bold hover:opacity-90 transition-opacity"
                                                 >
                                                     MAX
