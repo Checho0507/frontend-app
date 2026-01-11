@@ -391,7 +391,7 @@ const Deposito: React.FC<DepositoProps> = ({ usuario, setUsuario, cerrarSesion }
                         </h1>
 
                         <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-                            Deposita desde <span className="text-yellow-400 font-bold">$10,000</span> hasta <span className="text-yellow-400 font-bold">$5,000,000</span>.
+                            Deposita desde <span className="text-yellow-400 font-bold">$10,000</span> hasta <span className="text-yellow-400 font-bold">$1,000,000</span>.
                             <span className="text-green-400 font-bold"> ¡Usuarios verificados no requieren comprobante!</span>
                         </p>
                     </div>
@@ -553,7 +553,7 @@ const Deposito: React.FC<DepositoProps> = ({ usuario, setUsuario, cerrarSesion }
                                         </div>
                                         <ul className="text-sm space-y-1 text-gray-400">
                                             <li className={monto >= 10000 && monto <= 1000000 ? 'text-green-400' : 'text-gray-500'}>
-                                                • Monto válido (entre $10,000 y $5,000,000 COP)
+                                                • Monto válido (entre $10,000 y $1,000,000 COP)
                                             </li>
                                             <li className={metodoPago ? 'text-green-400' : 'text-gray-500'}>
                                                 • Método de pago seleccionado
