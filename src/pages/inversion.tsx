@@ -342,7 +342,7 @@ export default function Inversion() {
 
                                         <div className="mb-6">
                                             <label className="block text-gray-300 mb-3">
-                                                Monto a invertir (entre $50,000 y $5,000,000)
+                                                Monto a invertir (entre $50,000 y $1,000,000)
                                             </label>
                                             <div className="flex items-center space-x-4">
                                                 <input
@@ -700,7 +700,7 @@ export default function Inversion() {
                                 </div>
                                 <h3 className="text-xl font-bold text-white mb-3">Deposita</h3>
                                 <p className="text-gray-400">
-                                    Invierte entre $50,000 y $5,000,000. No hay límite de depósitos.
+                                    Invierte entre $50,000 y $1,000,000. No hay límite de depósitos.
                                 </p>
                             </div>
                             <div className="text-center">
