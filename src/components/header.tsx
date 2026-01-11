@@ -342,7 +342,7 @@ const Header: React.FC<HeaderProps> = ({ usuario, cerrarSesion, setUsuario }) =>
                             )}
                             {usuario?.verificado && (
                                 <Link to="/inversiones" className="text-green-400 hover:text-yellow-300 transition-colors flex items-center space-x-2 font-bold">
-                                    <span>📈</span>
+                                    <span>💰</span>
                                     <span className="hidden md:inline">Inversiones</span>
                                 </Link>
                             )}
@@ -609,6 +609,16 @@ const Header: React.FC<HeaderProps> = ({ usuario, cerrarSesion, setUsuario }) =>
                                 >
                                     <span className="text-2xl">🎟</span>
                                     <span className="text-lg font-medium">Sorteo VIP</span>
+                                </Link>
+                            )}
+                            {usuario?.verificado && (
+                                <Link
+                                    to="/inversiones"
+                                    className="flex items-center space-x-3 p-4 text-gray-300 hover:text-white hover:bg-gray-800/50 rounded-xl transition-colors"
+                                    onClick={() => setMenuNavegacionAbierto(false)}
+                                >
+                                    <span className="text-2xl">💰</span>
+                                    <span className="text-lg font-medium">Inversiones</span>
                                 </Link>
                             )}
 
