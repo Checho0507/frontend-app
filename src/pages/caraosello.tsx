@@ -25,7 +25,7 @@ interface HistorialApuesta {
     gano: boolean;
 }
 
-const APUESTA_MINIMA = 50;
+const APUESTA_MINIMA = 100;
 
 export default function CaraSello() {
     const navigate = useNavigate();
@@ -300,7 +300,7 @@ export default function CaraSello() {
         setUsuario(null);
     };
 
-    const valoresApuesta = [50, 100, 200, 500, 1000, 2000, 5000];
+    const valoresApuesta = [100, 200, 500, 1000, 2000, 5000];
 
     if (!usuario) {
         return (
