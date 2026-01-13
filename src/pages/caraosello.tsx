@@ -114,7 +114,7 @@ export default function CaraSello() {
 
     const actualizarEstadisticas = (nuevaApuesta: HistorialApuesta) => {
         const gano = nuevaApuesta.gano;
-        
+
         // Actualizar estadísticas acumulativas
         setEstadisticasAcumulativas(prev => {
             const nuevoTotal = prev.totalApuestasAcum + 1;
@@ -195,17 +195,17 @@ export default function CaraSello() {
             setMensaje("Debes iniciar sesión para jugar.");
             return;
         }
-        
+
         if (!eleccion) {
             setMensaje("Debes elegir Cara o Sello.");
             return;
         }
-        
+
         if (apuesta < APUESTA_MINIMA) {
             setMensaje(`La apuesta mínima es $${APUESTA_MINIMA}.`);
             return;
         }
-        
+
         if (apuesta > usuario.saldo) {
             setMensaje("Saldo insuficiente para realizar esta apuesta.");
             return;
@@ -219,15 +219,15 @@ export default function CaraSello() {
             const token = localStorage.getItem("token");
             const res = await axios.post(
                 `${API_URL}/juegos/caraosello?apuesta=${apuesta}&eleccion=${eleccion}`,
-                { },
+                {},
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
             const data = res.data;
-            
+
             // Actualizar saldo del usuario
             setUsuario(prev => prev ? { ...prev, saldo: data.nuevo_saldo } : null);
-            
+
             // Mostrar resultado
             setResultado({
                 gano: data.gano,
@@ -235,23 +235,23 @@ export default function CaraSello() {
                 ganancia: data.ganancia,
                 mensaje: data.mensaje
             });
-            
+
             // Animación de confetti si ganó
             if (data.gano) {
                 animarConfetti();
             }
-            
+
             // Agregar al historial
             agregarAlHistorial(
-                eleccion, 
-                data.resultado, 
-                data.ganancia, 
+                eleccion,
+                data.resultado,
+                data.ganancia,
                 apuesta,
                 data.gano
             );
-            
+
             setMensaje(data.mensaje);
-            
+
         } catch (err: any) {
             console.error("Error al realizar apuesta:", err);
             setMensaje(err.response?.data?.detail || "Error al procesar la apuesta");
@@ -328,7 +328,7 @@ export default function CaraSello() {
             )}
 
             {/* Header */}
-            <Header 
+            <Header
                 usuario={usuario}
                 cerrarSesion={cerrarSesion}
                 setUsuario={setUsuario}
@@ -448,7 +448,21 @@ export default function CaraSello() {
                                                 : 'bg-gradient-to-br from-gray-800/60 to-gray-900/60 border-4 border-gray-700 hover:border-yellow-500/50 hover:scale-105'
                                                 }`}
                                         >
-                                            <div className="text-8xl mb-4">👨</div>
+                                            <div className="text-8xl mb-4"><svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+
+                                                <circle cx="100" cy="100" r="95" fill="#FFD700" stroke="#C9A000" stroke-width="8" />
+
+                                                <circle cx="100" cy="100" r="75" fill="#FFECB3" />
+
+                                                <circle cx="80" cy="90" r="8" fill="#5A3E1B" />
+                                                <circle cx="120" cy="90" r="8" fill="#5A3E1B" />
+                                                <path d="M75 120 Q100 140 125 120" stroke="#5A3E1B" stroke-width="6" fill="none" />
+
+                                                <text x="100" y="40" text-anchor="middle" font-size="20" font-weight="bold" fill="#8B6B00">
+                                                    CARA
+                                                </text>
+                                            </svg>
+                                            </div>
                                             <div className="text-3xl font-bold text-white mb-2">CARA</div>
                                             <div className="text-gray-400">(Cara)</div>
                                             {eleccion === "cara" && (
@@ -457,9 +471,9 @@ export default function CaraSello() {
                                                 </div>
                                             )}
                                         </button>
-                                        
+
                                         <div className="text-4xl text-gray-500 font-bold">VS</div>
-                                        
+
                                         <button
                                             onClick={() => setEleccion("sello")}
                                             className={`flex flex-col items-center p-8 rounded-3xl transition-all duration-300 ${eleccion === "sello"
@@ -467,7 +481,20 @@ export default function CaraSello() {
                                                 : 'bg-gradient-to-br from-gray-800/60 to-gray-900/60 border-4 border-gray-700 hover:border-red-500/50 hover:scale-105'
                                                 }`}
                                         >
-                                            <div className="text-8xl mb-4">🪙</div>
+                                            <div className="text-8xl mb-4"><svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+
+                                                <circle cx="100" cy="100" r="95" fill="#FFD700" stroke="#C9A000" stroke-width="8" />
+
+                                                <circle cx="100" cy="100" r="75" fill="#FFECB3" />
+
+                                                <polygon points="100,65 115,95 150,95 122,115 135,150 100,130 65,150 78,115 50,95 85,95"
+                                                    fill="#5A3E1B" />
+
+                                                <text x="100" y="40" text-anchor="middle" font-size="20" font-weight="bold" fill="#8B6B00">
+                                                    SELLO
+                                                </text>
+                                            </svg>
+                                            </div>
                                             <div className="text-3xl font-bold text-white mb-2">SELLO</div>
                                             <div className="text-gray-400">(Cruz)</div>
                                             {eleccion === "sello" && (
@@ -555,7 +582,7 @@ export default function CaraSello() {
                                     <div className="text-sm text-gray-400">Ganadas</div>
                                     <div className="text-2xl font-bold text-green-400">{estadisticas.ganadas}</div>
                                     <div className="text-xs text-gray-500 mt-1">
-                                        {estadisticas.totalApuestas > 0 
+                                        {estadisticas.totalApuestas > 0
                                             ? `${((estadisticas.ganadas / estadisticas.totalApuestas) * 100).toFixed(1)}%`
                                             : '0%'}
                                     </div>
@@ -564,7 +591,7 @@ export default function CaraSello() {
                                     <div className="text-sm text-gray-400">Perdidas</div>
                                     <div className="text-2xl font-bold text-red-400">{estadisticas.perdidas}</div>
                                     <div className="text-xs text-gray-500 mt-1">
-                                        {estadisticas.totalApuestas > 0 
+                                        {estadisticas.totalApuestas > 0
                                             ? `${((estadisticas.perdidas / estadisticas.totalApuestas) * 100).toFixed(1)}%`
                                             : '0%'}
                                     </div>
