@@ -457,10 +457,6 @@ export default function CaraSello() {
                                                 <circle cx="80" cy="90" r="8" fill="#5A3E1B" />
                                                 <circle cx="120" cy="90" r="8" fill="#5A3E1B" />
                                                 <path d="M75 120 Q100 140 125 120" stroke="#5A3E1B" stroke-width="6" fill="none" />
-
-                                                <text x="100" y="40" text-anchor="middle" font-size="20" font-weight="bold" fill="#8B6B00">
-                                                    CARA
-                                                </text>
                                             </svg>
                                             </div>
                                             <div className="text-3xl font-bold text-white mb-2">CARA</div>
@@ -489,10 +485,6 @@ export default function CaraSello() {
 
                                                 <polygon points="100,65 115,95 150,95 122,115 135,150 100,130 65,150 78,115 50,95 85,95"
                                                     fill="#5A3E1B" />
-
-                                                <text x="100" y="40" text-anchor="middle" font-size="20" font-weight="bold" fill="#8B6B00">
-                                                    SELLO
-                                                </text>
                                             </svg>
                                             </div>
                                             <div className="text-3xl font-bold text-white mb-2">SELLO</div>
