@@ -16,6 +16,7 @@ import Minas from '../pages/minas';
 import Deposito from '../components/deposito';
 import Retiro from '../components/retiro';
 import Aviator from '../pages/aviator';
+import CartaMayor from '../pages/cartamayor';
 import CaraSello from '../pages/caraosello';
 import Inversion from '../pages/inversion';
 
@@ -79,7 +80,8 @@ const AppRouter = () => {
         <Route path="/juegos/minas" element={<Minas />} />
         <Route path="/juegos/aviator" element={<Aviator />} />
         <Route path="/juegos/caraosello" element={<CaraSello />} />
-        
+        <Route path="/juegos/cartamayor" element={<CartaMayor />} />
+
         <Route path="/transacciones/deposito" element={<Deposito usuario={usuario} cerrarSesion={cerrarSesion} setUsuario={setUsuario} />} />
         <Route path="/transacciones/retiro" element={<Retiro usuario={usuario} cerrarSesion={cerrarSesion} setUsuario={setUsuario} />} />
         <Route path="/referidos" element={<Referidos usuario={usuario} cerrarSesion={cerrarSesion} setUsuario={setUsuario}/>} />

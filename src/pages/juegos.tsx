@@ -83,7 +83,8 @@ export default function Juegos() {
       { nombre: "Blackjack", disponible: true },
       { nombre: "Minas", disponible: true },
       { nombre: "Aviator", disponible: true },
-      { nombre: "Cara o Sello", disponible: true }
+      { nombre: "Cara o Sello", disponible: true },
+      { nombre: "Carta Mayor", disponible: true }
     ];
 
     setEstadisticasJuegos({
@@ -174,6 +175,14 @@ export default function Juegos() {
       ruta: "/juegos/caraosello",
       icono: "🪙",
       color: "from-gray-500 to-gray-700",
+      disponible: true
+    },
+    {
+      nombre: "Carta Mayor",
+      descripcion: "Apuesta a la carta más alta y gana",
+      ruta: "/juegos/cartamayor",
+      icono: "🃏",
+      color: "from-pink-500 to-purple-500",
       disponible: true
     }
   ];
