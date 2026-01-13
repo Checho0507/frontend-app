@@ -82,7 +82,8 @@ export default function Juegos() {
       { nombre: "Tragamonedas", disponible: true },
       { nombre: "Blackjack", disponible: true },
       { nombre: "Minas", disponible: true },
-      { nombre: "Aviator", disponible: true }
+      { nombre: "Aviator", disponible: true },
+      { nombre: "Cara o Sello", disponible: true }
     ];
 
     setEstadisticasJuegos({
@@ -165,6 +166,14 @@ export default function Juegos() {
       ruta: "/juegos/aviator",
       icono: "✈️",
       color: "from-cyan-500 to-blue-500",
+      disponible: true
+    },
+    {
+      nombre: "Cara o Sello",
+      descripcion: "Apuesta al resultado del lanzamiento de una moneda",
+      ruta: "/juegos/caraosello",
+      icono: "🪙",
+      color: "from-gray-500 to-gray-700",
       disponible: true
     }
   ];
