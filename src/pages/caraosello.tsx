@@ -218,11 +218,8 @@ export default function CaraSello() {
         try {
             const token = localStorage.getItem("token");
             const res = await axios.post(
-                `${API_URL}/juegos/caraosello`,
-                { 
-                    apuesta: apuesta,
-                    eleccion: eleccion 
-                },
+                `${API_URL}/juegos/caraosello?apuesta=${apuesta}&eleccion=${eleccion}`,
+                { },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
