@@ -361,7 +361,7 @@ export default function CartaMayor() {
         setUsuario(null);
     };
 
-    const valoresApuesta = [50, 100, 200, 500, 1000, 2000, 5000];
+    const valoresApuesta = [100, 200, 500, 1000, 2000, 5000, 10000];
 
     const renderCarta = (carta: Carta, titulo: string, esGanadora: boolean = false) => {
         const colorPalo = obtenerColorPalo(carta.palo);
@@ -669,12 +669,8 @@ export default function CartaMayor() {
                                     
                                     {/* Comparación de valores */}
                                     {resultado && renderResultadoComparacion()}
-                                    
-                                    {/* Tabla de valores de cartas */}
-                                    {renderTablaCartas()}
-                                </div>
 
-                                {/* Botón de jugar */}
+                                    {/* Botón de jugar */}
                                 <button
                                     onClick={realizarJugada}
                                     disabled={jugando || apuesta < APUESTA_MINIMA || apuesta > usuario.saldo}
@@ -728,6 +724,10 @@ export default function CartaMayor() {
                                         </div>
                                     </div>
                                 )}
+                                    
+                                    {/* Tabla de valores de cartas */}
+                                    {renderTablaCartas()}
+                                </div>
                             </div>
                         </div>
                     </div>
