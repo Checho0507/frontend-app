@@ -279,10 +279,8 @@ export default function CartaMayor() {
         try {
             const token = localStorage.getItem("token");
             const res = await axios.post(
-                `${API_URL}/juegos/cartamayor`,
-                { 
-                    apuesta: apuesta
-                },
+                `${API_URL}/juegos/cartamayor?apuesta=${apuesta}`,
+                {},
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
