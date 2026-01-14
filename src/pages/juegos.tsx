@@ -85,7 +85,8 @@ export default function Juegos() {
       { nombre: "Aviator", disponible: true },
       { nombre: "Cara o Sello", disponible: true },
       { nombre: "Carta Mayor", disponible: true },
-      { nombre: "Piedra, Papel o Tijera", disponible: true }
+      { nombre: "Piedra, Papel o Tijera", disponible: true },
+      { nombre: "Ruleta Europea", disponible: true }
     ];
 
     setEstadisticasJuegos({
@@ -126,7 +127,7 @@ export default function Juegos() {
       nombre: "Ruleta",
       descripcion: "Gira la ruleta y gana grandes premios",
       ruta: "/juegos/ruleta",
-      icono: "🎡",
+      icono: "🎯",
       color: "from-red-500 to-pink-500",
       disponible: true
     },
@@ -192,6 +193,14 @@ export default function Juegos() {
       ruta: "/juegos/piedrapapeltijera",
       icono: "✊",
       color: "from-yellow-500 to-red-500",
+      disponible: true
+    },
+    {
+      nombre: "Ruleta Europea",
+      descripcion: "Disfruta de la versión clásica de la ruleta",
+      ruta: "/juegos/ruletaeuropea",
+      icono: "🎡",
+      color: "from-purple-500 to-pink-500",
       disponible: true
     }
   ];
