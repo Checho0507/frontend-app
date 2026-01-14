@@ -340,7 +340,7 @@ export default function RuletaEuropea() {
             console.log("Enviando apuestas:", apuestasArray); // Para depuración
 
             const res = await axios.post(
-                `${API_URL}/juegos/ruletaeuropea?apuestas=${apuestasArray}`,
+                `${API_URL}/juegos/ruletaeuropea?apuestas=${JSON.stringify(apuestasArray)}`,
                 {},  // ENVIAR EN EL BODY, no en query string
                 {
                     headers: {
