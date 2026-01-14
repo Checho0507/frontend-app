@@ -199,7 +199,7 @@ export default function PiedraPapelTijera() {
             const nuevasPerdidas = prev.perdidas + (resultado === "gana_maquina" ? 1 : 0);
             const nuevosEmpates = prev.empates + (resultado === "empate" ? 1 : 0);
             const nuevaGananciaTotal = prev.gananciaTotal + nuevoJuego.ganancia;
-            const nuevoGastoTotal = prev.gastoTotal + nuevoJuego.apostado;
+            const nuevoGastoTotal = prev.gastoTotal + (resultado === "empate" ? 0 : nuevoJuego.apostado);
             const nuevoBalance = nuevaGananciaTotal - nuevoGastoTotal;
 
             return {

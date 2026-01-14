@@ -190,7 +190,7 @@ export default function Juegos() {
       nombre: "Piedra, Papel o Tijera",
       descripcion: "Desafía al sistema en este clásico juego",
       ruta: "/juegos/piedrapapeltijera",
-      icono: "✊✋✌️",
+      icono: "✊",
       color: "from-yellow-500 to-red-500",
       disponible: true
     }
