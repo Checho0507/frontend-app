@@ -286,11 +286,8 @@ export default function PiedraPapelTijera() {
         try {
             const token = localStorage.getItem("token");
             const res = await axios.post(
-                `${API_URL}/juegos/piedrapapeltijera`,
-                { 
-                    apuesta: apuesta,
-                    eleccion: eleccion
-                },
+                `${API_URL}/juegos/piedrapapeltijera?apuesta=${apuesta}&eleccion=${eleccion}`,
+                {   },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
@@ -371,7 +368,7 @@ export default function PiedraPapelTijera() {
         setUsuario(null);
     };
 
-    const valoresApuesta = [50, 100, 200, 500, 1000, 2000, 5000];
+    const valoresApuesta = [100, 200, 500, 1000, 2000, 5000, 10000];
 
     const renderOpcion = (opcion: Opcion, esSeleccionada: boolean, onClick: () => void) => {
         const colores = {
