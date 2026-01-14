@@ -42,7 +42,7 @@ interface Probabilidades {
     };
 }
 
-const APUESTA_MINIMA = 50;
+const APUESTA_MINIMA = 100;
 
 const OPCIONES: Record<string, Opcion> = {
     piedra: {
