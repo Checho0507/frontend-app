@@ -18,6 +18,7 @@ import Retiro from '../components/retiro';
 import Aviator from '../pages/aviator';
 import CartaMayor from '../pages/cartamayor';
 import CaraSello from '../pages/caraosello';
+import PiedraPapelTijera from '../pages/piedrapapeltijera';
 import Inversion from '../pages/inversion';
 
 interface Usuario {
@@ -81,6 +82,7 @@ const AppRouter = () => {
         <Route path="/juegos/aviator" element={<Aviator />} />
         <Route path="/juegos/caraosello" element={<CaraSello />} />
         <Route path="/juegos/cartamayor" element={<CartaMayor />} />
+        <Route path="/juegos/piedrapapeltijera" element={<PiedraPapelTijera />} />
 
         <Route path="/transacciones/deposito" element={<Deposito usuario={usuario} cerrarSesion={cerrarSesion} setUsuario={setUsuario} />} />
         <Route path="/transacciones/retiro" element={<Retiro usuario={usuario} cerrarSesion={cerrarSesion} setUsuario={setUsuario} />} />

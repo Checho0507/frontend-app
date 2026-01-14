@@ -84,7 +84,8 @@ export default function Juegos() {
       { nombre: "Minas", disponible: true },
       { nombre: "Aviator", disponible: true },
       { nombre: "Cara o Sello", disponible: true },
-      { nombre: "Carta Mayor", disponible: true }
+      { nombre: "Carta Mayor", disponible: true },
+      { nombre: "Piedra, Papel o Tijera", disponible: true }
     ];
 
     setEstadisticasJuegos({
@@ -183,6 +184,14 @@ export default function Juegos() {
       ruta: "/juegos/cartamayor",
       icono: "🃏",
       color: "from-pink-500 to-purple-500",
+      disponible: true
+    },
+    {
+      nombre: "Piedra, Papel o Tijera",
+      descripcion: "Desafía al sistema en este clásico juego",
+      ruta: "/juegos/piedrapapeltijera",
+      icono: "✊✋✌️",
+      color: "from-yellow-500 to-red-500",
       disponible: true
     }
   ];

@@ -15,69 +15,71 @@ interface Usuario {
     verificado_pendiente?: boolean;
 }
 
-interface HistorialApuesta {
+interface HistorialJuego {
     id: number;
-    carta_usuario: string;
-    carta_casa: string;
+    eleccion_usuario: string;
+    eleccion_maquina: string;
     resultado: string;
     ganancia: number;
     fecha: string;
     apostado: number;
 }
 
-interface Carta {
-    valor: number;
+interface Opcion {
+    tipo: string;
     nombre: string;
-    simbolo: string;
-    palo: string;
+    emoji: string;
 }
 
 interface Probabilidades {
     gana_usuario: number;
-    gana_casa: number;
+    gana_maquina: number;
     empate: number;
+    reglas: {
+        piedra: string;
+        papel: string;
+        tijera: string;
+    };
 }
 
-const APUESTA_MINIMA = 100;
-const PALOS = ["♠️", "♥️", "♦️", "♣️"];
-const VALORES_CARTAS: { [key: number]: [string, string] } = {
-    1: ["As", "A"],
-    2: ["2", "2"],
-    3: ["3", "3"],
-    4: ["4", "4"],
-    5: ["5", "5"],
-    6: ["6", "6"],
-    7: ["7", "7"],
-    8: ["8", "8"],
-    9: ["9", "9"],
-    10: ["10", "10"],
-    11: ["Jota", "J"],
-    12: ["Reina", "Q"],
-    13: ["Rey", "K"]
+const APUESTA_MINIMA = 50;
+
+const OPCIONES: Record<string, Opcion> = {
+    piedra: {
+        tipo: "piedra",
+        nombre: "Piedra",
+        emoji: "🪨"
+    },
+    papel: {
+        tipo: "papel",
+        nombre: "Papel",
+        emoji: "📄"
+    },
+    tijera: {
+        tipo: "tijera",
+        nombre: "Tijera",
+        emoji: "✂️"
+    }
 };
 
-const obtenerColorPalo = (palo: string): string => {
-    if (palo === "♥️" || palo === "♦️") return "text-red-500";
-    return "text-black dark:text-white";
-};
-
-export default function CartaMayor() {
+export default function PiedraPapelTijera() {
     const navigate = useNavigate();
     const [usuario, setUsuario] = useState<Usuario | null>(null);
     const [apuesta, setApuesta] = useState<number>(APUESTA_MINIMA);
+    const [eleccion, setEleccion] = useState<string | null>(null);
     const [jugando, setJugando] = useState(false);
     const [mensaje, setMensaje] = useState<string | null>(null);
     const [resultado, setResultado] = useState<{
         resultado: string;
-        carta_usuario: Carta;
-        carta_casa: Carta;
+        eleccion_usuario: Opcion;
+        eleccion_maquina: Opcion;
         ganancia: number;
         mensaje: string;
     } | null>(null);
-    const [historial, setHistorial] = useState<HistorialApuesta[]>([]);
+    const [historial, setHistorial] = useState<HistorialJuego[]>([]);
     const [probabilidades, setProbabilidades] = useState<Probabilidades | null>(null);
     const [estadisticas, setEstadisticas] = useState({
-        totalApuestas: 0,
+        totalJuegos: 0,
         ganadas: 0,
         perdidas: 0,
         empates: 0,
@@ -86,7 +88,7 @@ export default function CartaMayor() {
         balance: 0
     });
     const [estadisticasAcumulativas, setEstadisticasAcumulativas] = useState({
-        totalApuestasAcum: 0,
+        totalJuegosAcum: 0,
         ganadasAcum: 0,
         perdidasAcum: 0,
         empatesAcum: 0,
@@ -119,7 +121,7 @@ export default function CartaMayor() {
     useEffect(() => {
         const cargarProbabilidades = async () => {
             try {
-                const res = await axios.get(`${API_URL}/juegos/cartamayor/probabilidades`);
+                const res = await axios.get(`${API_URL}/juegos/piedrapapeltijera/probabilidades`);
                 setProbabilidades(res.data.probabilidades);
             } catch (error) {
                 console.error("Error al cargar probabilidades:", error);
@@ -130,20 +132,20 @@ export default function CartaMayor() {
 
     // Cargar historial y estadísticas desde localStorage al iniciar
     useEffect(() => {
-        const historialGuardado = localStorage.getItem("historial_cartamayor");
+        const historialGuardado = localStorage.getItem("historial_ppt");
         if (historialGuardado) {
             const historialParsed = JSON.parse(historialGuardado);
             setHistorial(historialParsed);
         }
 
-        const statsAcum = localStorage.getItem("estadisticas_acumulativas_cartamayor");
+        const statsAcum = localStorage.getItem("estadisticas_acumulativas_ppt");
         if (statsAcum) {
             const parsedStats = JSON.parse(statsAcum);
             setEstadisticasAcumulativas(parsedStats);
 
             const balance = parsedStats.gananciaTotalAcum - parsedStats.gastoTotalAcum;
             setEstadisticas({
-                totalApuestas: parsedStats.totalApuestasAcum,
+                totalJuegos: parsedStats.totalJuegosAcum,
                 ganadas: parsedStats.ganadasAcum,
                 perdidas: parsedStats.perdidasAcum,
                 empates: parsedStats.empatesAcum,
@@ -157,31 +159,31 @@ export default function CartaMayor() {
     // Guardar historial en localStorage
     useEffect(() => {
         if (historial.length > 0) {
-            localStorage.setItem("historial_cartamayor", JSON.stringify(historial.slice(0, 15)));
+            localStorage.setItem("historial_ppt", JSON.stringify(historial.slice(0, 15)));
         }
     }, [historial]);
 
     // Guardar estadísticas acumulativas en localStorage
     useEffect(() => {
-        if (estadisticasAcumulativas.totalApuestasAcum > 0) {
-            localStorage.setItem("estadisticas_acumulativas_cartamayor", JSON.stringify(estadisticasAcumulativas));
+        if (estadisticasAcumulativas.totalJuegosAcum > 0) {
+            localStorage.setItem("estadisticas_acumulativas_ppt", JSON.stringify(estadisticasAcumulativas));
         }
     }, [estadisticasAcumulativas]);
 
-    const actualizarEstadisticas = (nuevaApuesta: HistorialApuesta) => {
-        const resultado = nuevaApuesta.resultado;
+    const actualizarEstadisticas = (nuevoJuego: HistorialJuego) => {
+        const resultado = nuevoJuego.resultado;
         
         // Actualizar estadísticas acumulativas
         setEstadisticasAcumulativas(prev => {
-            const nuevoTotal = prev.totalApuestasAcum + 1;
+            const nuevoTotal = prev.totalJuegosAcum + 1;
             const nuevasGanadas = prev.ganadasAcum + (resultado === "gana_usuario" ? 1 : 0);
-            const nuevasPerdidas = prev.perdidasAcum + (resultado === "gana_casa" ? 1 : 0);
+            const nuevasPerdidas = prev.perdidasAcum + (resultado === "gana_maquina" ? 1 : 0);
             const nuevosEmpates = prev.empatesAcum + (resultado === "empate" ? 1 : 0);
-            const nuevaGananciaTotal = prev.gananciaTotalAcum + nuevaApuesta.ganancia;
-            const nuevoGastoTotal = prev.gastoTotalAcum + nuevaApuesta.apostado;
+            const nuevaGananciaTotal = prev.gananciaTotalAcum + nuevoJuego.ganancia;
+            const nuevoGastoTotal = prev.gastoTotalAcum + nuevoJuego.apostado;
 
             return {
-                totalApuestasAcum: nuevoTotal,
+                totalJuegosAcum: nuevoTotal,
                 ganadasAcum: nuevasGanadas,
                 perdidasAcum: nuevasPerdidas,
                 empatesAcum: nuevosEmpates,
@@ -192,16 +194,16 @@ export default function CartaMayor() {
 
         // Actualizar estadísticas visibles
         setEstadisticas(prev => {
-            const nuevoTotal = prev.totalApuestas + 1;
+            const nuevoTotal = prev.totalJuegos + 1;
             const nuevasGanadas = prev.ganadas + (resultado === "gana_usuario" ? 1 : 0);
-            const nuevasPerdidas = prev.perdidas + (resultado === "gana_casa" ? 1 : 0);
+            const nuevasPerdidas = prev.perdidas + (resultado === "gana_maquina" ? 1 : 0);
             const nuevosEmpates = prev.empates + (resultado === "empate" ? 1 : 0);
-            const nuevaGananciaTotal = prev.gananciaTotal + nuevaApuesta.ganancia;
-            const nuevoGastoTotal = prev.gastoTotal + nuevaApuesta.apostado;
+            const nuevaGananciaTotal = prev.gananciaTotal + nuevoJuego.ganancia;
+            const nuevoGastoTotal = prev.gastoTotal + nuevoJuego.apostado;
             const nuevoBalance = nuevaGananciaTotal - nuevoGastoTotal;
 
             return {
-                totalApuestas: nuevoTotal,
+                totalJuegos: nuevoTotal,
                 ganadas: nuevasGanadas,
                 perdidas: nuevasPerdidas,
                 empates: nuevosEmpates,
@@ -213,25 +215,25 @@ export default function CartaMayor() {
     };
 
     const agregarAlHistorial = (
-        carta_usuario: Carta,
-        carta_casa: Carta,
+        eleccion_usuario: Opcion,
+        eleccion_maquina: Opcion,
         resultado: string,
         ganancia: number,
         apostado: number
     ) => {
-        const nuevaApuesta: HistorialApuesta = {
+        const nuevoJuego: HistorialJuego = {
             id: Date.now(),
-            carta_usuario: `${carta_usuario.simbolo}${carta_usuario.palo}`,
-            carta_casa: `${carta_casa.simbolo}${carta_casa.palo}`,
+            eleccion_usuario: eleccion_usuario.emoji,
+            eleccion_maquina: eleccion_maquina.emoji,
             resultado,
             ganancia,
             fecha: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             apostado
         };
 
-        const nuevoHistorial = [nuevaApuesta, ...historial.slice(0, 14)];
+        const nuevoHistorial = [nuevoJuego, ...historial.slice(0, 14)];
         setHistorial(nuevoHistorial);
-        actualizarEstadisticas(nuevaApuesta);
+        actualizarEstadisticas(nuevoJuego);
     };
 
     const animarConfetti = () => {
@@ -262,6 +264,11 @@ export default function CartaMayor() {
             return;
         }
         
+        if (!eleccion) {
+            setMensaje("Debes elegir Piedra, Papel o Tijera.");
+            return;
+        }
+        
         if (apuesta < APUESTA_MINIMA) {
             setMensaje(`La apuesta mínima es $${APUESTA_MINIMA}.`);
             return;
@@ -279,8 +286,11 @@ export default function CartaMayor() {
         try {
             const token = localStorage.getItem("token");
             const res = await axios.post(
-                `${API_URL}/juegos/cartamayor?apuesta=${apuesta}`,
-                {},
+                `${API_URL}/juegos/piedrapapeltijera`,
+                { 
+                    apuesta: apuesta,
+                    eleccion: eleccion
+                },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
@@ -292,8 +302,8 @@ export default function CartaMayor() {
             // Mostrar resultado
             setResultado({
                 resultado: data.resultado,
-                carta_usuario: data.carta_usuario,
-                carta_casa: data.carta_casa,
+                eleccion_usuario: data.eleccion_usuario,
+                eleccion_maquina: data.eleccion_maquina,
                 ganancia: data.ganancia,
                 mensaje: data.mensaje
             });
@@ -305,8 +315,8 @@ export default function CartaMayor() {
             
             // Agregar al historial
             agregarAlHistorial(
-                data.carta_usuario,
-                data.carta_casa,
+                data.eleccion_usuario,
+                data.eleccion_maquina,
                 data.resultado,
                 data.ganancia,
                 apuesta
@@ -324,14 +334,14 @@ export default function CartaMayor() {
 
     const limpiarHistorial = () => {
         setHistorial([]);
-        localStorage.removeItem("historial_cartamayor");
+        localStorage.removeItem("historial_ppt");
         showMsg("Historial limpiado", "info");
     };
 
     const limpiarTodasEstadisticas = () => {
         setHistorial([]);
         setEstadisticas({
-            totalApuestas: 0,
+            totalJuegos: 0,
             ganadas: 0,
             perdidas: 0,
             empates: 0,
@@ -340,15 +350,15 @@ export default function CartaMayor() {
             balance: 0
         });
         setEstadisticasAcumulativas({
-            totalApuestasAcum: 0,
+            totalJuegosAcum: 0,
             ganadasAcum: 0,
             perdidasAcum: 0,
             empatesAcum: 0,
             gananciaTotalAcum: 0,
             gastoTotalAcum: 0,
         });
-        localStorage.removeItem("historial_cartamayor");
-        localStorage.removeItem("estadisticas_acumulativas_cartamayor");
+        localStorage.removeItem("historial_ppt");
+        localStorage.removeItem("estadisticas_acumulativas_ppt");
         showMsg("Estadísticas reiniciadas completamente", "info");
     };
 
@@ -361,111 +371,149 @@ export default function CartaMayor() {
         setUsuario(null);
     };
 
-    const valoresApuesta = [100, 200, 500, 1000, 2000, 5000, 10000];
+    const valoresApuesta = [50, 100, 200, 500, 1000, 2000, 5000];
 
-    const renderCarta = (carta: Carta, titulo: string, esGanadora: boolean = false) => {
-        const colorPalo = obtenerColorPalo(carta.palo);
-        
+    const renderOpcion = (opcion: Opcion, esSeleccionada: boolean, onClick: () => void) => {
+        const colores = {
+            piedra: 'from-gray-600 to-gray-800 border-gray-500 hover:border-gray-400',
+            papel: 'from-blue-600 to-blue-800 border-blue-500 hover:border-blue-400',
+            tijera: 'from-red-600 to-red-800 border-red-500 hover:border-red-400'
+        };
+
         return (
-            <div className={`relative ${esGanadora ? 'scale-110 z-10' : ''}`}>
-                <div className="text-center mb-4">
-                    <div className="text-lg font-bold text-gray-300 mb-1">{titulo}</div>
-                    <div className="text-sm text-gray-500">{carta.nombre}</div>
-                </div>
-                <div className={`w-40 h-56 mx-auto rounded-2xl ${resultado && esGanadora
-                    ? 'bg-gradient-to-br from-yellow-400/20 to-yellow-600/20 border-4 border-yellow-500 shadow-2xl shadow-yellow-500/30'
-                    : 'bg-gradient-to-br from-white to-gray-100 dark:from-gray-800 dark:to-gray-900 border-4 border-gray-300 dark:border-gray-700 shadow-xl'
-                    } flex flex-col justify-between p-4 relative overflow-hidden`}>
-                    
-                    {/* Esquina superior izquierda */}
-                    <div className="absolute top-3 left-3 flex flex-col items-center">
-                        <div className={`text-2xl font-bold ${colorPalo}`}>{carta.simbolo}</div>
-                        <div className={`text-lg ${colorPalo}`}>{carta.palo}</div>
+            <button
+                onClick={onClick}
+                className={`flex flex-col items-center justify-center p-8 rounded-3xl transition-all duration-300 transform hover:scale-105 active:scale-95 ${esSeleccionada
+                    ? `${colores[opcion.tipo as keyof typeof colores]} border-4 scale-110 shadow-2xl`
+                    : `bg-gradient-to-br ${colores[opcion.tipo as keyof typeof colores]} border-2 opacity-90 hover:opacity-100`
+                    }`}
+            >
+                <div className="text-8xl mb-6">{opcion.emoji}</div>
+                <div className="text-3xl font-bold text-white">{opcion.nombre}</div>
+                {esSeleccionada && (
+                    <div className="mt-4 px-4 py-2 bg-white/20 rounded-full text-sm font-bold text-white">
+                        SELECCIONADO
                     </div>
-                    
-                    {/* Esquina inferior derecha */}
-                    <div className="absolute bottom-3 right-3 flex flex-col items-center rotate-180">
-                        <div className={`text-2xl font-bold ${colorPalo}`}>{carta.simbolo}</div>
-                        <div className={`text-lg ${colorPalo}`}>{carta.palo}</div>
-                    </div>
-                    
-                    {/* Centro de la carta */}
-                    <div className="flex items-center justify-center h-full">
-                        <div className="text-center">
-                            <div className={`text-7xl font-bold ${colorPalo} mb-2`}>{carta.palo}</div>
-                            <div className="text-4xl font-bold text-gray-800 dark:text-gray-200">{carta.simbolo}</div>
-                            <div className="text-lg text-gray-600 dark:text-gray-400 mt-2">{carta.nombre}</div>
-                        </div>
-                    </div>
-                    
-                    {/* Valor en las esquinas adicionales */}
-                    <div className="absolute top-3 right-3 opacity-20">
-                        <div className={`text-xl ${colorPalo}`}>{carta.palo}</div>
-                    </div>
-                    <div className="absolute bottom-3 left-3 opacity-20 rotate-180">
-                        <div className={`text-xl ${colorPalo}`}>{carta.palo}</div>
-                    </div>
-                </div>
-            </div>
+                )}
+            </button>
         );
     };
 
-    const renderResultadoComparacion = () => {
+    const renderResultado = () => {
         if (!resultado) return null;
-        
-        const usuarioMayor = resultado.carta_usuario.valor > resultado.carta_casa.valor;
-        const casaMayor = resultado.carta_usuario.valor < resultado.carta_casa.valor;
-        const empate = resultado.carta_usuario.valor === resultado.carta_casa.valor;
-        
+
+        const getColorResultado = () => {
+            switch (resultado.resultado) {
+                case "gana_usuario": return "from-green-600 to-green-800";
+                case "gana_maquina": return "from-red-600 to-red-800";
+                case "empate": return "from-yellow-600 to-yellow-800";
+                default: return "from-gray-600 to-gray-800";
+            }
+        };
+
+        const getTextoResultado = () => {
+            switch (resultado.resultado) {
+                case "gana_usuario": return "🎉 ¡GANASTE! 🎉";
+                case "gana_maquina": return "😢 ¡PERDISTE! 😢";
+                case "empate": return "🤝 ¡EMPATE! 🤝";
+                default: return "";
+            }
+        };
+
+        const getRelacion = (usuario: Opcion, maquina: Opcion) => {
+            if (usuario.tipo === maquina.tipo) return "vs";
+            
+            const reglas = {
+                piedra: { vence_a: ["tijera"], es_vencido_por: ["papel"] },
+                papel: { vence_a: ["piedra"], es_vencido_por: ["tijera"] },
+                tijera: { vence_a: ["papel"], es_vencido_por: ["piedra"] }
+            };
+
+            if (reglas[usuario.tipo as keyof typeof reglas].vence_a.includes(maquina.tipo)) {
+                return "vence a";
+            } else {
+                return "es vencido por";
+            }
+        };
+
         return (
-            <div className="mt-6 flex items-center justify-center">
-                <div className="text-center">
-                    <div className="text-2xl font-bold text-white mb-2">Comparación:</div>
-                    <div className="flex items-center space-x-8">
-                        <div className={`px-6 py-3 rounded-xl ${usuarioMayor ? 'bg-gradient-to-r from-green-900/50 to-green-800/50 border border-green-500/50' : 'bg-gray-800/50'}`}>
-                            <div className="text-xl font-bold text-white">Tu carta</div>
-                            <div className="text-3xl font-bold text-green-400">{resultado.carta_usuario.valor}</div>
+            <div className="mt-12">
+                <div className={`p-8 rounded-3xl bg-gradient-to-r ${getColorResultado()} border-4 border-white/20`}>
+                    <div className="text-center">
+                        <div className="text-4xl font-bold text-white mb-6">{getTextoResultado()}</div>
+                        
+                        <div className="flex flex-col md:flex-row items-center justify-center space-y-8 md:space-y-0 md:space-x-12">
+                            <div className="text-center">
+                                <div className="text-xl text-gray-300 mb-3">Tu elección</div>
+                                <div className="text-9xl">{resultado.eleccion_usuario.emoji}</div>
+                                <div className="text-2xl font-bold text-white mt-3">{resultado.eleccion_usuario.nombre}</div>
+                            </div>
+                            
+                            <div className="text-center">
+                                <div className="text-5xl text-white font-bold mb-2">{getRelacion(resultado.eleccion_usuario, resultado.eleccion_maquina)}</div>
+                                <div className="text-2xl text-gray-300">VS</div>
+                            </div>
+                            
+                            <div className="text-center">
+                                <div className="text-xl text-gray-300 mb-3">Máquina</div>
+                                <div className="text-9xl">{resultado.eleccion_maquina.emoji}</div>
+                                <div className="text-2xl font-bold text-white mt-3">{resultado.eleccion_maquina.nombre}</div>
+                            </div>
                         </div>
                         
-                        <div className="text-4xl text-yellow-400 font-bold">VS</div>
-                        
-                        <div className={`px-6 py-3 rounded-xl ${casaMayor ? 'bg-gradient-to-r from-red-900/50 to-red-800/50 border border-red-500/50' : 'bg-gray-800/50'}`}>
-                            <div className="text-xl font-bold text-white">Casa</div>
-                            <div className="text-3xl font-bold text-red-400">{resultado.carta_casa.valor}</div>
+                        <div className="mt-8 text-3xl">
+                            {resultado.resultado === "gana_usuario" && (
+                                <span className="text-green-300 font-bold">
+                                    +${resultado.ganancia} (${apuesta} × 2)
+                                </span>
+                            )}
+                            {resultado.resultado === "gana_maquina" && (
+                                <span className="text-red-300 font-bold">
+                                    -${apuesta}
+                                </span>
+                            )}
+                            {resultado.resultado === "empate" && (
+                                <span className="text-yellow-300 font-bold">
+                                    Se devuelven ${apuesta}
+                                </span>
+                            )}
                         </div>
-                    </div>
-                    <div className="mt-4 text-xl">
-                        {usuarioMayor && <span className="text-green-400 font-bold">Tu carta es MAYOR</span>}
-                        {casaMayor && <span className="text-red-400 font-bold">La carta de la casa es MAYOR</span>}
-                        {empate && <span className="text-yellow-400 font-bold">¡EMPATE! Las cartas son iguales</span>}
+                        
+                        <div className="mt-6 text-xl text-gray-200">{resultado.mensaje}</div>
                     </div>
                 </div>
             </div>
         );
     };
 
-    const renderTablaCartas = () => {
+    const renderReglas = () => {
+        if (!probabilidades) return null;
+
         return (
             <div className="mt-8 bg-gray-800/30 rounded-xl p-6">
-                <h4 className="text-lg font-bold text-white mb-4 text-center">📊 Valores de las Cartas</h4>
-                <div className="grid grid-cols-4 md:grid-cols-7 gap-3">
-                    {Object.entries(VALORES_CARTAS).map(([valorStr, datos]) => {
-                        const valor = parseInt(valorStr);
-                        const [nombre, simbolo] = datos;
-                        const palo = "♠️"; // Solo para mostrar ejemplo
-                        const colorPalo = obtenerColorPalo(palo);
-                        
-                        return (
-                            <div key={valor} className="text-center p-3 bg-gray-800/50 rounded-lg border border-gray-700/50">
-                                <div className={`text-2xl font-bold ${colorPalo}`}>{simbolo}</div>
-                                <div className="text-xs text-gray-400">{nombre}</div>
-                                <div className="text-sm font-bold text-yellow-400 mt-1">Valor: {valor}</div>
-                            </div>
-                        );
-                    })}
+                <h4 className="text-lg font-bold text-white mb-4 text-center">📜 Reglas del Juego</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="text-center p-4 bg-gray-800/50 rounded-lg border border-gray-700/50">
+                        <div className="text-3xl mb-2">🪨</div>
+                        <div className="text-lg font-bold text-white mb-1">Piedra</div>
+                        <div className="text-gray-400 text-sm">Vence a Tijera</div>
+                        <div className="text-gray-500 text-xs mt-2">Es vencida por Papel</div>
+                    </div>
+                    <div className="text-center p-4 bg-gray-800/50 rounded-lg border border-gray-700/50">
+                        <div className="text-3xl mb-2">📄</div>
+                        <div className="text-lg font-bold text-white mb-1">Papel</div>
+                        <div className="text-gray-400 text-sm">Vence a Piedra</div>
+                        <div className="text-gray-500 text-xs mt-2">Es vencido por Tijera</div>
+                    </div>
+                    <div className="text-center p-4 bg-gray-800/50 rounded-lg border border-gray-700/50">
+                        <div className="text-3xl mb-2">✂️</div>
+                        <div className="text-lg font-bold text-white mb-1">Tijera</div>
+                        <div className="text-gray-400 text-sm">Vence a Papel</div>
+                        <div className="text-gray-500 text-xs mt-2">Es vencida por Piedra</div>
+                    </div>
                 </div>
-                <div className="mt-4 text-center text-gray-400 text-sm">
-                    Las cartas van del As (valor 1) al Rey (valor 13)
+                <div className="mt-4 text-center text-sm text-gray-400">
+                    El ciclo es: Piedra → Tijera → Papel → Piedra
                 </div>
             </div>
         );
@@ -475,7 +523,7 @@ export default function CartaMayor() {
         return (
             <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 flex items-center justify-center">
                 <div className="text-center">
-                    <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <div className="w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
                     <p className="text-gray-300 text-xl font-bold">Cargando juego...</p>
                 </div>
             </div>
@@ -508,29 +556,29 @@ export default function CartaMayor() {
 
             {/* Hero Section */}
             <section className="relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-purple-500/10"></div>
-                <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full blur-3xl opacity-20"></div>
-                <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-r from-red-500 to-yellow-500 rounded-full blur-3xl opacity-20"></div>
+                <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-purple-500/10"></div>
+                <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-r from-green-500 to-purple-500 rounded-full blur-3xl opacity-20"></div>
+                <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-r from-blue-500 to-red-500 rounded-full blur-3xl opacity-20"></div>
 
                 <div className="container mx-auto px-4 py-12 relative z-10">
                     <div className="text-center max-w-4xl mx-auto">
                         <div className="inline-block mb-6">
-                            <span className="px-4 py-2 bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 rounded-full text-sm font-bold text-blue-400">
-                                🃏 CARTA MAYOR
+                            <span className="px-4 py-2 bg-gradient-to-r from-green-600/20 to-purple-600/20 border border-green-500/30 rounded-full text-sm font-bold text-green-400">
+                                🪨📄✂️ PIEDRA, PAPEL O TIJERA
                             </span>
                         </div>
 
                         <h1 className="text-4xl md:text-5xl font-bold mb-6">
-                            <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-blue-400 bg-clip-text text-transparent">
-                                Desafía a la Casa
+                            <span className="bg-gradient-to-r from-green-400 via-purple-400 to-green-400 bg-clip-text text-transparent">
+                                Clásico Atemporal
                             </span>
                             <br />
-                            <span className="text-white">¡Tu carta vs la carta de la casa!</span>
+                            <span className="text-white">¡Desafía a la máquina!</span>
                         </h1>
 
                         <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
                             Apuesta desde <span className="text-yellow-400 font-bold">${APUESTA_MINIMA}</span>.
-                            <span className="text-green-400 font-bold"> ¡Gana el doble si tu carta es mayor!</span>
+                            <span className="text-green-400 font-bold"> ¡Gana el doble si vences a la máquina!</span>
                             <br />
                             <span className="text-blue-400">⚖️ Empate: se devuelve tu apuesta</span>
                         </p>
@@ -577,7 +625,7 @@ export default function CartaMayor() {
                                             step={50}
                                             value={apuesta}
                                             onChange={(e) => setApuesta(parseInt(e.target.value))}
-                                            className="w-full h-4 bg-gray-700 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-8 [&::-webkit-slider-thumb]:w-8 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-gradient-to-r [&::-webkit-slider-thumb]:from-blue-500 [&::-webkit-slider-thumb]:to-purple-500"
+                                            className="w-full h-4 bg-gray-700 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-8 [&::-webkit-slider-thumb]:w-8 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-gradient-to-r [&::-webkit-slider-thumb]:from-green-500 [&::-webkit-slider-thumb]:to-purple-500"
                                         />
                                         <div className="flex justify-between w-full text-gray-400 text-sm">
                                             <span>${APUESTA_MINIMA}</span>
@@ -595,7 +643,7 @@ export default function CartaMayor() {
                                                     onClick={() => setApuesta(valor)}
                                                     disabled={valor > (usuario?.saldo || 0)}
                                                     className={`px-4 py-3 rounded-lg font-bold transition-all duration-200 ${apuesta === valor
-                                                        ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white scale-105'
+                                                        ? 'bg-gradient-to-r from-green-600 to-purple-600 text-white scale-105'
                                                         : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                                                         } ${valor > (usuario?.saldo || 0) ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                 >
@@ -604,80 +652,36 @@ export default function CartaMayor() {
                                             ))}
                                         </div>
                                         <div className="text-sm text-gray-500 text-center">
-                            Ganancia potencial: <span className="text-green-400 font-bold">${apuesta * 2}</span>
+                                            Ganancia potencial: <span className="text-green-400 font-bold">${apuesta * 2}</span>
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Cartas */}
+                                {/* Selección de opciones */}
                                 <div className="mb-10">
-                                    <div className="flex flex-col md:flex-row justify-center items-center space-y-10 md:space-y-0 md:space-x-16">
-                                        {resultado ? (
-                                            <>
-                                                {renderCarta(
-                                                    resultado.carta_usuario,
-                                                    "Tu Carta",
-                                                    resultado.resultado === "gana_usuario"
+                                    <label className="block text-white text-xl font-bold mb-8 text-center">
+                                        ✋ Elige tu jugada
+                                    </label>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        {Object.values(OPCIONES).map((opcion) => (
+                                            <div key={opcion.tipo}>
+                                                {renderOpcion(
+                                                    opcion,
+                                                    eleccion === opcion.tipo,
+                                                    () => setEleccion(opcion.tipo)
                                                 )}
-                                                
-                                                <div className="flex flex-col items-center">
-                                                    <div className="text-5xl text-yellow-400 font-bold mb-4">VS</div>
-                                                    <div className="text-center">
-                                                        <div className="text-lg text-gray-400">Apuesta:</div>
-                                                        <div className="text-2xl font-bold text-yellow-400">${apuesta}</div>
-                                                    </div>
-                                                </div>
-                                                
-                                                {renderCarta(
-                                                    resultado.carta_casa,
-                                                    "Casa",
-                                                    resultado.resultado === "gana_casa"
-                                                )}
-                                            </>
-                                        ) : (
-                                            <>
-                                                <div className="text-center">
-                                                    <div className="text-lg font-bold text-gray-300 mb-4">Tu Carta</div>
-                                                    <div className="w-40 h-56 mx-auto rounded-2xl bg-gradient-to-br from-gray-800 to-gray-900 border-4 border-gray-700 shadow-xl flex items-center justify-center">
-                                                        <div className="text-center">
-                                                            <div className="text-5xl mb-4">🃏</div>
-                                                            <div className="text-gray-400">?</div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                
-                                                <div className="flex flex-col items-center">
-                                                    <div className="text-5xl text-gray-500 font-bold mb-4">VS</div>
-                                                    <div className="text-center">
-                                                        <div className="text-lg text-gray-400">Apuesta:</div>
-                                                        <div className="text-2xl font-bold text-yellow-400">${apuesta}</div>
-                                                    </div>
-                                                </div>
-                                                
-                                                <div className="text-center">
-                                                    <div className="text-lg font-bold text-gray-300 mb-4">Casa</div>
-                                                    <div className="w-40 h-56 mx-auto rounded-2xl bg-gradient-to-br from-gray-800 to-gray-900 border-4 border-gray-700 shadow-xl flex items-center justify-center">
-                                                        <div className="text-center">
-                                                            <div className="text-5xl mb-4">🏠</div>
-                                                            <div className="text-gray-400">?</div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </>
-                                        )}
+                                            </div>
+                                        ))}
                                     </div>
-                                    
-                                    {/* Comparación de valores */}
-                                    {resultado && renderResultadoComparacion()}
-                                    <div></div>
+                                </div>
 
-                                    {/* Botón de jugar */}
+                                {/* Botón de jugar */}
                                 <button
                                     onClick={realizarJugada}
-                                    disabled={jugando || apuesta < APUESTA_MINIMA || apuesta > usuario.saldo}
-                                    className={`w-full py-5 px-8 rounded-xl font-bold text-xl transition-all duration-300 ${jugando || apuesta < APUESTA_MINIMA || apuesta > usuario.saldo
+                                    disabled={jugando || !eleccion || apuesta < APUESTA_MINIMA || apuesta > usuario.saldo}
+                                    className={`w-full py-5 px-8 rounded-xl font-bold text-xl transition-all duration-300 ${jugando || !eleccion || apuesta < APUESTA_MINIMA || apuesta > usuario.saldo
                                         ? 'bg-gray-600 cursor-not-allowed opacity-70'
-                                        : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 hover:scale-105 active:scale-95 shadow-lg shadow-blue-500/20'
+                                        : 'bg-gradient-to-r from-green-600 to-purple-600 hover:from-green-500 hover:to-purple-500 hover:scale-105 active:scale-95 shadow-lg shadow-green-500/20'
                                         }`}
                                 >
                                     {jugando ? (
@@ -686,49 +690,18 @@ export default function CartaMayor() {
                                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                                             </svg>
-                                            Repartiendo cartas...
+                                            Jugando...
                                         </span>
                                     ) : (
-                                        `🎯 Apostar $${apuesta}`
+                                        `🎮 Jugar por $${apuesta}`
                                     )}
                                 </button>
 
-                                {/* Resultado detallado */}
-                                {resultado && (
-                                    <div className="mt-10 p-8 bg-gradient-to-r from-gray-800/70 to-gray-900/70 border-2 border-blue-500/30 rounded-3xl">
-                                        <div className="text-center">
-                                            <div className="text-4xl font-bold text-white mb-4">
-                                                {resultado.resultado === "gana_usuario" && "🎉 ¡GANASTE! 🎉"}
-                                                {resultado.resultado === "gana_casa" && "😢 ¡PERDISTE! 😢"}
-                                                {resultado.resultado === "empate" && "🤝 ¡EMPATE! 🤝"}
-                                            </div>
-                                            
-                                            <div className="text-3xl mb-6">
-                                                {resultado.resultado === "gana_usuario" && (
-                                                    <span className="text-green-400 font-bold">
-                                                        +${resultado.ganancia} (${apuesta} × 2)
-                                                    </span>
-                                                )}
-                                                {resultado.resultado === "gana_casa" && (
-                                                    <span className="text-red-400 font-bold">
-                                                        -${apuesta}
-                                                    </span>
-                                                )}
-                                                {resultado.resultado === "empate" && (
-                                                    <span className="text-yellow-400 font-bold">
-                                                        Se devuelven ${apuesta}
-                                                    </span>
-                                                )}
-                                            </div>
-                                            
-                                            <div className="text-xl text-gray-400">{resultado.mensaje}</div>
-                                        </div>
-                                    </div>
-                                )}
-                                    
-                                    {/* Tabla de valores de cartas */}
-                                    {renderTablaCartas()}
-                                </div>
+                                {/* Resultado */}
+                                {renderResultado()}
+
+                                {/* Reglas */}
+                                {renderReglas()}
                             </div>
                         </div>
                     </div>
@@ -749,15 +722,15 @@ export default function CartaMayor() {
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="text-center p-4 bg-gray-800/40 rounded-xl border border-gray-700/50">
-                                    <div className="text-sm text-gray-400">Total Apuestas</div>
-                                    <div className="text-2xl font-bold text-blue-400">{estadisticas.totalApuestas}</div>
+                                    <div className="text-sm text-gray-400">Total Juegos</div>
+                                    <div className="text-2xl font-bold text-blue-400">{estadisticas.totalJuegos}</div>
                                 </div>
                                 <div className="text-center p-4 bg-gray-800/40 rounded-xl border border-gray-700/50">
                                     <div className="text-sm text-gray-400">Ganadas</div>
                                     <div className="text-2xl font-bold text-green-400">{estadisticas.ganadas}</div>
                                     <div className="text-xs text-gray-500 mt-1">
-                                        {estadisticas.totalApuestas > 0 
-                                            ? `${((estadisticas.ganadas / estadisticas.totalApuestas) * 100).toFixed(1)}%`
+                                        {estadisticas.totalJuegos > 0 
+                                            ? `${((estadisticas.ganadas / estadisticas.totalJuegos) * 100).toFixed(1)}%`
                                             : '0%'}
                                     </div>
                                 </div>
@@ -765,8 +738,8 @@ export default function CartaMayor() {
                                     <div className="text-sm text-gray-400">Perdidas</div>
                                     <div className="text-2xl font-bold text-red-400">{estadisticas.perdidas}</div>
                                     <div className="text-xs text-gray-500 mt-1">
-                                        {estadisticas.totalApuestas > 0 
-                                            ? `${((estadisticas.perdidas / estadisticas.totalApuestas) * 100).toFixed(1)}%`
+                                        {estadisticas.totalJuegos > 0 
+                                            ? `${((estadisticas.perdidas / estadisticas.totalJuegos) * 100).toFixed(1)}%`
                                             : '0%'}
                                     </div>
                                 </div>
@@ -774,8 +747,8 @@ export default function CartaMayor() {
                                     <div className="text-sm text-gray-400">Empates</div>
                                     <div className="text-2xl font-bold text-yellow-400">{estadisticas.empates}</div>
                                     <div className="text-xs text-gray-500 mt-1">
-                                        {estadisticas.totalApuestas > 0 
-                                            ? `${((estadisticas.empates / estadisticas.totalApuestas) * 100).toFixed(1)}%`
+                                        {estadisticas.totalJuegos > 0 
+                                            ? `${((estadisticas.empates / estadisticas.totalJuegos) * 100).toFixed(1)}%`
                                             : '0%'}
                                     </div>
                                 </div>
@@ -824,12 +797,12 @@ export default function CartaMayor() {
                                         <div>
                                             <div className="flex justify-between mb-1">
                                                 <span className="text-red-400">Pierdes</span>
-                                                <span className="text-gray-400">{probabilidades.gana_casa}%</span>
+                                                <span className="text-gray-400">{probabilidades.gana_maquina}%</span>
                                             </div>
                                             <div className="w-full bg-gray-700 rounded-full h-3">
                                                 <div 
                                                     className="bg-gradient-to-r from-red-500 to-red-600 h-3 rounded-full" 
-                                                    style={{ width: `${probabilidades.gana_casa}%` }}
+                                                    style={{ width: `${probabilidades.gana_maquina}%` }}
                                                 ></div>
                                             </div>
                                         </div>
@@ -848,7 +821,7 @@ export default function CartaMayor() {
                                     </>
                                 ) : (
                                     <div className="text-center py-4">
-                                        <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                                        <div className="w-8 h-8 border-2 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
                                         <p className="text-gray-400">Cargando probabilidades...</p>
                                     </div>
                                 )}
@@ -877,40 +850,40 @@ export default function CartaMayor() {
 
                             {historial.length === 0 ? (
                                 <div className="text-center py-8">
-                                    <div className="text-4xl mb-3">🃏</div>
+                                    <div className="text-4xl mb-3">🪨📄✂️</div>
                                     <p className="text-gray-400">No hay juegos registrados</p>
-                                    <p className="text-sm text-gray-500 mt-1">Realiza tu primera apuesta</p>
+                                    <p className="text-sm text-gray-500 mt-1">Realiza tu primera jugada</p>
                                 </div>
                             ) : (
                                 <div className="space-y-3 max-h-80 overflow-y-auto pr-2">
                                     {historial.map((juego) => (
                                         <div key={juego.id} className={`p-4 rounded-xl border ${juego.resultado === "gana_usuario"
                                             ? 'bg-gradient-to-r from-green-900/20 to-green-800/10 border-green-500/30'
-                                            : juego.resultado === "gana_casa"
+                                            : juego.resultado === "gana_maquina"
                                                 ? 'bg-gradient-to-r from-red-900/20 to-red-800/10 border-red-500/30'
                                                 : 'bg-gradient-to-r from-yellow-900/20 to-yellow-800/10 border-yellow-500/30'
                                             }`}>
                                             <div className="flex justify-between items-center">
                                                 <div>
                                                     <div className="flex items-center space-x-3">
-                                                        <div className="text-lg">{juego.carta_usuario}</div>
+                                                        <div className="text-2xl">{juego.eleccion_usuario}</div>
                                                         <div className="text-gray-400">vs</div>
-                                                        <div className="text-lg">{juego.carta_casa}</div>
+                                                        <div className="text-2xl">{juego.eleccion_maquina}</div>
                                                     </div>
                                                     <div className="text-sm text-gray-400 mt-1">{juego.fecha}</div>
                                                     <div className="text-xs text-gray-500">Apostado: ${juego.apostado}</div>
                                                 </div>
                                                 <div className={`text-right ${juego.resultado === "gana_usuario" ? 'text-green-400' :
-                                                    juego.resultado === "gana_casa" ? 'text-red-400' : 'text-yellow-400'
+                                                    juego.resultado === "gana_maquina" ? 'text-red-400' : 'text-yellow-400'
                                                     }`}>
                                                     <div className="text-2xl font-bold">
                                                         {juego.resultado === "gana_usuario" ? `+$${juego.ganancia}` :
-                                                            juego.resultado === "gana_casa" ? `-$${juego.apostado}` :
+                                                            juego.resultado === "gana_maquina" ? `-$${juego.apostado}` :
                                                                 `±$${juego.apostado}`}
                                                     </div>
                                                     <div className="text-xs text-gray-400">
                                                         {juego.resultado === "gana_usuario" ? `Ganancia: $${juego.ganancia - juego.apostado}` :
-                                                            juego.resultado === "gana_casa" ? 'Pérdida total' :
+                                                            juego.resultado === "gana_maquina" ? 'Pérdida total' :
                                                                 'Empate'}
                                                     </div>
                                                 </div>
@@ -922,35 +895,35 @@ export default function CartaMayor() {
                         </div>
 
                         {/* Información */}
-                        <div className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 rounded-2xl p-6">
+                        <div className="bg-gradient-to-r from-green-600/20 to-purple-600/20 border border-green-500/30 rounded-2xl p-6">
                             <h4 className="text-lg font-bold text-white mb-3">💡 Cómo jugar</h4>
                             <ul className="space-y-3 text-gray-300">
                                 <li className="flex items-start space-x-2">
-                                    <span className="text-blue-400">•</span>
+                                    <span className="text-green-400">•</span>
                                     <span>Elige la cantidad a apostar (mínimo ${APUESTA_MINIMA})</span>
                                 </li>
                                 <li className="flex items-start space-x-2">
-                                    <span className="text-blue-400">•</span>
-                                    <span>Se reparte una carta al <span className="text-green-300">usuario</span> y otra a la <span className="text-red-300">casa</span></span>
+                                    <span className="text-green-400">•</span>
+                                    <span>Selecciona <span className="text-gray-300">🪨 Piedra</span>, <span className="text-blue-300">📄 Papel</span> o <span className="text-red-300">✂️ Tijera</span></span>
                                 </li>
                                 <li className="flex items-start space-x-2">
-                                    <span className="text-blue-400">•</span>
-                                    <span>Cartas del As (1) al Rey (13)</span>
+                                    <span className="text-green-400">•</span>
+                                    <span>La máquina elegirá aleatoriamente</span>
                                 </li>
                                 <li className="flex items-start space-x-2">
-                                    <span className="text-blue-400">•</span>
-                                    <span><span className="text-green-400">Ganas</span> si tu carta es MAYOR que la de la casa (x2)</span>
+                                    <span className="text-green-400">•</span>
+                                    <span><span className="text-green-400">Ganas</span> si vences a la máquina (x2)</span>
                                 </li>
                                 <li className="flex items-start space-x-2">
-                                    <span className="text-blue-400">•</span>
-                                    <span><span className="text-red-400">Pierdes</span> si tu carta es MENOR que la de la casa</span>
+                                    <span className="text-green-400">•</span>
+                                    <span><span className="text-red-400">Pierdes</span> si la máquina te vence</span>
                                 </li>
                                 <li className="flex items-start space-x-2">
-                                    <span className="text-blue-400">•</span>
+                                    <span className="text-green-400">•</span>
                                     <span><span className="text-yellow-400">Empate</span>: se devuelve tu apuesta</span>
                                 </li>
                                 <li className="flex items-start space-x-2">
-                                    <span className="text-blue-400">•</span>
+                                    <span className="text-green-400">•</span>
                                     <span>¡Juega con responsabilidad!</span>
                                 </li>
                             </ul>
