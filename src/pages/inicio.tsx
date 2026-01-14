@@ -200,7 +200,7 @@ const Inicio: React.FC = () => {
     return (
       <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
         <Link
-          to="/inversion"
+          to="/inversiones"
           className="group bg-gradient-to-r from-teal-600 to-green-600 hover:from-teal-700 hover:to-green-700 text-white px-8 py-4 rounded-2xl font-bold text-lg transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-teal-500/25 flex items-center space-x-3"
         >
           <span>🚀</span>
@@ -308,7 +308,7 @@ const Inicio: React.FC = () => {
 
                 <div className="mt-5">
                   <Link
-                    to="/inversion"
+                    to="/inversiones"
                     className="inline-block w-full text-center bg-gradient-to-r from-teal-600 to-green-600 hover:from-teal-700 hover:to-green-700 text-white px-6 py-3 rounded-xl font-bold transition-all duration-300 hover:scale-[1.01]"
                   >
                     Ver Inversiones
@@ -409,7 +409,7 @@ const Inicio: React.FC = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           <Link
-            to="/inversion"
+            to="/inversiones"
             className="lg:col-span-2 bg-gradient-to-br from-teal-900/35 to-green-900/25 rounded-2xl p-7 border border-teal-500/25 hover:border-teal-500/50 transition-all duration-300 hover:scale-[1.01]"
           >
             <div className="flex items-center justify-between mb-4">
@@ -522,7 +522,7 @@ const Inicio: React.FC = () => {
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
-                to="/inversion"
+                to="/inversiones"
                 className="bg-gradient-to-r from-teal-600 to-green-600 hover:from-teal-700 hover:to-green-700 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all duration-300 hover:scale-105"
               >
                 💰 Ir a Inversiones
