@@ -57,15 +57,11 @@ const COLORES: { [key: number]: string } = {
 // Tipos de apuestas
 const TIPOS_APUESTA = [
     { id: "numero_pleno", nombre: "Número Pleno", multiplicador: 35, color: "bg-purple-600" },
-    { id: "split", nombre: "Split", multiplicador: 17, color: "bg-blue-600" },
-    { id: "calle", nombre: "Calle", multiplicador: 11, color: "bg-green-600" },
-    { id: "esquina", nombre: "Esquina", multiplicador: 8, color: "bg-yellow-600" },
-    { id: "linea", nombre: "Línea", multiplicador: 5, color: "bg-pink-600" },
     { id: "docena", nombre: "Docena", multiplicador: 2, color: "bg-indigo-600" },
     { id: "columna", nombre: "Columna", multiplicador: 2, color: "bg-teal-600" },
-    { id: "rojo_negro", nombre: "Rojo/Negro", multiplicador: 1, color: "bg-red-600" },
-    { id: "par_impar", nombre: "Par/Impar", multiplicador: 1, color: "bg-orange-600" },
-    { id: "bajo_alto", nombre: "Bajo/Alto", multiplicador: 1, color: "bg-cyan-600" }
+    { id: "rojo_negro", nombre: "Rojo/Negro", multiplicador: 2, color: "bg-red-600" },
+    { id: "par_impar", nombre: "Par/Impar", multiplicador: 2, color: "bg-orange-600" },
+    { id: "bajo_alto", nombre: "Bajo/Alto", multiplicador: 2, color: "bg-cyan-600" }
 ];
 
 export default function RuletaEuropea() {
@@ -344,7 +340,7 @@ export default function RuletaEuropea() {
         try {
             const token = localStorage.getItem("token");
             const res = await axios.post(
-                `${API_URL}/juegos/ruletaeuropea?apuestas=${apuestasFormateadas}`,
+                `${API_URL}/juegos/ruletaeuropea?apuestas=${encodeURIComponent(JSON.stringify(apuestasFormateadas))}`,
                 { },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
