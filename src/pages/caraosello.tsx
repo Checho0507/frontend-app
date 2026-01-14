@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import confetti from "canvas-confetti";
@@ -52,6 +52,12 @@ export default function CaraSello() {
         gastoTotalAcum: 0,
     });
     const [notificacion, setNotificacion] = useState<{ text: string; type?: "success" | "error" | "info" } | null>(null);
+    
+    // Nuevos estados para animación
+    const [animandoMoneda, setAnimandoMoneda] = useState(false);
+    const [resultadoAnimacion, setResultadoAnimacion] = useState<string | null>(null);
+    const [mostrarResultadoFinal, setMostrarResultadoFinal] = useState(false);
+    const animacionRef = useRef<number | null>(null);
 
     // Obtener usuario al cargar
     useEffect(() => {
@@ -96,6 +102,15 @@ export default function CaraSello() {
                 balance: balance
             });
         }
+    }, []);
+
+    // Limpiar animación al desmontar
+    useEffect(() => {
+        return () => {
+            if (animacionRef.current) {
+                clearInterval(animacionRef.current);
+            }
+        };
     }, []);
 
     // Guardar historial en localStorage
@@ -190,6 +205,44 @@ export default function CaraSello() {
         }, 250);
     };
 
+    // Animación de moneda girando
+    const animarMoneda = (resultadoFinal: string) => {
+        setAnimandoMoneda(true);
+        setMostrarResultadoFinal(false);
+        setResultadoAnimacion(null);
+        
+        let frame = 0;
+        const totalFrames = 20; // 2 segundos a 10 frames por segundo
+        const interval = 100; // 100ms por frame
+        
+        animacionRef.current = window.setInterval(() => {
+            frame++;
+            
+            // Alternar entre cara y sello durante la animación
+            if (frame % 2 === 0) {
+                setResultadoAnimacion('cara');
+            } else {
+                setResultadoAnimacion('sello');
+            }
+            
+            if (frame >= totalFrames) {
+                if (animacionRef.current) {
+                    clearInterval(animacionRef.current);
+                }
+                
+                // Mostrar el resultado final
+                setResultadoAnimacion(resultadoFinal);
+                setMostrarResultadoFinal(true);
+                setAnimandoMoneda(false);
+                
+                // Animación de confetti si ganó
+                if (resultado?.gano) {
+                    animarConfetti();
+                }
+            }
+        }, interval);
+    };
+
     const realizarApuesta = async () => {
         if (!usuario) {
             setMensaje("Debes iniciar sesión para jugar.");
@@ -214,6 +267,11 @@ export default function CaraSello() {
         setJugando(true);
         setMensaje(null);
         setResultado(null);
+        setMostrarResultadoFinal(false);
+        setAnimandoMoneda(false);
+        if (animacionRef.current) {
+            clearInterval(animacionRef.current);
+        }
 
         try {
             const token = localStorage.getItem("token");
@@ -228,7 +286,7 @@ export default function CaraSello() {
             // Actualizar saldo del usuario
             setUsuario(prev => prev ? { ...prev, saldo: data.nuevo_saldo } : null);
 
-            // Mostrar resultado
+            // Guardar resultado para mostrarlo después de la animación
             setResultado({
                 gano: data.gano,
                 resultado: data.resultado,
@@ -236,26 +294,24 @@ export default function CaraSello() {
                 mensaje: data.mensaje
             });
 
-            // Animación de confetti si ganó
-            if (data.gano) {
-                animarConfetti();
-            }
+            // Iniciar animación de la moneda
+            animarMoneda(data.resultado);
 
-            // Agregar al historial
-            agregarAlHistorial(
-                eleccion,
-                data.resultado,
-                data.ganancia,
-                apuesta,
-                data.gano
-            );
-
-            setMensaje(data.mensaje);
+            // Agregar al historial después de la animación
+            setTimeout(() => {
+                agregarAlHistorial(
+                    eleccion,
+                    data.resultado,
+                    data.ganancia,
+                    apuesta,
+                    data.gano
+                );
+                setMensaje(data.mensaje);
+            }, 2000);
 
         } catch (err: any) {
             console.error("Error al realizar apuesta:", err);
             setMensaje(err.response?.data?.detail || "Error al procesar la apuesta");
-        } finally {
             setJugando(false);
         }
     };
@@ -299,6 +355,104 @@ export default function CaraSello() {
 
     const valoresApuesta = [100, 200, 500, 1000, 2000, 5000, 10000];
 
+    // Componente de Moneda Animada
+    const MonedaAnimada = () => {
+        const lado = resultadoAnimacion || 'cara';
+        const esGirando = animandoMoneda;
+        
+        return (
+            <div className="relative flex flex-col items-center justify-center">
+                {/* Moneda girando */}
+                <div className={`relative w-48 h-48 ${esGirando ? 'animate-spin-fast' : ''}`}>
+                    {/* Cara */}
+                    <div className={`absolute inset-0 transition-all duration-300 ${lado === 'cara' ? 'opacity-100' : 'opacity-0'}`}>
+                        <div className="relative w-full h-full">
+                            <div className="absolute inset-0 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full"></div>
+                            <div className="absolute inset-4 bg-gradient-to-br from-yellow-300 to-yellow-500 rounded-full"></div>
+                            <div className="absolute top-12 left-12 w-6 h-6 bg-gradient-to-br from-gray-800 to-gray-900 rounded-full"></div>
+                            <div className="absolute top-12 right-12 w-6 h-6 bg-gradient-to-br from-gray-800 to-gray-900 rounded-full"></div>
+                            <div className="absolute bottom-16 left-16 right-16 h-3 bg-gradient-to-r from-gray-800 to-gray-900 rounded-full"></div>
+                            <div className="absolute inset-0 border-4 border-yellow-700 rounded-full opacity-50"></div>
+                        </div>
+                    </div>
+                    
+                    {/* Sello */}
+                    <div className={`absolute inset-0 transition-all duration-300 ${lado === 'sello' ? 'opacity-100' : 'opacity-0'}`}>
+                        <div className="relative w-full h-full">
+                            <div className="absolute inset-0 bg-gradient-to-br from-red-400 to-red-600 rounded-full"></div>
+                            <div className="absolute inset-4 bg-gradient-to-br from-red-300 to-red-500 rounded-full"></div>
+                            <div className="absolute inset-8 flex items-center justify-center">
+                                <div className="relative w-20 h-20">
+                                    <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900 rounded-full transform rotate-45"></div>
+                                    <div className="absolute inset-2 bg-gradient-to-br from-gray-700 to-gray-800 rounded-full transform rotate-45"></div>
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                        <div className="w-2 h-8 bg-gradient-to-b from-yellow-400 to-yellow-600 rounded-full"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="absolute inset-0 border-4 border-red-700 rounded-full opacity-50"></div>
+                        </div>
+                    </div>
+                    
+                    {/* Efecto de brillo */}
+                    <div className="absolute inset-0 rounded-full overflow-hidden">
+                        <div className={`absolute inset-0 bg-gradient-to-br from-white/20 to-transparent ${esGirando ? 'animate-pulse' : ''}`}></div>
+                    </div>
+                </div>
+                
+                {/* Texto de animación */}
+                {esGirando && (
+                    <div className="mt-6 text-center">
+                        <div className="text-2xl font-bold text-yellow-300 animate-pulse">
+                            ¡La moneda está girando!
+                        </div>
+                        <div className="text-gray-400 mt-2">
+                            Aguarda el resultado...
+                        </div>
+                    </div>
+                )}
+                
+                {/* Resultado final */}
+                {mostrarResultadoFinal && resultado && (
+                    <div className="mt-6 text-center">
+                        <div className={`text-4xl font-bold mb-2 ${resultado.gano ? 'text-green-400' : 'text-red-400'}`}>
+                            {resultado.gano ? '🎉 ¡GANASTE! 🎉' : '😢 ¡PERDISTE! 😢'}
+                        </div>
+                        <div className="text-xl text-gray-300">
+                            Resultado: <span className={`font-bold ${resultado.resultado === 'cara' ? 'text-yellow-400' : 'text-red-400'}`}>
+                                {resultado.resultado.toUpperCase()}
+                            </span>
+                        </div>
+                        <div className="text-2xl mt-2">
+                            {resultado.gano ? (
+                                <span className="text-green-400 font-bold">
+                                    +${resultado.ganancia} (${apuesta} × 2)
+                                </span>
+                            ) : (
+                                <span className="text-red-400 font-bold">
+                                    -${apuesta}
+                                </span>
+                            )}
+                        </div>
+                        <div className="text-gray-400 mt-2">{resultado.mensaje}</div>
+                        
+                        {/* Botón para apostar de nuevo */}
+                        <button
+                            onClick={() => {
+                                setMostrarResultadoFinal(false);
+                                setResultado(null);
+                                setEleccion(null);
+                            }}
+                            className="mt-6 px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 rounded-xl font-bold text-white transition-all duration-300"
+                        >
+                            🎯 Apostar de Nuevo
+                        </button>
+                    </div>
+                )}
+            </div>
+        );
+    };
+
     if (!usuario) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 flex items-center justify-center">
@@ -312,6 +466,25 @@ export default function CaraSello() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900">
+            {/* Estilos para animaciones */}
+            <style>{`
+                @keyframes spin-fast {
+                    0% { transform: rotateY(0deg); }
+                    100% { transform: rotateY(360deg); }
+                }
+                .animate-spin-fast {
+                    animation: spin-fast 0.2s linear infinite;
+                    transform-style: preserve-3d;
+                }
+                @keyframes pulse-glow {
+                    0%, 100% { opacity: 1; }
+                    50% { opacity: 0.7; }
+                }
+                .animate-pulse-glow {
+                    animation: pulse-glow 1s ease-in-out infinite;
+                }
+            `}</style>
+
             {/* Notificación */}
             {notificacion && (
                 <div className={`fixed top-6 right-6 z-50 px-6 py-4 rounded-xl font-bold flex items-center space-x-3 shadow-2xl animate-slideIn ${notificacion.type === "success"
@@ -378,7 +551,7 @@ export default function CaraSello() {
                                     <div className="text-3xl font-bold text-white mb-2">
                                         Saldo: <span className="text-yellow-400">${usuario?.saldo?.toLocaleString() ?? 0}</span>
                                     </div>
-                                    {mensaje && (
+                                    {mensaje && !mostrarResultadoFinal && (
                                         <div className={`px-6 py-4 rounded-xl font-bold mb-4 ${mensaje.includes("Ganaste") || mensaje.includes("¡Ganaste")
                                             ? "bg-gradient-to-r from-green-900/50 to-green-800/50 border border-green-500/50 text-green-200"
                                             : mensaje.includes("Error") || mensaje.includes("insuficiente") || mensaje.includes("Debes") || mensaje.includes("Perdiste")
@@ -390,169 +563,152 @@ export default function CaraSello() {
                                     )}
                                 </div>
 
-                                {/* Selector de apuesta */}
-                                <div className="mb-10">
-                                    <label className="block text-white text-xl font-bold mb-6 text-center">
-                                        💰 ¿Cuánto quieres apostar?
-                                    </label>
-                                    <div className="flex flex-col items-center space-y-6">
-                                        <input
-                                            type="range"
-                                            min={APUESTA_MINIMA}
-                                            max={Math.min(usuario?.saldo || APUESTA_MINIMA, 10000)}
-                                            step={50}
-                                            value={apuesta}
-                                            onChange={(e) => setApuesta(parseInt(e.target.value))}
-                                            className="w-full h-4 bg-gray-700 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-8 [&::-webkit-slider-thumb]:w-8 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-gradient-to-r [&::-webkit-slider-thumb]:from-yellow-500 [&::-webkit-slider-thumb]:to-red-500"
-                                        />
-                                        <div className="flex justify-between w-full text-gray-400 text-sm">
-                                            <span>${APUESTA_MINIMA}</span>
-                                            <span className="text-xl font-bold text-yellow-400">${apuesta}</span>
-                                            <span>${Math.min(usuario?.saldo || APUESTA_MINIMA, 10000)}</span>
+                                {/* Mostrar moneda animada o controles de apuesta */}
+                                {animandoMoneda || mostrarResultadoFinal ? (
+                                    <div className="mb-10 flex flex-col items-center justify-center min-h-[500px]">
+                                        <MonedaAnimada />
+                                    </div>
+                                ) : (
+                                    <>
+                                        {/* Selector de apuesta */}
+                                        <div className="mb-10">
+                                            <label className="block text-white text-xl font-bold mb-6 text-center">
+                                                💰 ¿Cuánto quieres apostar?
+                                            </label>
+                                            <div className="flex flex-col items-center space-y-6">
+                                                <input
+                                                    type="range"
+                                                    min={APUESTA_MINIMA}
+                                                    max={Math.min(usuario?.saldo || APUESTA_MINIMA, 10000)}
+                                                    step={50}
+                                                    value={apuesta}
+                                                    onChange={(e) => setApuesta(parseInt(e.target.value))}
+                                                    className="w-full h-4 bg-gray-700 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-8 [&::-webkit-slider-thumb]:w-8 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-gradient-to-r [&::-webkit-slider-thumb]:from-yellow-500 [&::-webkit-slider-thumb]:to-red-500"
+                                                />
+                                                <div className="flex justify-between w-full text-gray-400 text-sm">
+                                                    <span>${APUESTA_MINIMA}</span>
+                                                    <span className="text-xl font-bold text-yellow-400">${apuesta}</span>
+                                                    <span>${Math.min(usuario?.saldo || APUESTA_MINIMA, 10000)}</span>
+                                                </div>
+                                                <div className="text-center">
+                                                    <div className="text-5xl font-bold text-yellow-400 mb-2">${apuesta}</div>
+                                                    <div className="text-gray-400">Apuesta actual</div>
+                                                </div>
+                                                <div className="flex flex-wrap justify-center gap-3">
+                                                    {valoresApuesta.map((valor) => (
+                                                        <button
+                                                            key={valor}
+                                                            onClick={() => setApuesta(valor)}
+                                                            disabled={valor > (usuario?.saldo || 0)}
+                                                            className={`px-4 py-3 rounded-lg font-bold transition-all duration-200 ${apuesta === valor
+                                                                ? 'bg-gradient-to-r from-yellow-600 to-red-600 text-white scale-105'
+                                                                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                                                                } ${valor > (usuario?.saldo || 0) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                        >
+                                                            ${valor}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                                <div className="text-sm text-gray-500 text-center">
+                                                    Ganancia potencial: <span className="text-green-400 font-bold">${apuesta * 2}</span>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div className="text-center">
-                                            <div className="text-5xl font-bold text-yellow-400 mb-2">${apuesta}</div>
-                                            <div className="text-gray-400">Apuesta actual</div>
-                                        </div>
-                                        <div className="flex flex-wrap justify-center gap-3">
-                                            {valoresApuesta.map((valor) => (
+
+                                        {/* Selección Cara o Sello */}
+                                        <div className="mb-10">
+                                            <label className="block text-white text-xl font-bold mb-6 text-center">
+                                                🪙 Elige Cara o Sello
+                                            </label>
+                                            <div className="flex flex-col md:flex-row justify-center items-center space-y-6 md:space-y-0 md:space-x-12">
                                                 <button
-                                                    key={valor}
-                                                    onClick={() => setApuesta(valor)}
-                                                    disabled={valor > (usuario?.saldo || 0)}
-                                                    className={`px-4 py-3 rounded-lg font-bold transition-all duration-200 ${apuesta === valor
-                                                        ? 'bg-gradient-to-r from-yellow-600 to-red-600 text-white scale-105'
-                                                        : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                                                        } ${valor > (usuario?.saldo || 0) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                    onClick={() => setEleccion("cara")}
+                                                    className={`flex flex-col items-center p-8 rounded-3xl transition-all duration-300 ${eleccion === "cara"
+                                                        ? 'bg-gradient-to-br from-yellow-600/40 to-yellow-800/40 border-4 border-yellow-500 scale-105 shadow-2xl shadow-yellow-500/30'
+                                                        : 'bg-gradient-to-br from-gray-800/60 to-gray-900/60 border-4 border-gray-700 hover:border-yellow-500/50 hover:scale-105'
+                                                        }`}
                                                 >
-                                                    ${valor}
+                                                    <div className="text-8xl mb-4">
+                                                        <div className="relative w-32 h-32">
+                                                            <div className="absolute inset-0 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full"></div>
+                                                            <div className="absolute inset-4 bg-gradient-to-br from-yellow-300 to-yellow-500 rounded-full"></div>
+                                                            <div className="absolute top-8 left-8 w-5 h-5 bg-gradient-to-br from-gray-800 to-gray-900 rounded-full"></div>
+                                                            <div className="absolute top-8 right-8 w-5 h-5 bg-gradient-to-br from-gray-800 to-gray-900 rounded-full"></div>
+                                                            <div className="absolute bottom-12 left-12 right-12 h-2 bg-gradient-to-r from-gray-800 to-gray-900 rounded-full"></div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-3xl font-bold text-white mb-2">CARA</div>
+                                                    <div className="text-gray-400">(Cara)</div>
+                                                    {eleccion === "cara" && (
+                                                        <div className="mt-4 px-4 py-1 bg-yellow-600 rounded-full text-sm font-bold">
+                                                            SELECCIONADO
+                                                        </div>
+                                                    )}
                                                 </button>
-                                            ))}
-                                        </div>
-                                        <div className="text-sm text-gray-500 text-center">
-                                            Ganancia potencial: <span className="text-green-400 font-bold">${apuesta * 2}</span>
-                                        </div>
-                                    </div>
-                                </div>
 
-                                {/* Selección Cara o Sello */}
-                                <div className="mb-10">
-                                    <label className="block text-white text-xl font-bold mb-6 text-center">
-                                        🪙 Elige Cara o Sello
-                                    </label>
-                                    {/* Botones Cara y Sello, en celulares cambiar tamaño*/}
-                                    <div className="flex flex-col md:flex-row justify-center items-center space-y-6 md:space-y-0 md:space-x-12">
+                                                <div className="text-4xl text-gray-500 font-bold">VS</div>
+
+                                                <button
+                                                    onClick={() => setEleccion("sello")}
+                                                    className={`flex flex-col items-center p-8 rounded-3xl transition-all duration-300 ${eleccion === "sello"
+                                                        ? 'bg-gradient-to-br from-red-600/40 to-red-800/40 border-4 border-red-500 scale-105 shadow-2xl shadow-red-500/30'
+                                                        : 'bg-gradient-to-br from-gray-800/60 to-gray-900/60 border-4 border-gray-700 hover:border-red-500/50 hover:scale-105'
+                                                        }`}
+                                                >
+                                                    <div className="text-8xl mb-4">
+                                                        <div className="relative w-32 h-32">
+                                                            <div className="absolute inset-0 bg-gradient-to-br from-red-400 to-red-600 rounded-full"></div>
+                                                            <div className="absolute inset-4 bg-gradient-to-br from-red-300 to-red-500 rounded-full"></div>
+                                                            <div className="absolute inset-8 flex items-center justify-center">
+                                                                <div className="relative w-16 h-16">
+                                                                    <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900 rounded-full transform rotate-45"></div>
+                                                                    <div className="absolute inset-2 bg-gradient-to-br from-gray-700 to-gray-800 rounded-full transform rotate-45"></div>
+                                                                    <div className="absolute inset-0 flex items-center justify-center">
+                                                                        <div className="w-2 h-6 bg-gradient-to-b from-yellow-400 to-yellow-600 rounded-full"></div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-3xl font-bold text-white mb-2">SELLO</div>
+                                                    <div className="text-gray-400">(Cruz)</div>
+                                                    {eleccion === "sello" && (
+                                                        <div className="mt-4 px-4 py-1 bg-red-600 rounded-full text-sm font-bold">
+                                                            SELECCIONADO
+                                                        </div>
+                                                    )}
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* Botón de jugar */}
                                         <button
-                                            onClick={() => setEleccion("cara")}
-                                            className={`flex flex-col items-center p-8 rounded-3xl transition-all duration-300 ${eleccion === "cara"
-                                                ? 'bg-gradient-to-br from-yellow-600/40 to-yellow-800/40 border-4 border-yellow-500 scale-105 shadow-2xl shadow-yellow-500/30'
-                                                : 'bg-gradient-to-br from-gray-800/60 to-gray-900/60 border-4 border-gray-700 hover:border-yellow-500/50 hover:scale-105'
+                                            onClick={realizarApuesta}
+                                            disabled={jugando || !eleccion || apuesta < APUESTA_MINIMA || apuesta > usuario.saldo}
+                                            className={`w-full py-5 px-8 rounded-xl font-bold text-xl transition-all duration-300 ${jugando || !eleccion || apuesta < APUESTA_MINIMA || apuesta > usuario.saldo
+                                                ? 'bg-gray-600 cursor-not-allowed opacity-70'
+                                                : 'bg-gradient-to-r from-yellow-600 to-red-600 hover:from-yellow-500 hover:to-red-500 hover:scale-105 active:scale-95 shadow-lg shadow-yellow-500/20'
                                                 }`}
                                         >
-                                            <div className="text-8xl mb-4"><svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-
-                                                <circle cx="100" cy="100" r="95" fill="#FFD700" stroke="#C9A000" stroke-width="8" />
-
-                                                <circle cx="100" cy="100" r="75" fill="#FFECB3" />
-
-                                                <circle cx="80" cy="90" r="8" fill="#5A3E1B" />
-                                                <circle cx="120" cy="90" r="8" fill="#5A3E1B" />
-                                                <path d="M75 120 Q100 140 125 120" stroke="#5A3E1B" stroke-width="6" fill="none" />
-                                            </svg>
-                                            </div>
-                                            <div className="text-3xl font-bold text-white mb-2">CARA</div>
-                                            <div className="text-gray-400">(Cara)</div>
-                                            {eleccion === "cara" && (
-                                                <div className="mt-4 px-4 py-1 bg-yellow-600 rounded-full text-sm font-bold">
-                                                    SELECCIONADO
-                                                </div>
-                                            )}
-                                        </button>
-
-                                        <div className="text-4xl text-gray-500 font-bold">VS</div>
-
-                                        <button
-                                            onClick={() => setEleccion("sello")}
-                                            className={`flex flex-col items-center p-8 rounded-3xl transition-all duration-300 ${eleccion === "sello"
-                                                ? 'bg-gradient-to-br from-red-600/40 to-red-800/40 border-4 border-red-500 scale-105 shadow-2xl shadow-red-500/30'
-                                                : 'bg-gradient-to-br from-gray-800/60 to-gray-900/60 border-4 border-gray-700 hover:border-red-500/50 hover:scale-105'
-                                                }`}
-                                        >
-                                            <div className="text-8xl mb-4"><svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-
-                                                <circle cx="100" cy="100" r="95" fill="#FFD700" stroke="#C9A000" stroke-width="8" />
-
-                                                <circle cx="100" cy="100" r="75" fill="#FFECB3" />
-
-                                                <polygon points="100,65 115,95 150,95 122,115 135,150 100,130 65,150 78,115 50,95 85,95"
-                                                    fill="#5A3E1B" />
-                                            </svg>
-                                            </div>
-                                            <div className="text-3xl font-bold text-white mb-2">SELLO</div>
-                                            <div className="text-gray-400">(Cruz)</div>
-                                            {eleccion === "sello" && (
-                                                <div className="mt-4 px-4 py-1 bg-red-600 rounded-full text-sm font-bold">
-                                                    SELECCIONADO
-                                                </div>
-                                            )}
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {/* Botón de jugar */}
-                                <button
-                                    onClick={realizarApuesta}
-                                    disabled={jugando || !eleccion || apuesta < APUESTA_MINIMA || apuesta > usuario.saldo}
-                                    className={`w-full py-5 px-8 rounded-xl font-bold text-xl transition-all duration-300 ${jugando || !eleccion || apuesta < APUESTA_MINIMA || apuesta > usuario.saldo
-                                        ? 'bg-gray-600 cursor-not-allowed opacity-70'
-                                        : 'bg-gradient-to-r from-yellow-600 to-red-600 hover:from-yellow-500 hover:to-red-500 hover:scale-105 active:scale-95 shadow-lg shadow-yellow-500/20'
-                                        }`}
-                                >
-                                    {jugando ? (
-                                        <span className="flex items-center justify-center">
-                                            <svg className="animate-spin h-6 w-6 mr-3 text-white" viewBox="0 0 24 24">
-                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                                            </svg>
-                                            Lanzando moneda...
-                                        </span>
-                                    ) : (
-                                        `🎯 Apostar $${apuesta}`
-                                    )}
-                                </button>
-
-                                {/* Resultado */}
-                                {resultado && (
-                                    <div className="mt-10 p-8 bg-gradient-to-r from-gray-800/70 to-gray-900/70 border-2 border-yellow-500/30 rounded-3xl">
-                                        <div className="text-center">
-                                            <div className="text-4xl font-bold text-white mb-4">
-                                                {resultado.gano ? "🎉 ¡GANASTE! 🎉" : "😢 ¡PERDISTE! 😢"}
-                                            </div>
-                                            <div className="text-2xl text-gray-300 mb-6">
-                                                Resultado: <span className={`font-bold ${resultado.resultado === 'cara' ? 'text-yellow-400' : 'text-red-400'}`}>
-                                                    {resultado.resultado.toUpperCase()}
+                                            {jugando ? (
+                                                <span className="flex items-center justify-center">
+                                                    <svg className="animate-spin h-6 w-6 mr-3 text-white" viewBox="0 0 24 24">
+                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                                    </svg>
+                                                    Procesando apuesta...
                                                 </span>
-                                            </div>
-                                            <div className="text-3xl mb-4">
-                                                {resultado.gano ? (
-                                                    <span className="text-green-400 font-bold">
-                                                        +${resultado.ganancia} (${apuesta} × 2)
-                                                    </span>
-                                                ) : (
-                                                    <span className="text-red-400 font-bold">
-                                                        -${apuesta}
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <div className="text-xl text-gray-400">{resultado.mensaje}</div>
-                                        </div>
-                                    </div>
+                                            ) : (
+                                                `🎯 Apostar $${apuesta}`
+                                            )}
+                                        </button>
+                                    </>
                                 )}
                             </div>
                         </div>
                     </div>
 
-                    {/* Panel Lateral */}
+                    {/* Panel Lateral - Resto del código se mantiene igual */}
                     <div className="space-y-6">
                         {/* Estadísticas */}
                         <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50">
