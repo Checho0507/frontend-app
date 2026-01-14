@@ -201,7 +201,7 @@ export default function Juegos() {
       ruta: "/juegos/ruletaeuropea",
       icono: "🎡",
       color: "from-purple-500 to-pink-500",
-      disponible: true
+      disponible: false
     }
   ];
 
