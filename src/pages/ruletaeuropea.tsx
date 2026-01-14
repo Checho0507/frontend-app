@@ -911,12 +911,6 @@ export default function RuletaEuropea() {
                                     </div>
                                 </div>
 
-                                {/* Tablero de apuestas */}
-                                <div className="mb-10">
-                                    <h3 className="text-2xl font-bold text-white mb-6 text-center">🎯 Tablero de Apuestas</h3>
-                                    {renderTableroRuleta()}
-                                </div>
-
                                 {/* Selector de apuestas */}
                                 <div className="mb-10">
                                     <h3 className="text-2xl font-bold text-white mb-6 text-center">💰 Configurar Apuesta</h3>
