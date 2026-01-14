@@ -38,7 +38,7 @@ interface Probabilidades {
     empate: number;
 }
 
-const APUESTA_MINIMA = 50;
+const APUESTA_MINIMA = 100;
 const PALOS = ["♠️", "♥️", "♦️", "♣️"];
 const VALORES_CARTAS: { [key: number]: [string, string] } = {
     1: ["As", "A"],

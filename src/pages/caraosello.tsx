@@ -440,6 +440,7 @@ export default function CaraSello() {
                                     <label className="block text-white text-xl font-bold mb-6 text-center">
                                         🪙 Elige Cara o Sello
                                     </label>
+                                    {/* Botones Cara y Sello, en celulares cambiar tamaño*/}
                                     <div className="flex flex-col md:flex-row justify-center items-center space-y-6 md:space-y-0 md:space-x-12">
                                         <button
                                             onClick={() => setEleccion("cara")}
