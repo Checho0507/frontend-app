@@ -494,19 +494,19 @@ export default function PiedraPapelTijera() {
                 <h4 className="text-lg font-bold text-white mb-4 text-center">📜 Reglas del Juego</h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="text-center p-4 bg-gray-800/50 rounded-lg border border-gray-700/50">
-                        <div className="text-3xl mb-2">🪨</div>
+                        <div className="text-3xl mb-2">✊</div>
                         <div className="text-lg font-bold text-white mb-1">Piedra</div>
                         <div className="text-gray-400 text-sm">Vence a Tijera</div>
                         <div className="text-gray-500 text-xs mt-2">Es vencida por Papel</div>
                     </div>
                     <div className="text-center p-4 bg-gray-800/50 rounded-lg border border-gray-700/50">
-                        <div className="text-3xl mb-2">📄</div>
+                        <div className="text-3xl mb-2">🖐</div>
                         <div className="text-lg font-bold text-white mb-1">Papel</div>
                         <div className="text-gray-400 text-sm">Vence a Piedra</div>
                         <div className="text-gray-500 text-xs mt-2">Es vencido por Tijera</div>
                     </div>
                     <div className="text-center p-4 bg-gray-800/50 rounded-lg border border-gray-700/50">
-                        <div className="text-3xl mb-2">✂️</div>
+                        <div className="text-3xl mb-2">✌️</div>
                         <div className="text-lg font-bold text-white mb-1">Tijera</div>
                         <div className="text-gray-400 text-sm">Vence a Papel</div>
                         <div className="text-gray-500 text-xs mt-2">Es vencida por Piedra</div>
@@ -564,7 +564,7 @@ export default function PiedraPapelTijera() {
                     <div className="text-center max-w-4xl mx-auto">
                         <div className="inline-block mb-6">
                             <span className="px-4 py-2 bg-gradient-to-r from-green-600/20 to-purple-600/20 border border-green-500/30 rounded-full text-sm font-bold text-green-400">
-                                🪨📄✂️ PIEDRA, PAPEL O TIJERA
+                                ✊🖐✌️ PIEDRA, PAPEL O TIJERA
                             </span>
                         </div>
 
@@ -850,7 +850,7 @@ export default function PiedraPapelTijera() {
 
                             {historial.length === 0 ? (
                                 <div className="text-center py-8">
-                                    <div className="text-4xl mb-3">🪨📄✂️</div>
+                                    <div className="text-4xl mb-3">✊ 🖐 ✌️</div>
                                     <p className="text-gray-400">No hay juegos registrados</p>
                                     <p className="text-sm text-gray-500 mt-1">Realiza tu primera jugada</p>
                                 </div>
