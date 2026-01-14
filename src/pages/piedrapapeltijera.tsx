@@ -48,17 +48,17 @@ const OPCIONES: Record<string, Opcion> = {
     piedra: {
         tipo: "piedra",
         nombre: "Piedra",
-        emoji: "🪨"
+        emoji: "✊"
     },
     papel: {
         tipo: "papel",
         nombre: "Papel",
-        emoji: "📄"
+        emoji: "✋"
     },
     tijera: {
         tipo: "tijera",
         nombre: "Tijera",
-        emoji: "✂️"
+        emoji: "✌️"
     }
 };
 
@@ -904,7 +904,7 @@ export default function PiedraPapelTijera() {
                                 </li>
                                 <li className="flex items-start space-x-2">
                                     <span className="text-green-400">•</span>
-                                    <span>Selecciona <span className="text-gray-300">🪨 Piedra</span>, <span className="text-blue-300">📄 Papel</span> o <span className="text-red-300">✂️ Tijera</span></span>
+                                    <span>Selecciona <span className="text-gray-300">✊ Piedra</span>, <span className="text-blue-300">✋ Papel</span> o <span className="text-red-300">✌️ Tijera</span></span>
                                 </li>
                                 <li className="flex items-start space-x-2">
                                     <span className="text-green-400">•</span>
