@@ -203,16 +203,16 @@ export default function RuletaEuropea() {
             const nuevoNumero = nuevoJuego.numero_ganador;
             const numerosActualizados = [...prev.numerosMasFrecuentes];
             const index = numerosActualizados.findIndex(n => n.numero === nuevoNumero);
-            
+
             if (index !== -1) {
                 numerosActualizados[index].frecuencia += 1;
             } else {
                 numerosActualizados.push({ numero: nuevoNumero, frecuencia: 1 });
             }
-            
+
             // Ordenar por frecuencia
             numerosActualizados.sort((a, b) => b.frecuencia - a.frecuencia);
-            
+
             return {
                 totalJuegos: nuevoTotal,
                 gananciaTotal: nuevaGananciaTotal,
@@ -270,12 +270,12 @@ export default function RuletaEuropea() {
             setMensaje("Debes seleccionar un valor para la apuesta.");
             return;
         }
-        
+
         if (montoApuesta < APUESTA_MINIMA) {
             setMensaje(`El monto mínimo por apuesta es $${APUESTA_MINIMA}.`);
             return;
         }
-        
+
         if (usuario && montoApuesta > usuario.saldo) {
             setMensaje("Saldo insuficiente para agregar esta apuesta.");
             return;
@@ -311,12 +311,12 @@ export default function RuletaEuropea() {
             setMensaje("Debes iniciar sesión para jugar.");
             return;
         }
-        
+
         if (apuestas.length === 0) {
             setMensaje("Debes agregar al menos una apuesta.");
             return;
         }
-        
+
         const totalApostado = calcularTotalApostado();
         if (totalApostado > usuario.saldo) {
             setMensaje("Saldo insuficiente para realizar estas apuestas.");
@@ -327,37 +327,42 @@ export default function RuletaEuropea() {
         setMensaje(null);
         setResultado(null);
 
-        // Preparar apuestas para enviar al backend
-        const apuestasFormateadas: { [key: string]: any } = {};
-        apuestas.forEach((apuesta, index) => {
-            apuestasFormateadas[`apuesta_${index}`] = {
+        try {
+            const token = localStorage.getItem("token");
+
+            // Preparar apuestas para enviar al backend
+            const apuestasArray = apuestas.map(apuesta => ({
                 tipo: apuesta.tipo,
                 valor: apuesta.valor,
                 monto: apuesta.monto
-            };
-        });
+            }));
 
-        try {
-            const token = localStorage.getItem("token");
+            console.log("Enviando apuestas:", apuestasArray); // Para depuración
+
             const res = await axios.post(
-                `${API_URL}/juegos/ruletaeuropea?apuestas=${encodeURIComponent(JSON.stringify(apuestasFormateadas))}`,
-                { },
-                { headers: { Authorization: `Bearer ${token}` } }
+                `${API_URL}/juegos/ruletaeuropea`,
+                apuestasArray,  // ENVIAR EN EL BODY, no en query string
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
             );
 
             const data = res.data;
-            
+
             // Actualizar saldo del usuario
             setUsuario(prev => prev ? { ...prev, saldo: data.nuevo_saldo } : null);
-            
+
             // Mostrar resultado
             setResultado(data);
-            
+
             // Animación de confetti si hay ganancias
             if (data.ganancia_total > 0) {
                 animarConfetti();
             }
-            
+
             // Agregar al historial
             agregarAlHistorial(
                 data.numero_ganador,
@@ -365,15 +370,16 @@ export default function RuletaEuropea() {
                 data.ganancia_total,
                 data.total_apostado
             );
-            
+
             setMensaje(data.mensaje);
-            
+
             // Limpiar apuestas después del juego
             setApuestas([]);
-            
+
         } catch (err: any) {
             console.error("Error al realizar apuesta:", err);
-            setMensaje(err.response?.data?.detail || "Error al procesar las apuestas");
+            console.error("Respuesta del servidor:", err.response?.data);
+            setMensaje(err.response?.data?.detail || err.response?.data?.message || "Error al procesar las apuestas");
         } finally {
             setGirando(false);
         }
@@ -443,7 +449,7 @@ export default function RuletaEuropea() {
                         ))}
                     </div>
                 );
-            
+
             case "rojo_negro":
                 return (
                     <div className="flex space-x-4">
@@ -467,7 +473,7 @@ export default function RuletaEuropea() {
                         </button>
                     </div>
                 );
-            
+
             case "par_impar":
                 return (
                     <div className="flex space-x-4">
@@ -491,7 +497,7 @@ export default function RuletaEuropea() {
                         </button>
                     </div>
                 );
-            
+
             case "bajo_alto":
                 return (
                     <div className="flex space-x-4">
@@ -515,7 +521,7 @@ export default function RuletaEuropea() {
                         </button>
                     </div>
                 );
-            
+
             case "docena":
                 return (
                     <div className="grid grid-cols-3 gap-4">
@@ -548,7 +554,7 @@ export default function RuletaEuropea() {
                         </button>
                     </div>
                 );
-            
+
             case "columna":
                 return (
                     <div className="grid grid-cols-3 gap-4">
@@ -581,7 +587,7 @@ export default function RuletaEuropea() {
                         </button>
                     </div>
                 );
-            
+
             default:
                 return (
                     <div className="text-center text-gray-400">
@@ -596,7 +602,7 @@ export default function RuletaEuropea() {
         const cx = 220;
         const cy = 220;
         const sectorAngle = (2 * Math.PI) / NUMEROS_RULETA.length;
-        
+
         return (
             <svg width={440} height={440} viewBox="0 0 440 440" className="block mx-auto">
                 <defs>
@@ -619,16 +625,16 @@ export default function RuletaEuropea() {
                         const y2 = Math.sin(endAngle) * radius;
                         const largeArcFlag = sectorAngle > Math.PI ? 1 : 0;
                         const path = `M 0 0 L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2} Z`;
-                        
+
                         const textAngle = (startAngle + endAngle) / 2;
                         const tx = Math.cos(textAngle) * (radius * 0.7);
                         const ty = Math.sin(textAngle) * (radius * 0.7);
                         const rotateDeg = (textAngle * 180) / Math.PI;
-                        
+
                         const color = COLORES[numero];
                         let fillColor;
                         let textColor;
-                        
+
                         if (color === "rojo") {
                             fillColor = "#DC2626"; // Rojo
                             textColor = "#FFFFFF";
@@ -639,7 +645,7 @@ export default function RuletaEuropea() {
                             fillColor = "#10B981"; // Verde
                             textColor = "#FFFFFF";
                         }
-                        
+
                         return (
                             <g key={i}>
                                 <path d={path} fill={fillColor} stroke="#FFFFFF33" strokeWidth={1} />
@@ -688,7 +694,7 @@ export default function RuletaEuropea() {
                         </div>
                         <div className="flex-1"></div>
                     </div>
-                    
+
                     {/* Números principales */}
                     <div className="flex-1">
                         {numerosTablero.map((columna, colIndex) => (
@@ -711,7 +717,7 @@ export default function RuletaEuropea() {
                             </div>
                         ))}
                     </div>
-                    
+
                     {/* Apuestas externas */}
                     <div className="w-32 ml-4 flex flex-col space-y-2">
                         <button
@@ -743,7 +749,7 @@ export default function RuletaEuropea() {
                         </button>
                     </div>
                 </div>
-                
+
                 {/* Apuestas inferiores */}
                 <div className="mt-4 grid grid-cols-6 gap-2">
                     <button
@@ -834,7 +840,7 @@ export default function RuletaEuropea() {
             )}
 
             {/* Header */}
-            <Header 
+            <Header
                 usuario={usuario}
                 cerrarSesion={cerrarSesion}
                 setUsuario={setUsuario}
@@ -914,7 +920,7 @@ export default function RuletaEuropea() {
                                 {/* Selector de apuestas */}
                                 <div className="mb-10">
                                     <h3 className="text-2xl font-bold text-white mb-6 text-center">💰 Configurar Apuesta</h3>
-                                    
+
                                     {/* Tipo de apuesta */}
                                     <div className="mb-8">
                                         <label className="block text-white text-lg font-bold mb-4">Tipo de Apuesta</label>
@@ -1008,7 +1014,7 @@ export default function RuletaEuropea() {
                                             </button>
                                         )}
                                     </div>
-                                    
+
                                     {apuestas.length === 0 ? (
                                         <div className="text-center py-8 bg-gray-800/30 rounded-2xl border border-gray-700/50">
                                             <div className="text-4xl mb-3">🎯</div>
@@ -1032,7 +1038,7 @@ export default function RuletaEuropea() {
                                                             <div className="text-right">
                                                                 <div className="text-xl font-bold text-yellow-400">${apuesta.monto}</div>
                                                                 <div className="text-sm text-gray-400">
-                                                                    Posible ganancia: ${apuesta.monto * 
+                                                                    Posible ganancia: ${apuesta.monto *
                                                                         (TIPOS_APUESTA.find(t => t.id === apuesta.tipo)?.multiplicador || 1)}
                                                                 </div>
                                                             </div>
@@ -1046,7 +1052,7 @@ export default function RuletaEuropea() {
                                                     </div>
                                                 </div>
                                             ))}
-                                            
+
                                             <div className="p-4 bg-gradient-to-r from-gray-800 to-gray-900 rounded-xl border border-yellow-500/30">
                                                 <div className="flex justify-between items-center">
                                                     <div className="text-white font-bold text-lg">TOTAL APOSTADO</div>
@@ -1086,7 +1092,7 @@ export default function RuletaEuropea() {
                                             <div className="text-4xl font-bold text-white mb-6">
                                                 ¡NÚMERO GANADOR!
                                             </div>
-                                            
+
                                             <div className="flex items-center justify-center space-x-8 mb-8">
                                                 <div className={`text-center p-6 rounded-2xl ${COLORES[resultado.numero_ganador] === "rojo"
                                                     ? 'bg-red-600'
@@ -1099,7 +1105,7 @@ export default function RuletaEuropea() {
                                                         {COLORES[resultado.numero_ganador].toUpperCase()}
                                                     </div>
                                                 </div>
-                                                
+
                                                 <div className="text-left">
                                                     <div className="text-gray-300">
                                                         <div>Par: {resultado.es_par ? '✅' : '❌'}</div>
@@ -1111,7 +1117,7 @@ export default function RuletaEuropea() {
                                                     </div>
                                                 </div>
                                             </div>
-                                            
+
                                             <div className="grid grid-cols-2 gap-6 mb-8">
                                                 <div className="bg-gray-800/50 p-6 rounded-xl">
                                                     <div className="text-sm text-gray-400">Total Apostado</div>
@@ -1124,9 +1130,9 @@ export default function RuletaEuropea() {
                                                     </div>
                                                 </div>
                                             </div>
-                                            
+
                                             <div className="text-xl text-gray-400">{resultado.mensaje}</div>
-                                            
+
                                             {/* Apuestas ganadoras */}
                                             {resultado.apuestas_ganadoras && resultado.apuestas_ganadoras.length > 0 && (
                                                 <div className="mt-8">
@@ -1209,7 +1215,7 @@ export default function RuletaEuropea() {
                                                 <div className="text-right">
                                                     <div className="text-white font-bold">{frecuencia} veces</div>
                                                     <div className="text-xs text-gray-400">
-                                                        {estadisticas.totalJuegos > 0 
+                                                        {estadisticas.totalJuegos > 0
                                                             ? `${((frecuencia / estadisticas.totalJuegos) * 100).toFixed(1)}%`
                                                             : '0%'}
                                                     </div>
@@ -1242,8 +1248,8 @@ export default function RuletaEuropea() {
                                             <span className="text-blue-400">{datos.probabilidad}%</span>
                                         </div>
                                         <div className="w-full bg-gray-700 rounded-full h-2">
-                                            <div 
-                                                className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full" 
+                                            <div
+                                                className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full"
                                                 style={{ width: `${datos.probabilidad}%` }}
                                             ></div>
                                         </div>
@@ -1306,7 +1312,7 @@ export default function RuletaEuropea() {
                                                         {juego.ganancia_total > 0 ? `+$${juego.ganancia_total}` : `-$${juego.total_apostado}`}
                                                     </div>
                                                     <div className="text-xs text-gray-400">
-                                                        {juego.ganancia_total > 0 
+                                                        {juego.ganancia_total > 0
                                                             ? `Neto: $${juego.ganancia_total - juego.total_apostado}`
                                                             : 'Pérdida total'}
                                                     </div>
