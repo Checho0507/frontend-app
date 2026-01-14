@@ -432,6 +432,7 @@ export default function CaraSello() {
                                 setMostrarResultadoFinal(false);
                                 setResultado(null);
                                 setEleccion(null);
+                                setJugando(false);
                             }}
                             className="mt-6 px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 rounded-xl font-bold text-white transition-all duration-300"
                         >
@@ -862,7 +863,7 @@ export default function CaraSello() {
                         </div>
                     </div>
                 </div>
-                
+
             </section>
 
             {/* Footer */}
