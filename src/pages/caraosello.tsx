@@ -355,7 +355,7 @@ export default function CaraSello() {
 
     const valoresApuesta = [100, 200, 500, 1000, 2000, 5000, 10000];
 
-    // Componente de Moneda Animada
+    // Componente de Moneda Animada con tus SVGs originales
     const MonedaAnimada = () => {
         const lado = resultadoAnimacion || 'cara';
         const esGirando = animandoMoneda;
@@ -364,34 +364,24 @@ export default function CaraSello() {
             <div className="relative flex flex-col items-center justify-center">
                 {/* Moneda girando */}
                 <div className={`relative w-48 h-48 ${esGirando ? 'animate-spin-fast' : ''}`}>
-                    {/* Cara */}
-                    <div className={`absolute inset-0 transition-all duration-300 ${lado === 'cara' ? 'opacity-100' : 'opacity-0'}`}>
-                        <div className="relative w-full h-full">
-                            <div className="absolute inset-0 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full"></div>
-                            <div className="absolute inset-4 bg-gradient-to-br from-yellow-300 to-yellow-500 rounded-full"></div>
-                            <div className="absolute top-12 left-12 w-6 h-6 bg-gradient-to-br from-gray-800 to-gray-900 rounded-full"></div>
-                            <div className="absolute top-12 right-12 w-6 h-6 bg-gradient-to-br from-gray-800 to-gray-900 rounded-full"></div>
-                            <div className="absolute bottom-16 left-16 right-16 h-3 bg-gradient-to-r from-gray-800 to-gray-900 rounded-full"></div>
-                            <div className="absolute inset-0 border-4 border-yellow-700 rounded-full opacity-50"></div>
-                        </div>
+                    {/* Cara SVG */}
+                    <div className={`absolute inset-0 transition-all duration-200 ${lado === 'cara' ? 'opacity-100' : 'opacity-0'}`}>
+                        <svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+                            <circle cx="100" cy="100" r="95" fill="#FFD700" stroke="#C9A000" strokeWidth="8" />
+                            <circle cx="100" cy="100" r="75" fill="#FFECB3" />
+                            <circle cx="80" cy="90" r="8" fill="#5A3E1B" />
+                            <circle cx="120" cy="90" r="8" fill="#5A3E1B" />
+                            <path d="M75 120 Q100 140 125 120" stroke="#5A3E1B" strokeWidth="6" fill="none" />
+                        </svg>
                     </div>
                     
-                    {/* Sello */}
-                    <div className={`absolute inset-0 transition-all duration-300 ${lado === 'sello' ? 'opacity-100' : 'opacity-0'}`}>
-                        <div className="relative w-full h-full">
-                            <div className="absolute inset-0 bg-gradient-to-br from-red-400 to-red-600 rounded-full"></div>
-                            <div className="absolute inset-4 bg-gradient-to-br from-red-300 to-red-500 rounded-full"></div>
-                            <div className="absolute inset-8 flex items-center justify-center">
-                                <div className="relative w-20 h-20">
-                                    <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900 rounded-full transform rotate-45"></div>
-                                    <div className="absolute inset-2 bg-gradient-to-br from-gray-700 to-gray-800 rounded-full transform rotate-45"></div>
-                                    <div className="absolute inset-0 flex items-center justify-center">
-                                        <div className="w-2 h-8 bg-gradient-to-b from-yellow-400 to-yellow-600 rounded-full"></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="absolute inset-0 border-4 border-red-700 rounded-full opacity-50"></div>
-                        </div>
+                    {/* Sello SVG */}
+                    <div className={`absolute inset-0 transition-all duration-200 ${lado === 'sello' ? 'opacity-100' : 'opacity-0'}`}>
+                        <svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+                            <circle cx="100" cy="100" r="95" fill="#FFD700" stroke="#C9A000" strokeWidth="8" />
+                            <circle cx="100" cy="100" r="75" fill="#FFECB3" />
+                            <polygon points="100,65 115,95 150,95 122,115 135,150 100,130 65,150 78,115 50,95 85,95" fill="#5A3E1B" />
+                        </svg>
                     </div>
                     
                     {/* Efecto de brillo */}
@@ -629,13 +619,13 @@ export default function CaraSello() {
                                                         }`}
                                                 >
                                                     <div className="text-8xl mb-4">
-                                                        <div className="relative w-32 h-32">
-                                                            <div className="absolute inset-0 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full"></div>
-                                                            <div className="absolute inset-4 bg-gradient-to-br from-yellow-300 to-yellow-500 rounded-full"></div>
-                                                            <div className="absolute top-8 left-8 w-5 h-5 bg-gradient-to-br from-gray-800 to-gray-900 rounded-full"></div>
-                                                            <div className="absolute top-8 right-8 w-5 h-5 bg-gradient-to-br from-gray-800 to-gray-900 rounded-full"></div>
-                                                            <div className="absolute bottom-12 left-12 right-12 h-2 bg-gradient-to-r from-gray-800 to-gray-900 rounded-full"></div>
-                                                        </div>
+                                                        <svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                                                            <circle cx="100" cy="100" r="95" fill="#FFD700" stroke="#C9A000" strokeWidth="8" />
+                                                            <circle cx="100" cy="100" r="75" fill="#FFECB3" />
+                                                            <circle cx="80" cy="90" r="8" fill="#5A3E1B" />
+                                                            <circle cx="120" cy="90" r="8" fill="#5A3E1B" />
+                                                            <path d="M75 120 Q100 140 125 120" stroke="#5A3E1B" strokeWidth="6" fill="none" />
+                                                        </svg>
                                                     </div>
                                                     <div className="text-3xl font-bold text-white mb-2">CARA</div>
                                                     <div className="text-gray-400">(Cara)</div>
@@ -656,19 +646,11 @@ export default function CaraSello() {
                                                         }`}
                                                 >
                                                     <div className="text-8xl mb-4">
-                                                        <div className="relative w-32 h-32">
-                                                            <div className="absolute inset-0 bg-gradient-to-br from-red-400 to-red-600 rounded-full"></div>
-                                                            <div className="absolute inset-4 bg-gradient-to-br from-red-300 to-red-500 rounded-full"></div>
-                                                            <div className="absolute inset-8 flex items-center justify-center">
-                                                                <div className="relative w-16 h-16">
-                                                                    <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900 rounded-full transform rotate-45"></div>
-                                                                    <div className="absolute inset-2 bg-gradient-to-br from-gray-700 to-gray-800 rounded-full transform rotate-45"></div>
-                                                                    <div className="absolute inset-0 flex items-center justify-center">
-                                                                        <div className="w-2 h-6 bg-gradient-to-b from-yellow-400 to-yellow-600 rounded-full"></div>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
+                                                        <svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                                                            <circle cx="100" cy="100" r="95" fill="#FFD700" stroke="#C9A000" strokeWidth="8" />
+                                                            <circle cx="100" cy="100" r="75" fill="#FFECB3" />
+                                                            <polygon points="100,65 115,95 150,95 122,115 135,150 100,130 65,150 78,115 50,95 85,95" fill="#5A3E1B" />
+                                                        </svg>
                                                     </div>
                                                     <div className="text-3xl font-bold text-white mb-2">SELLO</div>
                                                     <div className="text-gray-400">(Cruz)</div>
@@ -690,7 +672,15 @@ export default function CaraSello() {
                                                 : 'bg-gradient-to-r from-yellow-600 to-red-600 hover:from-yellow-500 hover:to-red-500 hover:scale-105 active:scale-95 shadow-lg shadow-yellow-500/20'
                                                 }`}
                                         >
-                                            {(
+                                            {jugando ? (
+                                                <span className="flex items-center justify-center">
+                                                    <svg className="animate-spin h-6 w-6 mr-3 text-white" viewBox="0 0 24 24">
+                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                                    </svg>
+                                                    Procesando apuesta...
+                                                </span>
+                                            ) : (
                                                 `🎯 Apostar $${apuesta}`
                                             )}
                                         </button>
