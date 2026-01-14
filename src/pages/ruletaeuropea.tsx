@@ -340,7 +340,7 @@ export default function RuletaEuropea() {
         try {
             const token = localStorage.getItem("token");
             const res = await axios.post(
-                `${API_URL}/juegos/ruletaeuropea?apuestas=${encodeURIComponent(JSON.stringify(apuestasFormateadas))}`,
+                `${API_URL}/juegos/ruletaeuropea?apuestas=${JSON.stringify(apuestasFormateadas)}`,
                 { },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
