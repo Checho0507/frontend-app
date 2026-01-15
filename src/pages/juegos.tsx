@@ -86,6 +86,7 @@ export default function Juegos() {
       { nombre: "Cara o Sello", disponible: true },
       { nombre: "Carta Mayor", disponible: true },
       { nombre: "Piedra, Papel o Tijera", disponible: true },
+      { nombre: "Poker", disponible: true },
       { nombre: "Ruleta Europea", disponible: true }
     ];
 
@@ -193,6 +194,14 @@ export default function Juegos() {
       ruta: "/juegos/piedrapapeltijera",
       icono: "✊",
       color: "from-yellow-500 to-red-500",
+      disponible: true
+    },
+    {
+      nombre: "Poker",
+      descripcion: "Juega al poker y demuestra tu habilidad",
+      ruta: "/juegos/poker",
+      icono: "♠️",
+      color: "from-green-500 to-teal-500",
       disponible: true
     },
     {
