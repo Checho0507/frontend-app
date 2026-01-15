@@ -420,47 +420,35 @@ export default function Aviator() {
         });
     };
 
-    // Función para actualizar estadísticas desde el historial (manual)
+    // Función para actualizar estadísticas desde la última partida jugada (manual)
     const actualizarEstadisticasDesdeHistorial = () => {
         if (historial.length === 0) {
             showMsg("No hay historial para actualizar", "info");
             return;
         }
 
-        let nuevasEstadisticas = {
-            total_vuelos: 0,
-            vuelos_ganados: 0,
-            vuelos_perdidos: 0,
-            ganancia_total: 0,
-            perdida_total: 0,
-            balance: 0,
-            mayor_ganancia: 0,
-            multiplicador_record: 0,
+        // Tomar solo la última partida (la primera del array)
+        const ultimaPartida = historial[0];
+        
+        // Calcular estadísticas basadas solo en la última partida
+        const esVictoria = ultimaPartida.resultado === 'cashout';
+        const nuevaGanancia = esVictoria ? ultimaPartida.ganancia : 0;
+        const nuevaPerdida = esVictoria ? 0 : ultimaPartida.apuesta;
+        const nuevoBalance = nuevaGanancia - nuevaPerdida;
+        
+        const nuevasEstadisticas = {
+            total_vuelos: 1, // Solo contamos esta partida
+            vuelos_ganados: esVictoria ? 1 : 0,
+            vuelos_perdidos: esVictoria ? 0 : 1,
+            ganancia_total: nuevaGanancia,
+            perdida_total: nuevaPerdida,
+            balance: nuevoBalance,
+            mayor_ganancia: nuevaGanancia,
+            multiplicador_record: ultimaPartida.multiplicador_retiro || 0
         };
         
-        historial.forEach(vuelo => {
-            nuevasEstadisticas.total_vuelos++;
-            
-            if (vuelo.resultado === 'cashout') {
-                nuevasEstadisticas.vuelos_ganados++;
-                nuevasEstadisticas.ganancia_total += vuelo.ganancia;
-                nuevasEstadisticas.balance += vuelo.ganancia;
-                nuevasEstadisticas.mayor_ganancia = Math.max(nuevasEstadisticas.mayor_ganancia, vuelo.ganancia);
-                if (vuelo.multiplicador_retiro) {
-                    nuevasEstadisticas.multiplicador_record = Math.max(
-                        nuevasEstadisticas.multiplicador_record, 
-                        vuelo.multiplicador_retiro
-                    );
-                }
-            } else {
-                nuevasEstadisticas.vuelos_perdidos++;
-                nuevasEstadisticas.perdida_total += vuelo.apuesta;
-                nuevasEstadisticas.balance -= vuelo.apuesta;
-            }
-        });
-        
         setEstadisticas(nuevasEstadisticas);
-        showMsg("Estadísticas actualizadas desde el historial", "success");
+        showMsg("Estadísticas actualizadas con la última partida", "success");
     };
 
     // Función para restablecer estadísticas a cero
