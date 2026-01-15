@@ -566,7 +566,7 @@ export default function Aviator() {
                     className="absolute bottom-4 transform -translate-x-1/2 transition-all duration-300"
                     style={{ left: `${10 + posicionX}%` }}
                 >
-                    <div className="text-4xl"><svg width="900" height="400" viewBox="0 0 900 400" xmlns="http://www.w3.org/2000/svg">
+                    <div className="text-4xl"><svg width="1500" height="900" viewBox="0 0 900 400" xmlns="http://www.w3.org/2000/svg">
 
   <defs>
     <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
