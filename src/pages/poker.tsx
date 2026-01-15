@@ -64,7 +64,6 @@ export default function Poker() {
     
     // Acciones
     const [montoSubida, setMontoSubida] = useState<number>(0);
-    const [puedePasar, setPuedePasar] = useState<boolean>(true);
     
     // Historial y estadísticas
     const [historial, setHistorial] = useState<HistorialPartida[]>([]);
@@ -202,6 +201,7 @@ export default function Poker() {
         setMostrarCartasBanca(false);
         setRondaActual('esperando');
         setEstado('esperando');
+        setGanancia(0);
 
         try {
             const token = localStorage.getItem("token");
@@ -219,7 +219,7 @@ export default function Poker() {
             setFichasBanca(res.data.fichas_banca);
             setBote(res.data.bote);
             setApuestaMinima(res.data.apuesta_minima);
-            setRondaActual(res.data.ronda_actual);
+            setRondaActual(res.data.ronda_actual as EstadoJuego);
             setEstado(res.data.estado);
             
             // Actualizar saldo
@@ -262,7 +262,7 @@ export default function Poker() {
                 setApuestaMinima(res.data.apuesta_minima);
             }
             if (res.data.ronda_actual) {
-                setRondaActual(res.data.ronda_actual);
+                setRondaActual(res.data.ronda_actual as EstadoJuego);
             }
             if (res.data.cartas_comunitarias) {
                 setCartasComunitarias(res.data.cartas_comunitarias);
@@ -334,13 +334,13 @@ export default function Poker() {
             
             setEstado('terminada');
             setMensaje(res.data.resultado);
-            setGanancia(res.data.devolucion - apuestaSeleccionada);
+            setGanancia(res.data.ganancia);
             setUsuario(prev => prev ? { ...prev, saldo: res.data.nuevo_saldo } : prev);
             setSessionId(null);
             
             agregarAlHistorial(
                 res.data.resultado,
-                res.data.devolucion - apuestaSeleccionada,
+                res.data.ganancia,
                 apuestaSeleccionada,
                 0,
                 "Rendición",
@@ -369,7 +369,7 @@ export default function Poker() {
             setFichasBanca(res.data.fichas_banca);
             setBote(res.data.bote);
             setApuestaMinima(res.data.apuesta_minima);
-            setRondaActual(res.data.ronda_actual);
+            setRondaActual(res.data.ronda_actual as EstadoJuego);
             setEstado(res.data.estado);
             setCartasComunitarias(res.data.cartas_comunitarias || []);
         } catch (error) {
@@ -682,13 +682,11 @@ export default function Poker() {
                                     
                                     {mensaje && (
                                         <div className={`px-6 py-4 rounded-xl font-bold mb-4 ${
-                                            mensaje.includes("Ganaste") || mensaje.includes("¡Blackjack!")
+                                            ganancia > 0
                                                 ? "bg-gradient-to-r from-green-900/50 to-green-800/50 border border-green-500/50 text-green-200"
-                                                : mensaje.includes("Perdiste") || mensaje.includes("banca gana")
+                                                : ganancia < 0
                                                 ? "bg-gradient-to-r from-red-900/50 to-red-800/50 border border-red-500/50 text-red-200"
-                                                : mensaje.includes("Empate")
-                                                ? "bg-gradient-to-r from-yellow-900/50 to-yellow-800/50 border border-yellow-500/50 text-yellow-200"
-                                                : "bg-gradient-to-r from-blue-900/50 to-blue-800/50 border border-blue-500/50 text-blue-200"
+                                                : "bg-gradient-to-r from-yellow-900/50 to-yellow-800/50 border border-yellow-500/50 text-yellow-200"
                                         }`}>
                                             {mensaje}
                                             {ganancia !== 0 && (
@@ -696,7 +694,7 @@ export default function Poker() {
                                                     {ganancia > 0 ? (
                                                         <span className="text-green-400">💰 Ganancia: +${ganancia.toLocaleString()}</span>
                                                     ) : (
-                                                        <span className="text-red-400">💸 Pérdida: ${(-ganancia).toLocaleString()}</span>
+                                                        <span className="text-red-400">💸 Pérdida: ${Math.abs(ganancia).toLocaleString()}</span>
                                                     )}
                                                 </div>
                                             )}
@@ -858,7 +856,7 @@ export default function Poker() {
                                             onClick={rendirse}
                                             className="py-2 px-4 bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-600 hover:to-gray-700 rounded-xl font-bold text-gray-300 transition-all duration-300"
                                         >
-                                            ⚠️ Rendirse (Recuperar 50%)
+                                            ⚠️ Rendirse (Recuperar 50% de lo apostado)
                                         </button>
                                     </div>
                                 )}
