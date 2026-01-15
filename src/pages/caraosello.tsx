@@ -52,7 +52,7 @@ export default function CaraSello() {
         gastoTotalAcum: 0,
     });
     const [notificacion, setNotificacion] = useState<{ text: string; type?: "success" | "error" | "info" } | null>(null);
-    
+
     // Nuevos estados para animación
     const [animandoMoneda, setAnimandoMoneda] = useState(false);
     const [resultadoAnimacion, setResultadoAnimacion] = useState<string | null>(null);
@@ -210,31 +210,31 @@ export default function CaraSello() {
         setAnimandoMoneda(true);
         setMostrarResultadoFinal(false);
         setResultadoAnimacion(null);
-        
+
         let frame = 0;
         const totalFrames = 20; // 2 segundos a 10 frames por segundo
         const interval = 100; // 100ms por frame
-        
+
         animacionRef.current = window.setInterval(() => {
             frame++;
-            
+
             // Alternar entre cara y sello durante la animación
             if (frame % 2 === 0) {
                 setResultadoAnimacion('cara');
             } else {
                 setResultadoAnimacion('sello');
             }
-            
+
             if (frame >= totalFrames) {
                 if (animacionRef.current) {
                     clearInterval(animacionRef.current);
                 }
-                
+
                 // Mostrar el resultado final
                 setResultadoAnimacion(resultadoFinal);
                 setMostrarResultadoFinal(true);
                 setAnimandoMoneda(false);
-                
+
                 // Animación de confetti si ganó
                 if (resultado?.gano) {
                     animarConfetti();
@@ -359,9 +359,54 @@ export default function CaraSello() {
     const MonedaAnimada = () => {
         const lado = resultadoAnimacion || 'cara';
         const esGirando = animandoMoneda;
-        
+
         return (
+
             <div className="relative flex flex-col items-center justify-center">
+                {/* Selector de apuesta */}
+                <div className="mb-10">
+                    <label className="block text-white text-xl font-bold mb-6 text-center">
+                        💰 ¿Cuánto quieres apostar?
+                    </label>
+                    <div className="flex flex-col items-center space-y-6">
+                        <input
+                            type="range"
+                            min={APUESTA_MINIMA}
+                            max={Math.min(usuario?.saldo || APUESTA_MINIMA, 10000)}
+                            step={50}
+                            value={apuesta}
+                            onChange={(e) => setApuesta(parseInt(e.target.value))}
+                            className="w-full h-4 bg-gray-700 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-8 [&::-webkit-slider-thumb]:w-8 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-gradient-to-r [&::-webkit-slider-thumb]:from-yellow-500 [&::-webkit-slider-thumb]:to-red-500"
+                        />
+                        <div className="flex justify-between w-full text-gray-400 text-sm">
+                            <span>${APUESTA_MINIMA}</span>
+                            <span className="text-xl font-bold text-yellow-400">${apuesta}</span>
+                            <span>${Math.min(usuario?.saldo || APUESTA_MINIMA, 10000)}</span>
+                        </div>
+                        <div className="text-center">
+                            <div className="text-5xl font-bold text-yellow-400 mb-2">${apuesta}</div>
+                            <div className="text-gray-400">Apuesta actual</div>
+                        </div>
+                        <div className="flex flex-wrap justify-center gap-3">
+                            {valoresApuesta.map((valor) => (
+                                <button
+                                    key={valor}
+                                    onClick={() => setApuesta(valor)}
+                                    disabled={valor > (usuario?.saldo || 0)}
+                                    className={`px-4 py-3 rounded-lg font-bold transition-all duration-200 ${apuesta === valor
+                                        ? 'bg-gradient-to-r from-yellow-600 to-red-600 text-white scale-105'
+                                        : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                                        } ${valor > (usuario?.saldo || 0) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                >
+                                    ${valor}
+                                </button>
+                            ))}
+                        </div>
+                        <div className="text-sm text-gray-500 text-center">
+                            Ganancia potencial: <span className="text-green-400 font-bold">${apuesta * 2}</span>
+                        </div>
+                    </div>
+                </div>
                 {/* Moneda girando */}
                 <div className={`relative w-48 h-48 ${esGirando ? 'animate-spin-fast' : ''}`}>
                     {/* Cara SVG */}
@@ -374,7 +419,7 @@ export default function CaraSello() {
                             <path d="M75 120 Q100 140 125 120" stroke="#5A3E1B" strokeWidth="6" fill="none" />
                         </svg>
                     </div>
-                    
+
                     {/* Sello SVG */}
                     <div className={`absolute inset-0 transition-all duration-200 ${lado === 'sello' ? 'opacity-100' : 'opacity-0'}`}>
                         <svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
@@ -383,13 +428,13 @@ export default function CaraSello() {
                             <polygon points="100,65 115,95 150,95 122,115 135,150 100,130 65,150 78,115 50,95 85,95" fill="#5A3E1B" />
                         </svg>
                     </div>
-                    
+
                     {/* Efecto de brillo */}
                     <div className="absolute inset-0 rounded-full overflow-hidden">
                         <div className={`absolute inset-0 bg-gradient-to-br from-white/20 to-transparent ${esGirando ? 'animate-pulse' : ''}`}></div>
                     </div>
                 </div>
-                
+
                 {/* Texto de animación */}
                 {esGirando && (
                     <div className="mt-6 text-center">
@@ -401,7 +446,7 @@ export default function CaraSello() {
                         </div>
                     </div>
                 )}
-                
+
                 {/* Resultado final */}
                 {mostrarResultadoFinal && resultado && (
                     <div className="mt-6 text-center">
