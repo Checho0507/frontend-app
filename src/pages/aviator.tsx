@@ -6,43 +6,7 @@ import Header from '../components/header';
 import Footer from '../components/footer';
 import { API_URL } from "../api/auth";
 
-interface Usuario {
-    id: number;
-    username: string;
-    saldo: number;
-    verificado: boolean;
-    nivel?: string;
-    verificado_pendiente?: boolean;
-}
-
-interface Vuelo {
-    id: number;
-    multiplicador_crash: number;
-    multiplicador_retiro: number | null;
-    resultado: string;
-    ganancia: number;
-    fecha: string;
-    apuesta: number;
-    retiro_manual: boolean;
-}
-
-interface HistorialPublico {
-    id: number;
-    multiplicador: number;
-    timestamp: string;
-    color: string;
-}
-
-interface Estadisticas {
-    total_vuelos: number;
-    vuelos_ganados: number;
-    vuelos_perdidos: number;
-    ganancia_total: number;
-    perdida_total: number;
-    balance: number;
-    mayor_ganancia: number;
-    multiplicador_record: number;
-}
+// ... (interfaces permanecen iguales hasta Estadisticas)
 
 type EstadoVuelo = 'esperando' | 'vuelo' | 'cashout' | 'explosion';
 
@@ -71,7 +35,6 @@ export default function Aviator() {
     const [historial, setHistorial] = useState<Vuelo[]>([]);
     const [historialPublico, setHistorialPublico] = useState<HistorialPublico[]>([]);
     const [estadisticas, setEstadisticas] = useState<Estadisticas>(() => {
-        // Cargar estadísticas desde localStorage al iniciar
         const estadisticasGuardadas = localStorage.getItem('estadisticas_aviator');
         if (estadisticasGuardadas) {
             try {
@@ -80,7 +43,6 @@ export default function Aviator() {
                 console.error('Error al parsear estadísticas guardadas:', error);
             }
         }
-        // Valores por defecto
         return {
             total_vuelos: 0,
             vuelos_ganados: 0,
@@ -396,7 +358,6 @@ export default function Aviator() {
         setHistorial(nuevoHistorial);
         localStorage.setItem('historial_aviator', JSON.stringify(nuevoHistorial));
         
-        // Actualizar estadísticas automáticamente
         actualizarEstadisticasConVuelo(nuevoVuelo);
     };
 
@@ -420,24 +381,21 @@ export default function Aviator() {
         });
     };
 
-    // Función para actualizar estadísticas desde la última partida jugada (manual)
     const actualizarEstadisticasDesdeHistorial = () => {
         if (historial.length === 0) {
             showMsg("No hay historial para actualizar", "info");
             return;
         }
 
-        // Tomar solo la última partida (la primera del array)
         const ultimaPartida = historial[0];
         
-        // Calcular estadísticas basadas solo en la última partida
         const esVictoria = ultimaPartida.resultado === 'cashout';
         const nuevaGanancia = esVictoria ? ultimaPartida.ganancia : 0;
         const nuevaPerdida = esVictoria ? 0 : ultimaPartida.apuesta;
         const nuevoBalance = nuevaGanancia - nuevaPerdida;
         
         const nuevasEstadisticas = {
-            total_vuelos: 1, // Solo contamos esta partida
+            total_vuelos: 1,
             vuelos_ganados: esVictoria ? 1 : 0,
             vuelos_perdidos: esVictoria ? 0 : 1,
             ganancia_total: nuevaGanancia,
@@ -451,7 +409,6 @@ export default function Aviator() {
         showMsg("Estadísticas actualizadas con la última partida", "success");
     };
 
-    // Función para restablecer estadísticas a cero
     const restablecerEstadisticas = () => {
         if (window.confirm("¿Estás seguro de que quieres restablecer todas las estadísticas a cero?")) {
             const estadisticasIniciales = {
@@ -549,29 +506,106 @@ export default function Aviator() {
         return `${Math.max(0, segundos).toFixed(1)}s`;
     };
 
+    // Componente de avión 3D
+    const Avion3D = ({ posicionX = 10, estaVolando = false }) => {
+        return (
+            <div 
+                className="absolute bottom-4 transform transition-all duration-300"
+                style={{ 
+                    left: `${posicionX}%`,
+                    transform: `translateX(-50%) perspective(1000px) rotateX(${estaVolando ? '20deg' : '0deg'}) rotateY(${estaVolando ? '-5deg' : '0deg'})`,
+                    transition: 'all 0.3s ease-out'
+                }}
+            >
+                <div className="relative">
+                    {/* Cuerpo principal del avión */}
+                    <div className="w-16 h-6 bg-gradient-to-r from-gray-700 to-gray-800 rounded-lg shadow-lg relative z-10">
+                        {/* Alas */}
+                        <div className="absolute -top-3 -left-2 w-20 h-4 bg-gradient-to-r from-blue-700 to-blue-800 rounded-lg"></div>
+                        <div className="absolute -bottom-3 -left-2 w-20 h-4 bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg"></div>
+                        
+                        {/* Cabina */}
+                        <div className="absolute top-0 left-6 w-6 h-4 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-t-lg"></div>
+                        
+                        {/* Motor */}
+                        <div className="absolute -right-2 top-1/2 transform -translate-y-1/2 w-4 h-8 bg-gradient-to-r from-red-600 to-orange-500 rounded-lg"></div>
+                        
+                        {/* Hélices */}
+                        <div className="absolute -right-6 top-1/2 transform -translate-y-1/2 w-6 h-6">
+                            <div className="absolute inset-0 rounded-full bg-yellow-500 animate-spin" style={{ animationDuration: '0.3s' }}>
+                                <div className="absolute inset-1 rounded-full bg-yellow-600"></div>
+                            </div>
+                            <div className="absolute top-1/2 left-1/2 w-8 h-1 bg-yellow-700 transform -translate-x-1/2 -translate-y-1/2 rotate-0"></div>
+                            <div className="absolute top-1/2 left-1/2 w-8 h-1 bg-yellow-700 transform -translate-x-1/2 -translate-y-1/2 rotate-90"></div>
+                        </div>
+                        
+                        {/* Ventanas */}
+                        <div className="absolute top-1 left-2 w-2 h-2 bg-cyan-300 rounded-full"></div>
+                        <div className="absolute top-1 left-4 w-2 h-2 bg-cyan-300 rounded-full"></div>
+                        
+                        {/* Estela de humo durante el vuelo */}
+                        {estaVolando && (
+                            <div className="absolute -right-8 top-1/2 transform -translate-y-1/2">
+                                <div className="flex space-x-1">
+                                    <div className="w-4 h-2 bg-white/30 rounded-full animate-pulse" style={{ animationDelay: '0s' }}></div>
+                                    <div className="w-6 h-3 bg-white/20 rounded-full animate-pulse" style={{ animationDelay: '0.1s' }}></div>
+                                    <div className="w-8 h-4 bg-white/10 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                    
+                    {/* Sombra del avión */}
+                    <div 
+                        className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-12 h-3 bg-black/20 blur-sm rounded-full"
+                        style={{ transform: `translateX(-50%) scale(${1 - (posicionX - 10) / 100})` }}
+                    ></div>
+                </div>
+            </div>
+        );
+    };
+
     const renderAvion = () => {
         const progreso = duracionTotal > 0 ? Math.min(tiempoTranscurrido / duracionTotal, 1) : 0;
-        const posicionX = progreso * 90;
+        const posicionX = 10 + (progreso * 90);
+        const estaVolando = estado === 'vuelo';
         
         return (
             <div className="relative w-full h-64 bg-gradient-to-b from-gray-900/50 to-transparent rounded-xl overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-b from-blue-900/20 to-purple-900/10"></div>
-                
-                <div className="absolute top-4 left-8 w-16 h-8 bg-white/10 rounded-full blur-sm"></div>
-                <div className="absolute top-10 right-12 w-20 h-10 bg-white/15 rounded-full blur-sm"></div>
-                
-                <div className="absolute bottom-0 left-0 right-0 h-2 bg-gradient-to-r from-yellow-500/30 to-yellow-600/40"></div>
-                
-                <div 
-                    className="absolute bottom-4 transform -translate-x-1/2 transition-all duration-300"
-                    style={{ left: `${10 + posicionX}%` }}
-                >
-                    <div className="text-4xl">✈️</div>
+                {/* Fondo con perspectiva 3D */}
+                <div className="absolute inset-0 bg-gradient-to-b from-blue-900/30 via-purple-900/20 to-transparent">
+                    {/* Horizonte */}
+                    <div className="absolute bottom-1/3 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+                    
+                    {/* Montañas en el fondo */}
+                    <div className="absolute bottom-0 left-0 right-0 h-32">
+                        <div className="absolute bottom-0 left-0 w-64 h-24 bg-gradient-to-r from-blue-900/40 to-purple-900/40 clip-path-polygon"></div>
+                        <div className="absolute bottom-0 right-0 w-48 h-20 bg-gradient-to-l from-indigo-900/40 to-purple-900/40 clip-path-polygon-reverse"></div>
+                    </div>
+                    
+                    {/* Nubes en 3D */}
+                    <div className="absolute top-8 left-8 w-16 h-8 bg-white/10 rounded-full blur-sm transform rotate-12"></div>
+                    <div className="absolute top-12 right-12 w-20 h-10 bg-white/15 rounded-full blur-sm transform -rotate-6"></div>
+                    <div className="absolute top-20 left-1/3 w-24 h-12 bg-white/20 rounded-full blur-sm transform rotate-3"></div>
                 </div>
                 
-                <div className="absolute top-4 right-4 bg-black/40 backdrop-blur-sm rounded-lg p-3 border border-blue-500/30">
+                {/* Pista de despegue con perspectiva */}
+                <div className="absolute bottom-0 left-0 right-0 h-8">
+                    <div className="absolute inset-0 bg-gradient-to-r from-yellow-900/40 via-yellow-800/50 to-yellow-900/40 transform perspective(500px) rotateX(60deg) origin-bottom"></div>
+                    {/* Líneas de la pista */}
+                    <div className="absolute top-1/2 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-yellow-500/50 to-transparent"></div>
+                    <div className="absolute top-1/2 left-1/4 w-8 h-1 bg-yellow-400/70"></div>
+                    <div className="absolute top-1/2 left-2/4 w-8 h-1 bg-yellow-400/70"></div>
+                    <div className="absolute top-1/2 left-3/4 w-8 h-1 bg-yellow-400/70"></div>
+                </div>
+                
+                {/* Avión 3D */}
+                <Avion3D posicionX={posicionX} estaVolando={estaVolando} />
+                
+                {/* Indicador de multiplicador flotante */}
+                <div className="absolute top-4 right-4 bg-black/40 backdrop-blur-sm rounded-xl p-3 border border-blue-500/30 transform perspective(500px) rotateY(-5deg)">
                     <div className="text-center">
-                        <div className="text-xs text-gray-400">MULTIPLICADOR</div>
+                        <div className="text-xs text-gray-400 mb-1">MULTIPLICADOR</div>
                         <div className={`text-3xl font-bold ${
                             multiplicadorActual >= 100 ? 'text-green-400 animate-pulse' :
                             multiplicadorActual >= 50 ? 'text-yellow-400' :
@@ -583,7 +617,8 @@ export default function Aviator() {
                     </div>
                 </div>
                 
-                <div className="absolute top-2 left-2 bg-black/40 backdrop-blur-sm rounded-lg px-3 py-1 text-xs text-gray-300">
+                {/* Indicadores de tiempo */}
+                <div className="absolute top-2 left-2 bg-black/40 backdrop-blur-sm rounded-lg px-3 py-1 text-xs text-gray-300 transform perspective(500px) rotateY(5deg)">
                     Tiempo: {formatearTiempo(tiempoTranscurrido)}
                 </div>
                 
@@ -599,9 +634,11 @@ export default function Aviator() {
     const renderGrafico = () => {
         if (estado === 'esperando') {
             return (
-                <div className="w-full h-64 bg-gradient-to-b from-gray-900/50 to-transparent rounded-xl flex items-center justify-center">
-                    <div className="text-center">
-                        <div className="text-6xl mb-4 animate-bounce">✈️</div>
+                <div className="w-full h-64 bg-gradient-to-b from-gray-900/50 to-transparent rounded-xl flex items-center justify-center perspective(1000px)">
+                    <div className="text-center transform rotateY(5deg)">
+                        <div className="relative mb-4">
+                            <Avion3D posicionX={50} estaVolando={false} />
+                        </div>
                         <p className="text-gray-400 text-lg">Esperando despegue...</p>
                         <p className="text-gray-500 text-sm mt-2">Selecciona tu apuesta y presiona "Iniciar Vuelo"</p>
                     </div>
@@ -626,25 +663,28 @@ export default function Aviator() {
         }).join(' ');
 
         return (
-            <div className="w-full h-64 bg-gradient-to-b from-gray-900/50 to-transparent rounded-xl relative overflow-hidden">
+            <div className="w-full h-64 bg-gradient-to-b from-gray-900/50 to-transparent rounded-xl relative overflow-hidden perspective(1000px)">
+                {/* Fondo con profundidad */}
+                <div className="absolute inset-0 bg-gradient-to-b from-blue-900/20 via-purple-900/10 to-transparent transform rotateX(15deg) origin-bottom"></div>
+                
                 <div className="absolute inset-0">
                     {[1, 2, 5, 10, 20, 50, 100, 200, 500].filter(y => y <= maxY).map(y => (
                         <div 
                             key={y} 
-                            className="absolute left-0 right-0 border-t border-gray-700/30" 
+                            className="absolute left-0 right-0 border-t border-gray-700/30 transform perspective(500px) rotateX(15deg)" 
                             style={{ bottom: `${escalaY(y)}%` }}
                         >
-                            <span className="absolute left-2 -top-3 text-xs text-gray-500">{y}x</span>
+                            <span className="absolute left-2 -top-3 text-xs text-gray-500 transform rotateY(-15deg)">{y}x</span>
                         </div>
                     ))}
                 </div>
                 
                 {autoRetiroActivo && multiplicadorAuto > 1.0 && multiplicadorAuto <= maxY && (
                     <div 
-                        className="absolute left-0 right-0 border-t-2 border-dashed border-yellow-500/70" 
+                        className="absolute left-0 right-0 border-t-2 border-dashed border-yellow-500/70 transform perspective(500px) rotateX(15deg)" 
                         style={{ bottom: `${escalaY(multiplicadorAuto)}%` }}
                     >
-                        <div className="absolute right-2 -top-6 bg-yellow-900/50 backdrop-blur-sm px-2 py-1 rounded text-xs text-yellow-300 font-bold">
+                        <div className="absolute right-2 -top-6 bg-yellow-900/50 backdrop-blur-sm px-2 py-1 rounded text-xs text-yellow-300 font-bold transform rotateY(-10deg)">
                             AUTO: {multiplicadorAuto.toFixed(1)}x
                         </div>
                     </div>
@@ -657,29 +697,41 @@ export default function Aviator() {
                             <stop offset="50%" stopColor="#3B82F6" stopOpacity="0.8" />
                             <stop offset="100%" stopColor="#8B5CF6" stopOpacity="0.8" />
                         </linearGradient>
+                        <filter id="glow">
+                            <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                            <feMerge>
+                                <feMergeNode in="coloredBlur"/>
+                                <feMergeNode in="SourceGraphic"/>
+                            </feMerge>
+                        </filter>
                     </defs>
                     <path 
                         d={puntosSVG} 
                         fill="none" 
                         stroke="url(#lineGradient)" 
-                        strokeWidth="2" 
+                        strokeWidth="3"
+                        filter="url(#glow)"
                     />
                 </svg>
                 
+                {/* Avión 3D sobre el gráfico */}
                 {puntosGrafico.length > 0 && (
                     <div 
-                        className="absolute w-4 h-4 rounded-full bg-gradient-to-br from-green-400 to-blue-500 border-2 border-white"
+                        className="absolute transform -translate-x-1/2 translate-y-1/2"
                         style={{ 
                             left: `${escalaX(puntosGrafico[puntosGrafico.length-1].x)}%`,
                             bottom: `${escalaY(puntosGrafico[puntosGrafico.length-1].y)}%`,
-                            transform: 'translate(-50%, 50%)'
+                            transform: 'translate(-50%, 50%) perspective(1000px) rotateX(20deg) rotateY(-10deg)'
                         }}
                     >
-                        <div className="absolute inset-0 rounded-full bg-green-400 animate-ping opacity-30"></div>
+                        <div className="relative">
+                            <div className="w-8 h-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg transform rotate-45"></div>
+                            <div className="absolute -top-1 -left-1 w-10 h-2 bg-blue-500/50 rounded-lg transform rotate-12"></div>
+                        </div>
                     </div>
                 )}
                 
-                <div className="absolute bottom-2 left-2 bg-black/40 backdrop-blur-sm rounded-lg px-3 py-1 text-xs text-gray-300">
+                <div className="absolute bottom-2 left-2 bg-black/40 backdrop-blur-sm rounded-lg px-3 py-1 text-xs text-gray-300 transform perspective(500px) rotateY(5deg)">
                     {formatearTiempo(tiempoTranscurrido)} / {formatearTiempo(duracionTotal)}
                 </div>
             </div>
@@ -725,24 +777,24 @@ export default function Aviator() {
                 
                 <div className="container mx-auto px-4 py-12 relative z-10">
                     <div className="text-center max-w-4xl mx-auto">
-                        <div className="inline-block mb-6 animate-bounce">
-                            <span className="px-6 py-3 bg-gradient-to-r from-blue-600/30 via-purple-600/30 to-pink-600/30 border border-blue-500/30 rounded-full text-lg font-bold text-blue-400 backdrop-blur-sm">
-                                ✈️ AVIATOR ELITE 🚀
+                        <div className="inline-block mb-6 animate-bounce perspective(1000px)">
+                            <span className="px-6 py-3 bg-gradient-to-r from-blue-600/30 via-purple-600/30 to-pink-600/30 border border-blue-500/30 rounded-full text-lg font-bold text-blue-400 backdrop-blur-sm transform rotateY(10deg)">
+                                ✈️ AVIATOR 3D ELITE 🚀
                             </span>
                         </div>
                         
-                        <h1 className="text-5xl md:text-6xl font-bold mb-6">
+                        <h1 className="text-5xl md:text-6xl font-bold mb-6 transform perspective(1000px) rotateX(5deg)">
                             <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-                                ¡Aviator Pro!
+                                ¡Aviator 3D Pro!
                             </span>
                             <br />
-                            <span className="text-white text-3xl">Retira antes del crash</span>
+                            <span className="text-white text-3xl">Experiencia de vuelo inmersiva</span>
                         </h1>
                         
-                        <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
+                        <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto transform perspective(1000px) rotateY(-5deg)">
                             Multiplicadores de hasta <span className="text-yellow-400 font-bold">500x</span> 
                             <span className="text-pink-400"> • </span>
-                            Probabilidades realistas 
+                            Gráficos 3D realistas 
                             <span className="text-pink-400"> • </span>
                             Retiro automático inteligente
                         </p>
@@ -753,48 +805,29 @@ export default function Aviator() {
             <section className="container mx-auto px-4 pb-8">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div className="lg:col-span-2">
-                        <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 shadow-2xl">
+                        <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 shadow-2xl transform perspective(1000px) rotateY(-1deg)">
                             <div className="mb-6">
                                 {estado === 'vuelo' ? renderGrafico() : renderAvion()}
                             </div>
 
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                                <div className="bg-gray-800/40 rounded-xl p-4 border border-gray-700/50">
-                                    <div className="text-sm text-gray-400">Multiplicador</div>
-                                    <div className={`text-3xl font-bold ${
-                                        multiplicadorActual >= 100 ? 'text-green-400' :
-                                        multiplicadorActual >= 50 ? 'text-yellow-400' :
-                                        multiplicadorActual >= 10 ? 'text-blue-400' :
-                                        'text-white'
-                                    }`}>
-                                        {multiplicadorActual.toFixed(2)}<span className="text-lg">x</span>
+                                {[
+                                    { label: "Multiplicador", value: `${multiplicadorActual.toFixed(2)}x`, color: multiplicadorActual >= 100 ? 'text-green-400' : multiplicadorActual >= 50 ? 'text-yellow-400' : multiplicadorActual >= 10 ? 'text-blue-400' : 'text-white' },
+                                    { label: "Tiempo", value: formatearTiempo(tiempoTranscurrido), color: "text-white" },
+                                    { label: "Apuesta", value: `$${apuestaActual > 0 ? apuestaActual.toLocaleString() : '0'}`, color: "text-yellow-400" },
+                                    { label: "Ganancia", value: `$${ganancia > 0 ? ganancia.toFixed(2) : '0.00'}`, color: ganancia > 0 ? 'text-green-400' : 'text-gray-400' }
+                                ].map((item, index) => (
+                                    <div key={index} className="bg-gray-800/40 rounded-xl p-4 border border-gray-700/50 transform perspective(500px) rotateY(5deg)">
+                                        <div className="text-sm text-gray-400">{item.label}</div>
+                                        <div className={`text-3xl font-bold ${item.color}`}>
+                                            {item.value}
+                                        </div>
                                     </div>
-                                </div>
-                                
-                                <div className="bg-gray-800/40 rounded-xl p-4 border border-gray-700/50">
-                                    <div className="text-sm text-gray-400">Tiempo</div>
-                                    <div className="text-3xl font-bold text-white">
-                                        {formatearTiempo(tiempoTranscurrido)}
-                                    </div>
-                                </div>
-                                
-                                <div className="bg-gray-800/40 rounded-xl p-4 border border-gray-700/50">
-                                    <div className="text-sm text-gray-400">Apuesta</div>
-                                    <div className="text-3xl font-bold text-yellow-400">
-                                        ${apuestaActual > 0 ? apuestaActual.toLocaleString() : '0'}
-                                    </div>
-                                </div>
-                                
-                                <div className="bg-gray-800/40 rounded-xl p-4 border border-gray-700/50">
-                                    <div className="text-sm text-gray-400">Ganancia</div>
-                                    <div className={`text-3xl font-bold ${ganancia > 0 ? 'text-green-400' : 'text-gray-400'}`}>
-                                        ${ganancia > 0 ? ganancia.toFixed(2) : '0.00'}
-                                    </div>
-                                </div>
+                                ))}
                             </div>
 
                             {estado === 'esperando' ? (
-                                <div className="mb-8">
+                                <div className="mb-8 transform perspective(1000px) rotateY(2deg)">
                                     <h3 className="text-xl font-bold text-white mb-4 text-center">💰 Selecciona tu apuesta</h3>
                                     <div className="flex gap-3 justify-center flex-wrap mb-6">
                                         {apuestasPermitidas.map((apuesta) => (
@@ -802,7 +835,7 @@ export default function Aviator() {
                                                 key={apuesta}
                                                 onClick={() => setApuestaSeleccionada(apuesta)}
                                                 disabled={usuario.saldo < apuesta}
-                                                className={`px-6 py-3 rounded-xl font-bold transition-all duration-300 ${
+                                                className={`px-6 py-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 ${
                                                     apuestaSeleccionada === apuesta
                                                         ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg scale-105'
                                                         : usuario.saldo < apuesta
@@ -815,7 +848,7 @@ export default function Aviator() {
                                         ))}
                                     </div>
                                     
-                                    <div className="bg-gray-800/30 rounded-xl p-4 mb-4 border border-gray-700/50">
+                                    <div className="bg-gray-800/30 rounded-xl p-4 mb-4 border border-gray-700/50 transform perspective(500px) rotateY(-3deg)">
                                         <div className="flex items-center justify-between mb-3">
                                             <div className="flex items-center space-x-2">
                                                 <span className="text-yellow-400">⚡</span>
@@ -823,10 +856,10 @@ export default function Aviator() {
                                             </div>
                                             <button
                                                 onClick={() => setAutoRetiroActivo(!autoRetiroActivo)}
-                                                className={`px-4 py-1 rounded-full text-sm font-bold ${
+                                                className={`px-4 py-1 rounded-full text-sm font-bold transform transition-all duration-300 ${
                                                     autoRetiroActivo
-                                                        ? 'bg-green-600 text-white'
-                                                        : 'bg-gray-700 text-gray-300'
+                                                        ? 'bg-green-600 text-white hover:bg-green-700'
+                                                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                                                 }`}
                                             >
                                                 {autoRetiroActivo ? 'ACTIVADO' : 'DESACTIVADO'}
@@ -845,9 +878,9 @@ export default function Aviator() {
                                                     step="0.1"
                                                     value={multiplicadorAuto}
                                                     onChange={(e) => setMultiplicadorAuto(parseFloat(e.target.value))}
-                                                    className="flex-1 h-2 bg-gray-700 rounded-lg accent-yellow-500"
+                                                    className="flex-1 h-2 bg-gray-700 rounded-lg accent-yellow-500 transform perspective(500px) rotateY(2deg)"
                                                 />
-                                                <span className="text-white font-bold w-16 text-center bg-gray-800/50 px-3 py-1 rounded-lg">
+                                                <span className="text-white font-bold w-16 text-center bg-gray-800/50 px-3 py-1 rounded-lg transform perspective(500px) rotateY(-5deg)">
                                                     {multiplicadorAuto.toFixed(1)}x
                                                 </span>
                                             </div>
@@ -856,14 +889,14 @@ export default function Aviator() {
                                 </div>
                             ) : (
                                 <div className="mb-6 text-center">
-                                    <div className="text-xl text-white">
+                                    <div className="text-xl text-white transform perspective(500px) rotateY(3deg)">
                                         Saldo: <span className="text-yellow-400 font-bold">${usuario?.saldo?.toFixed(2) ?? '0.00'}</span>
                                     </div>
                                 </div>
                             )}
 
                             {mensaje && (
-                                <div className={`px-6 py-4 rounded-xl font-bold mb-6 text-center ${
+                                <div className={`px-6 py-4 rounded-xl font-bold mb-6 text-center transform perspective(500px) rotateY(2deg) ${
                                     mensaje.includes("CRASH")
                                         ? "bg-red-900/60 text-red-200" 
                                         : mensaje.includes("Ganaste")
@@ -879,22 +912,22 @@ export default function Aviator() {
                                     <button
                                         onClick={iniciarVuelo}
                                         disabled={cargando || !usuario || usuario.saldo < apuestaSeleccionada}
-                                        className={`w-full py-5 px-8 rounded-xl font-bold text-xl ${
+                                        className={`w-full py-5 px-8 rounded-xl font-bold text-xl transform transition-all duration-300 hover:scale-105 perspective(1000px) rotateY(2deg) ${
                                             cargando || !usuario || usuario.saldo < apuestaSeleccionada
                                                 ? 'bg-gray-600 cursor-not-allowed opacity-70' 
-                                                : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:scale-105'
-                                        } transition-all duration-300`}
+                                                : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:shadow-xl'
+                                        }`}
                                     >
                                         {cargando ? 'Preparando...' : `✈️ INICIAR VUELO ($${apuestaSeleccionada.toLocaleString()})`}
                                     </button>
                                 )}
 
                                 {estado === 'vuelo' && (
-                                    <div className="flex gap-4">
+                                    <div className="flex gap-4 transform perspective(1000px) rotateY(-2deg)">
                                         <button
                                             onClick={() => hacerCashout(multiplicadorActual)}
                                             disabled={cargando}
-                                            className="flex-1 py-4 px-6 rounded-xl font-bold text-lg bg-gradient-to-r from-green-600 to-emerald-600 hover:scale-105"
+                                            className="flex-1 py-4 px-6 rounded-xl font-bold text-lg bg-gradient-to-r from-green-600 to-emerald-600 hover:scale-105 transition-all duration-300"
                                         >
                                             💰 RETIRAR ({multiplicadorActual.toFixed(2)}x)
                                         </button>
@@ -902,10 +935,10 @@ export default function Aviator() {
                                         <button
                                             onClick={configurarAutoretiro}
                                             disabled={cargando}
-                                            className={`py-4 px-6 rounded-xl font-bold ${
+                                            className={`py-4 px-6 rounded-xl font-bold transition-all duration-300 ${
                                                 autoRetiroActivo
-                                                    ? 'bg-yellow-600'
-                                                    : 'bg-gray-700'
+                                                    ? 'bg-yellow-600 hover:bg-yellow-700'
+                                                    : 'bg-gray-700 hover:bg-gray-600'
                                             }`}
                                         >
                                             ⚡ {multiplicadorAuto.toFixed(1)}x
@@ -914,15 +947,15 @@ export default function Aviator() {
                                 )}
 
                                 {(estado === 'cashout' || estado === 'explosion') && (
-                                    <div className="space-y-4">
+                                    <div className="space-y-4 transform perspective(1000px) rotateY(3deg)">
                                         <div className="grid grid-cols-2 gap-4">
-                                            <div className="p-4 bg-gray-800/40 rounded-xl">
+                                            <div className="p-4 bg-gray-800/40 rounded-xl transform perspective(500px) rotateY(5deg)">
                                                 <div className="text-sm text-gray-400">Crash</div>
                                                 <div className="text-2xl font-bold text-red-400">
                                                     {multiplicadorCrash?.toFixed(2)}x
                                                 </div>
                                             </div>
-                                            <div className="p-4 bg-gray-800/40 rounded-xl">
+                                            <div className="p-4 bg-gray-800/40 rounded-xl transform perspective(500px) rotateY(-5deg)">
                                                 <div className="text-sm text-gray-400">Tu Retiro</div>
                                                 <div className="text-2xl font-bold text-green-400">
                                                     {multiplicadorRetiro ? `${multiplicadorRetiro.toFixed(2)}x` : 'N/A'}
@@ -932,7 +965,7 @@ export default function Aviator() {
                                         
                                         <button
                                             onClick={reiniciarJuego}
-                                            className="w-full py-5 rounded-xl font-bold text-xl bg-gradient-to-r from-blue-600 to-purple-600 hover:scale-105"
+                                            className="w-full py-5 rounded-xl font-bold text-xl bg-gradient-to-r from-blue-600 to-purple-600 hover:scale-105 transition-all duration-300"
                                         >
                                             ✈️ NUEVO VUELO
                                         </button>
@@ -943,19 +976,19 @@ export default function Aviator() {
                     </div>
                     
                     <div className="space-y-6">
-                        <div className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700/50">
+                        <div className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700/50 transform perspective(1000px) rotateY(2deg)">
                             <div className="flex justify-between items-center mb-4">
                                 <h3 className="text-xl font-bold text-white">📊 Estadísticas</h3>
                                 <div className="flex space-x-2">
                                     <button
                                         onClick={actualizarEstadisticasDesdeHistorial}
-                                        className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-bold"
+                                        className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-bold transition-all duration-300 transform hover:scale-105"
                                     >
                                         🔄 Actualizar
                                     </button>
                                     <button
                                         onClick={restablecerEstadisticas}
-                                        className="px-3 py-1 bg-red-600 hover:bg-red-700 rounded-lg text-sm font-bold"
+                                        className="px-3 py-1 bg-red-600 hover:bg-red-700 rounded-lg text-sm font-bold transition-all duration-300 transform hover:scale-105"
                                     >
                                         🗑️ Restablecer
                                     </button>
@@ -963,33 +996,26 @@ export default function Aviator() {
                             </div>
                             
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="text-center p-4 bg-gray-800/40 rounded-xl">
-                                    <div className="text-sm text-gray-400">Vuelos</div>
-                                    <div className="text-2xl font-bold text-blue-400">{estadisticas.total_vuelos}</div>
-                                </div>
-                                <div className="text-center p-4 bg-gray-800/40 rounded-xl">
-                                    <div className="text-sm text-gray-400">Ganados</div>
-                                    <div className="text-2xl font-bold text-green-400">{estadisticas.vuelos_ganados}</div>
-                                </div>
-                                <div className="text-center p-4 bg-gray-800/40 rounded-xl">
-                                    <div className="text-sm text-gray-400">Balance</div>
-                                    <div className={`text-2xl font-bold ${estadisticas.balance >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                        ${estadisticas.balance.toFixed(2)}
+                                {[
+                                    { label: "Vuelos", value: estadisticas.total_vuelos, color: "text-blue-400" },
+                                    { label: "Ganados", value: estadisticas.vuelos_ganados, color: "text-green-400" },
+                                    { label: "Balance", value: `$${estadisticas.balance.toFixed(2)}`, color: estadisticas.balance >= 0 ? 'text-green-400' : 'text-red-400' },
+                                    { label: "Record", value: `${estadisticas.multiplicador_record.toFixed(2)}x`, color: "text-yellow-400" }
+                                ].map((stat, index) => (
+                                    <div key={index} className="text-center p-4 bg-gray-800/40 rounded-xl transform perspective(500px) rotateY(index % 2 ? 5 : -5)">
+                                        <div className="text-sm text-gray-400">{stat.label}</div>
+                                        <div className={`text-2xl font-bold ${stat.color}`}>{stat.value}</div>
                                     </div>
-                                </div>
-                                <div className="text-center p-4 bg-gray-800/40 rounded-xl">
-                                    <div className="text-sm text-gray-400">Record</div>
-                                    <div className="text-2xl font-bold text-yellow-400">{estadisticas.multiplicador_record.toFixed(2)}x</div>
-                                </div>
+                                ))}
                                 
                                 <div className="col-span-2 grid grid-cols-2 gap-4 mt-2">
-                                    <div className="text-center p-3 bg-gray-800/40 rounded-xl">
+                                    <div className="text-center p-3 bg-gray-800/40 rounded-xl transform perspective(500px) rotateY(3deg)">
                                         <div className="text-sm text-gray-400">Ganancia Total</div>
                                         <div className="text-lg font-bold text-green-400">
                                             ${estadisticas.ganancia_total.toFixed(2)}
                                         </div>
                                     </div>
-                                    <div className="text-center p-3 bg-gray-800/40 rounded-xl">
+                                    <div className="text-center p-3 bg-gray-800/40 rounded-xl transform perspective(500px) rotateY(-3deg)">
                                         <div className="text-sm text-gray-400">Pérdida Total</div>
                                         <div className="text-lg font-bold text-red-400">
                                             ${estadisticas.perdida_total.toFixed(2)}
@@ -1008,14 +1034,13 @@ export default function Aviator() {
                             </div>
                         </div>
                         
-                        
-                        <div className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700/50">
+                        <div className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700/50 transform perspective(1000px) rotateY(-2deg)">
                             <div className="flex justify-between mb-4">
                                 <h3 className="text-xl font-bold text-white">📝 Historial</h3>
                                 {historial.length > 0 && (
                                     <button
                                         onClick={limpiarHistorial}
-                                        className="text-sm text-red-400 hover:text-red-300"
+                                        className="text-sm text-red-400 hover:text-red-300 transition-colors duration-300"
                                     >
                                         Limpiar
                                     </button>
@@ -1024,13 +1049,15 @@ export default function Aviator() {
                             
                             {historial.length === 0 ? (
                                 <div className="text-center py-8">
-                                    <div className="text-4xl mb-3">✈️</div>
+                                    <div className="relative mb-3">
+                                        <Avion3D posicionX={50} estaVolando={false} />
+                                    </div>
                                     <p className="text-gray-400">Sin vuelos</p>
                                 </div>
                             ) : (
                                 <div className="space-y-3 max-h-64 overflow-y-auto">
                                     {historial.map((vuelo) => (
-                                        <div key={vuelo.id} className="p-3 bg-gray-800/40 rounded-lg">
+                                        <div key={vuelo.id} className="p-3 bg-gray-800/40 rounded-lg transform perspective(500px) rotateY(2deg) transition-transform duration-300 hover:rotateY(0)">
                                             <div className="flex justify-between">
                                                 <div>
                                                     <span className={vuelo.ganancia > 0 ? 'text-green-400' : 'text-red-400'}>
@@ -1063,7 +1090,61 @@ export default function Aviator() {
                     from { transform: translateX(100%); opacity: 0; }
                     to { transform: translateX(0); opacity: 1; }
                 }
+                
+                @keyframes float {
+                    0%, 100% { transform: translateY(0px) rotateX(20deg) rotateY(-5deg); }
+                    50% { transform: translateY(-5px) rotateX(25deg) rotateY(-3deg); }
+                }
+                
+                @keyframes propeller {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+                
                 .animate-slideIn { animation: slideIn 0.3s ease-out; }
+                .animate-float { animation: float 2s ease-in-out infinite; }
+                .animate-propeller { animation: propeller 0.3s linear infinite; }
+                
+                .clip-path-polygon {
+                    clip-path: polygon(0% 100%, 100% 100%, 80% 0%, 20% 0%);
+                }
+                
+                .clip-path-polygon-reverse {
+                    clip-path: polygon(0% 100%, 100% 100%, 100% 0%, 20% 0%);
+                }
+                
+                /* Estilos 3D mejorados */
+                .perspective-1000 {
+                    perspective: 1000px;
+                }
+                
+                .transform-3d {
+                    transform-style: preserve-3d;
+                }
+                
+                /* Sombra 3D para los botones */
+                .shadow-3d {
+                    box-shadow: 
+                        0 10px 20px rgba(0, 0, 0, 0.3),
+                        0 6px 6px rgba(0, 0, 0, 0.2),
+                        inset 0 -2px 5px rgba(255, 255, 255, 0.1),
+                        inset 0 2px 5px rgba(0, 0, 0, 0.2);
+                }
+                
+                /* Efecto de brillo para elementos importantes */
+                .glow {
+                    filter: drop-shadow(0 0 8px currentColor);
+                }
+                
+                /* Gradiente animado para el avión */
+                @keyframes jetGlow {
+                    0%, 100% { opacity: 0.8; }
+                    50% { opacity: 1; }
+                }
+                
+                .jet-glow {
+                    animation: jetGlow 1s ease-in-out infinite;
+                }
             `}</style>
         </div>
     );
