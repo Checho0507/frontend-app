@@ -566,7 +566,98 @@ export default function Aviator() {
                     className="absolute bottom-4 transform -translate-x-1/2 transition-all duration-300"
                     style={{ left: `${10 + posicionX}%` }}
                 >
-                    <div className="text-4xl">✈️</div>
+                    <div className="text-4xl"><svg width="900" height="400" viewBox="0 0 900 400" xmlns="http://www.w3.org/2000/svg">
+
+  <!-- CIELO -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#6db9ef"/>
+      <stop offset="100%" stop-color="#eaf6ff"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="900" height="400" fill="url(#sky)" />
+
+  <g id="plane" transform="translate(-200,200)">
+
+    <path d="
+      M 40 0
+      Q 160 -15 320 0
+      Q 160 15 40 0
+      Z"
+      fill="#f2f2f2"
+      stroke="#cfcfcf"
+      stroke-width="2"/>
+
+    <path d="
+      M 320 0
+      Q 355 0 360 0
+      Q 330 -18 320 0
+      Q 330 18 360 0"
+      fill="#e6e6e6"/>
+
+    <polygon points="40,0 0,-35 10,0 0,35" fill="#d0d0d0"/>
+
+    <polygon points="70,-10 40,-45 90,-30" fill="#c7c7c7"/>
+
+    <polygon points="170,0 110,55 200,55 240,0" fill="#d9d9d9"/>
+
+    <ellipse cx="180" cy="45" rx="16" ry="10" fill="#9e9e9e"/>
+    <ellipse cx="180" cy="45" rx="10" ry="6" fill="#555"/>
+
+    <g fill="#4b8fd8">
+      <circle cx="120" cy="-4" r="3"/>
+      <circle cx="135" cy="-4" r="3"/>
+      <circle cx="150" cy="-4" r="3"/>
+      <circle cx="165" cy="-4" r="3"/>
+      <circle cx="180" cy="-4" r="3"/>
+    </g>
+  </g>
+
+  <animateTransform
+    href="#plane"
+    attributeName="transform"
+    type="translate"
+    dur="10s"
+    repeatCount="indefinite"
+    values="
+      -200 250;
+       200 200;
+       450 120;
+       700 200;
+       1000 150"
+  />
+
+  <animateTransform
+    href="#plane"
+    attributeName="transform"
+    type="translate"
+    dur="3s"
+    repeatCount="indefinite"
+    additive="sum"
+    values="
+      0 0;
+      0 -25;
+      0 0;
+      0 20;
+      0 0"
+  />
+
+  <animateTransform
+    href="#plane"
+    attributeName="transform"
+    type="rotate"
+    dur="3s"
+    repeatCount="indefinite"
+    additive="sum"
+    values="
+      -4 180 200;
+       3 180 200;
+      -2 180 200"
+  />
+
+</svg>
+</div>
                 </div>
                 
                 <div className="absolute top-4 right-4 bg-black/40 backdrop-blur-sm rounded-lg p-3 border border-blue-500/30">
