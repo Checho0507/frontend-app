@@ -70,15 +70,27 @@ export default function Aviator() {
     // Historial y estadísticas
     const [historial, setHistorial] = useState<Vuelo[]>([]);
     const [historialPublico, setHistorialPublico] = useState<HistorialPublico[]>([]);
-    const [estadisticas, setEstadisticas] = useState<Estadisticas>({
-        total_vuelos: 0,
-        vuelos_ganados: 0,
-        vuelos_perdidos: 0,
-        ganancia_total: 0,
-        perdida_total: 0,
-        balance: 0,
-        mayor_ganancia: 0,
-        multiplicador_record: 0,
+    const [estadisticas, setEstadisticas] = useState<Estadisticas>(() => {
+        // Cargar estadísticas desde localStorage al iniciar
+        const estadisticasGuardadas = localStorage.getItem('estadisticas_aviator');
+        if (estadisticasGuardadas) {
+            try {
+                return JSON.parse(estadisticasGuardadas);
+            } catch (error) {
+                console.error('Error al parsear estadísticas guardadas:', error);
+            }
+        }
+        // Valores por defecto
+        return {
+            total_vuelos: 0,
+            vuelos_ganados: 0,
+            vuelos_perdidos: 0,
+            ganancia_total: 0,
+            perdida_total: 0,
+            balance: 0,
+            mayor_ganancia: 0,
+            multiplicador_record: 0,
+        };
     });
     
     // Gráfico y animación
@@ -86,7 +98,7 @@ export default function Aviator() {
     const [tiempoTranscurrido, setTiempoTranscurrido] = useState<number>(0);
     const [duracionTotal, setDuracionTotal] = useState<number>(0);
     
-    // Refs para animación - CORREGIDOS
+    // Refs para animación
     const animacionRef = useRef<number | null>(null);
     const tiempoInicioRef = useRef<number>(0);
     const tiempoUltimoFrameRef = useRef<number>(0);
@@ -95,6 +107,28 @@ export default function Aviator() {
     
     // Notificación
     const [notificacion, setNotificacion] = useState<{ text: string; type?: "success" | "error" | "info" } | null>(null);
+
+    // Cargar estadísticas desde localStorage al iniciar
+    useEffect(() => {
+        const cargarEstadisticasGuardadas = () => {
+            const estadisticasGuardadas = localStorage.getItem('estadisticas_aviator');
+            if (estadisticasGuardadas) {
+                try {
+                    const parsed = JSON.parse(estadisticasGuardadas);
+                    setEstadisticas(parsed);
+                } catch (error) {
+                    console.error('Error al cargar estadísticas:', error);
+                }
+            }
+        };
+        
+        cargarEstadisticasGuardadas();
+    }, []);
+
+    // Guardar estadísticas en localStorage cuando cambien
+    useEffect(() => {
+        localStorage.setItem('estadisticas_aviator', JSON.stringify(estadisticas));
+    }, [estadisticas]);
 
     // Obtener usuario al cargar
     useEffect(() => {
@@ -154,7 +188,7 @@ export default function Aviator() {
         }
     };
 
-    // Animación del vuelo - FUNCIÓN CORREGIDA
+    // Animación del vuelo
     useEffect(() => {
         if (estado === 'vuelo') {
             iniciarAnimacion();
@@ -174,7 +208,7 @@ export default function Aviator() {
         }
 
         detenerAnimacion();
-        tiempoInicioRef.current = performance.now(); // Usar performance.now() para mayor precisión
+        tiempoInicioRef.current = performance.now();
         tiempoUltimoFrameRef.current = tiempoInicioRef.current;
         setPuntosGrafico([]);
         setTiempoTranscurrido(0);
@@ -182,33 +216,23 @@ export default function Aviator() {
         const animar = (currentTime: number) => {
             if (!tiempoInicioRef.current) return;
             
-            // Tiempo transcurrido en SEGUNDOS
             const tiempoTrans = (currentTime - tiempoInicioRef.current) / 1000;
             setTiempoTranscurrido(tiempoTrans);
             
-            // Calcular progreso (0 a 1)
             const progreso = Math.min(tiempoTrans / duracionTotalRef.current, 1.0);
-            
-            // Aplicar función de easing (easeOutCubic)
             const progresoEased = 1 - Math.pow(1 - progreso, 3);
             
-            // Calcular multiplicador: de 1.0 al crash
             const rango = multiplicadorCrashRef.current - 1.0;
             const multiplicadorCalculado = 1.0 + rango * progresoEased;
-            
-            // Redondear a 2 decimales
             const multiplicadorRedondeado = Math.round(multiplicadorCalculado * 100) / 100;
             
             setMultiplicadorActual(multiplicadorRedondeado);
             
-            // Actualizar gráfico (mantener últimos 100 puntos)
             setPuntosGrafico(prev => {
                 const nuevoPunto = { x: tiempoTrans, y: multiplicadorRedondeado };
                 const nuevosPuntos = [...prev, nuevoPunto];
                 return nuevosPuntos.length > 100 ? nuevosPuntos.slice(-100) : nuevosPuntos;
             });
-            
-            // Verificar si alcanzó el final
             
             if (progreso >= 1.0) {
                 setEstado('explosion');
@@ -220,7 +244,6 @@ export default function Aviator() {
                 return;
             }
             
-            // Verificar retiro automático
             if (autoRetiroActivo && multiplicadorRedondeado >= multiplicadorAuto && multiplicadorAuto > 1.0) {
                 hacerCashout(multiplicadorAuto);
                 return;
@@ -272,13 +295,11 @@ export default function Aviator() {
                 }
             );
 
-            // Validar datos recibidos
             if (!res.data || typeof res.data.duracion_total !== 'number' || 
                 typeof res.data.multiplicador_crash !== 'number') {
                 throw new Error("Datos inválidos recibidos del servidor");
             }
 
-            // Configurar referencias - CON VALIDACIÓN
             const crashMultiplier = Math.max(1.0, Math.min(res.data.multiplicador_crash || 2.0, 500.0));
             const duracion = Math.max(0.5, Math.min(res.data.duracion_total || 5.0, 30.0));
             
@@ -288,12 +309,10 @@ export default function Aviator() {
             setSessionId(res.data.session_id);
             setDuracionTotal(duracion);
             
-            // Actualizar saldo
             if (usuario && res.data.nuevo_saldo) {
                 setUsuario(prev => prev ? { ...prev, saldo: res.data.nuevo_saldo } : prev);
             }
 
-            // Iniciar vuelo
             setEstado('vuelo');
             setMensaje("¡El avión despegó! Retira antes de que explote.");
 
@@ -333,21 +352,17 @@ export default function Aviator() {
                 setGanancia(res.data.ganancia);
                 setMensaje(res.data.resultado);
                 
-                // Actualizar saldo
                 if (usuario && res.data.nuevo_saldo) {
                     setUsuario(prev => prev ? { ...prev, saldo: res.data.nuevo_saldo } : prev);
                 }
 
-                // Animación de confetti
                 if (res.data.ganancia > apuestaActual) {
                     animarConfetti();
                 }
 
-                // Agregar al historial
                 agregarAlHistorial('cashout', res.data.multiplicador_crash, res.data.multiplicador_retiro, res.data.ganancia, apuestaActual);
                 showMsg(`¡Retiro exitoso! Ganaste $${res.data.ganancia.toFixed(2)}`, "success");
             } else {
-                // Explotó antes del cashout
                 setEstado('explosion');
                 setMultiplicadorCrash(res.data.multiplicador_crash);
                 setMensaje(res.data.resultado);
@@ -381,11 +396,11 @@ export default function Aviator() {
         setHistorial(nuevoHistorial);
         localStorage.setItem('historial_aviator', JSON.stringify(nuevoHistorial));
         
-        // Actualizar estadísticas
-        actualizarEstadisticas(nuevoVuelo);
+        // Actualizar estadísticas automáticamente
+        actualizarEstadisticasConVuelo(nuevoVuelo);
     };
 
-    const actualizarEstadisticas = (vuelo: Vuelo) => {
+    const actualizarEstadisticasConVuelo = (vuelo: Vuelo) => {
         setEstadisticas(prev => {
             const esVictoria = vuelo.resultado === 'cashout';
             const nuevaGanancia = esVictoria ? vuelo.ganancia : 0;
@@ -403,6 +418,68 @@ export default function Aviator() {
                 multiplicador_record: Math.max(prev.multiplicador_record, vuelo.multiplicador_retiro || 0)
             };
         });
+    };
+
+    // Función para actualizar estadísticas desde el historial (manual)
+    const actualizarEstadisticasDesdeHistorial = () => {
+        if (historial.length === 0) {
+            showMsg("No hay historial para actualizar", "info");
+            return;
+        }
+
+        let nuevasEstadisticas = {
+            total_vuelos: 0,
+            vuelos_ganados: 0,
+            vuelos_perdidos: 0,
+            ganancia_total: 0,
+            perdida_total: 0,
+            balance: 0,
+            mayor_ganancia: 0,
+            multiplicador_record: 0,
+        };
+        
+        historial.forEach(vuelo => {
+            nuevasEstadisticas.total_vuelos++;
+            
+            if (vuelo.resultado === 'cashout') {
+                nuevasEstadisticas.vuelos_ganados++;
+                nuevasEstadisticas.ganancia_total += vuelo.ganancia;
+                nuevasEstadisticas.balance += vuelo.ganancia;
+                nuevasEstadisticas.mayor_ganancia = Math.max(nuevasEstadisticas.mayor_ganancia, vuelo.ganancia);
+                if (vuelo.multiplicador_retiro) {
+                    nuevasEstadisticas.multiplicador_record = Math.max(
+                        nuevasEstadisticas.multiplicador_record, 
+                        vuelo.multiplicador_retiro
+                    );
+                }
+            } else {
+                nuevasEstadisticas.vuelos_perdidos++;
+                nuevasEstadisticas.perdida_total += vuelo.apuesta;
+                nuevasEstadisticas.balance -= vuelo.apuesta;
+            }
+        });
+        
+        setEstadisticas(nuevasEstadisticas);
+        showMsg("Estadísticas actualizadas desde el historial", "success");
+    };
+
+    // Función para restablecer estadísticas a cero
+    const restablecerEstadisticas = () => {
+        if (window.confirm("¿Estás seguro de que quieres restablecer todas las estadísticas a cero?")) {
+            const estadisticasIniciales = {
+                total_vuelos: 0,
+                vuelos_ganados: 0,
+                vuelos_perdidos: 0,
+                ganancia_total: 0,
+                perdida_total: 0,
+                balance: 0,
+                mayor_ganancia: 0,
+                multiplicador_record: 0,
+            };
+            
+            setEstadisticas(estadisticasIniciales);
+            showMsg("Estadísticas restablecidas a cero", "info");
+        }
     };
 
     const animarConfetti = () => {
@@ -462,44 +539,41 @@ export default function Aviator() {
     };
 
     const limpiarHistorial = () => {
-        setHistorial([]);
-        localStorage.removeItem('historial_aviator');
-        showMsg("Historial limpiado", "info");
+        if (window.confirm("¿Estás seguro de que quieres limpiar el historial?")) {
+            setHistorial([]);
+            localStorage.removeItem('historial_aviator');
+            showMsg("Historial limpiado", "info");
+        }
     };
 
     const cerrarSesion = () => {
         localStorage.removeItem("token");
         localStorage.removeItem("usuario");
         localStorage.removeItem("historial_aviator");
+        localStorage.removeItem("estadisticas_aviator");
         setUsuario(null);
         showMsg("Sesión cerrada correctamente", "success");
         setTimeout(() => navigate('/login'), 1500);
     };
 
-    // Formatear tiempo en segundos con 1 decimal
     const formatearTiempo = (segundos: number) => {
-        if (segundos < 0) return "0.0s"; // Evitar tiempos negativos
+        if (segundos < 0) return "0.0s";
         return `${Math.max(0, segundos).toFixed(1)}s`;
     };
 
-    // Renderizar avión animado
     const renderAvion = () => {
         const progreso = duracionTotal > 0 ? Math.min(tiempoTranscurrido / duracionTotal, 1) : 0;
-        const posicionX = progreso * 90; // Máximo 90% para no salir del contenedor
+        const posicionX = progreso * 90;
         
         return (
             <div className="relative w-full h-64 bg-gradient-to-b from-gray-900/50 to-transparent rounded-xl overflow-hidden">
-                {/* Fondo del cielo */}
                 <div className="absolute inset-0 bg-gradient-to-b from-blue-900/20 to-purple-900/10"></div>
                 
-                {/* Nubes decorativas */}
                 <div className="absolute top-4 left-8 w-16 h-8 bg-white/10 rounded-full blur-sm"></div>
                 <div className="absolute top-10 right-12 w-20 h-10 bg-white/15 rounded-full blur-sm"></div>
                 
-                {/* Pista de despegue */}
                 <div className="absolute bottom-0 left-0 right-0 h-2 bg-gradient-to-r from-yellow-500/30 to-yellow-600/40"></div>
                 
-                {/* Avión */}
                 <div 
                     className="absolute bottom-4 transform -translate-x-1/2 transition-all duration-300"
                     style={{ left: `${10 + posicionX}%` }}
@@ -507,7 +581,6 @@ export default function Aviator() {
                     <div className="text-4xl">✈️</div>
                 </div>
                 
-                {/* Indicador de multiplicador */}
                 <div className="absolute top-4 right-4 bg-black/40 backdrop-blur-sm rounded-lg p-3 border border-blue-500/30">
                     <div className="text-center">
                         <div className="text-xs text-gray-400">MULTIPLICADOR</div>
@@ -522,12 +595,10 @@ export default function Aviator() {
                     </div>
                 </div>
                 
-                {/* Tiempo transcurrido */}
                 <div className="absolute top-2 left-2 bg-black/40 backdrop-blur-sm rounded-lg px-3 py-1 text-xs text-gray-300">
                     Tiempo: {formatearTiempo(tiempoTranscurrido)}
                 </div>
                 
-                {/* Duración total */}
                 {duracionTotal > 0 && estado === 'vuelo' && (
                     <div className="absolute top-2 left-1/2 transform -translate-x-1/2 bg-black/40 backdrop-blur-sm rounded-lg px-3 py-1 text-xs text-gray-300">
                         Duración: {formatearTiempo(duracionTotal)}
@@ -537,7 +608,6 @@ export default function Aviator() {
         );
     };
 
-    // Renderizar gráfico
     const renderGrafico = () => {
         if (estado === 'esperando') {
             return (
@@ -555,7 +625,6 @@ export default function Aviator() {
             return renderAvion();
         }
 
-        // Calcular escalas con límites razonables
         const maxX = Math.max(Math.min(Math.max(...puntosGrafico.map(p => p.x), duracionTotal || 10), 30), 1);
         const maxY = Math.max(Math.min(Math.max(...puntosGrafico.map(p => p.y), multiplicadorCrashRef.current || 5), 500), 2);
         
@@ -570,7 +639,6 @@ export default function Aviator() {
 
         return (
             <div className="w-full h-64 bg-gradient-to-b from-gray-900/50 to-transparent rounded-xl relative overflow-hidden">
-                {/* Grid horizontal */}
                 <div className="absolute inset-0">
                     {[1, 2, 5, 10, 20, 50, 100, 200, 500].filter(y => y <= maxY).map(y => (
                         <div 
@@ -583,7 +651,6 @@ export default function Aviator() {
                     ))}
                 </div>
                 
-                {/* Línea de auto-retiro */}
                 {autoRetiroActivo && multiplicadorAuto > 1.0 && multiplicadorAuto <= maxY && (
                     <div 
                         className="absolute left-0 right-0 border-t-2 border-dashed border-yellow-500/70" 
@@ -595,7 +662,6 @@ export default function Aviator() {
                     </div>
                 )}
                 
-                {/* Gráfico SVG */}
                 <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
                     <defs>
                         <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -612,7 +678,6 @@ export default function Aviator() {
                     />
                 </svg>
                 
-                {/* Punto actual */}
                 {puntosGrafico.length > 0 && (
                     <div 
                         className="absolute w-4 h-4 rounded-full bg-gradient-to-br from-green-400 to-blue-500 border-2 border-white"
@@ -626,7 +691,6 @@ export default function Aviator() {
                     </div>
                 )}
                 
-                {/* Tiempo */}
                 <div className="absolute bottom-2 left-2 bg-black/40 backdrop-blur-sm rounded-lg px-3 py-1 text-xs text-gray-300">
                     {formatearTiempo(tiempoTranscurrido)} / {formatearTiempo(duracionTotal)}
                 </div>
@@ -647,7 +711,6 @@ export default function Aviator() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900">
-            {/* Notificación */}
             {notificacion && (
                 <div className={`fixed top-6 right-6 z-50 px-6 py-4 rounded-xl font-bold flex items-center space-x-3 shadow-2xl animate-slideIn ${
                     notificacion.type === "success" 
@@ -663,14 +726,12 @@ export default function Aviator() {
                 </div>
             )}
 
-            {/* Header */}
             <Header 
                 usuario={usuario}
                 cerrarSesion={cerrarSesion}
                 setUsuario={setUsuario}
             />
 
-            {/* Hero Section */}
             <section className="relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-pink-500/10"></div>
                 
@@ -701,18 +762,14 @@ export default function Aviator() {
                 </div>
             </section>
 
-            {/* Contenido Principal */}
             <section className="container mx-auto px-4 pb-8">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Área de juego */}
                     <div className="lg:col-span-2">
                         <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 shadow-2xl">
-                            {/* Gráfico */}
                             <div className="mb-6">
                                 {estado === 'vuelo' ? renderGrafico() : renderAvion()}
                             </div>
 
-                            {/* Panel de información */}
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                                 <div className="bg-gray-800/40 rounded-xl p-4 border border-gray-700/50">
                                     <div className="text-sm text-gray-400">Multiplicador</div>
@@ -748,7 +805,6 @@ export default function Aviator() {
                                 </div>
                             </div>
 
-                            {/* Selector de apuesta */}
                             {estado === 'esperando' ? (
                                 <div className="mb-8">
                                     <h3 className="text-xl font-bold text-white mb-4 text-center">💰 Selecciona tu apuesta</h3>
@@ -771,7 +827,6 @@ export default function Aviator() {
                                         ))}
                                     </div>
                                     
-                                    {/* Configuración de auto-retiro */}
                                     <div className="bg-gray-800/30 rounded-xl p-4 mb-4 border border-gray-700/50">
                                         <div className="flex items-center justify-between mb-3">
                                             <div className="flex items-center space-x-2">
@@ -819,7 +874,6 @@ export default function Aviator() {
                                 </div>
                             )}
 
-                            {/* Mensajes */}
                             {mensaje && (
                                 <div className={`px-6 py-4 rounded-xl font-bold mb-6 text-center ${
                                     mensaje.includes("CRASH")
@@ -832,7 +886,6 @@ export default function Aviator() {
                                 </div>
                             )}
 
-                            {/* Controles */}
                             <div className="text-center">
                                 {estado === 'esperando' && (
                                     <button
@@ -901,11 +954,26 @@ export default function Aviator() {
                         </div>
                     </div>
                     
-                    {/* Panel Lateral */}
                     <div className="space-y-6">
-                        {/* Estadísticas */}
                         <div className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700/50">
-                            <h3 className="text-xl font-bold text-white mb-4">📊 Estadísticas</h3>
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-xl font-bold text-white">📊 Estadísticas</h3>
+                                <div className="flex space-x-2">
+                                    <button
+                                        onClick={actualizarEstadisticasDesdeHistorial}
+                                        className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-bold"
+                                    >
+                                        🔄 Actualizar
+                                    </button>
+                                    <button
+                                        onClick={restablecerEstadisticas}
+                                        className="px-3 py-1 bg-red-600 hover:bg-red-700 rounded-lg text-sm font-bold"
+                                    >
+                                        🗑️ Restablecer
+                                    </button>
+                                </div>
+                            </div>
+                            
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="text-center p-4 bg-gray-800/40 rounded-xl">
                                     <div className="text-sm text-gray-400">Vuelos</div>
@@ -925,10 +993,33 @@ export default function Aviator() {
                                     <div className="text-sm text-gray-400">Record</div>
                                     <div className="text-2xl font-bold text-yellow-400">{estadisticas.multiplicador_record.toFixed(2)}x</div>
                                 </div>
+                                
+                                <div className="col-span-2 grid grid-cols-2 gap-4 mt-2">
+                                    <div className="text-center p-3 bg-gray-800/40 rounded-xl">
+                                        <div className="text-sm text-gray-400">Ganancia Total</div>
+                                        <div className="text-lg font-bold text-green-400">
+                                            ${estadisticas.ganancia_total.toFixed(2)}
+                                        </div>
+                                    </div>
+                                    <div className="text-center p-3 bg-gray-800/40 rounded-xl">
+                                        <div className="text-sm text-gray-400">Pérdida Total</div>
+                                        <div className="text-lg font-bold text-red-400">
+                                            ${estadisticas.perdida_total.toFixed(2)}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div className="col-span-2 text-center mt-2">
+                                    <div className="text-xs text-gray-500">
+                                        {estadisticas.total_vuelos > 0 ? 
+                                            `Última actualización: ${new Date().toLocaleTimeString()}` : 
+                                            "Sin datos guardados"
+                                        }
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         
-                        {/* Historial */}
                         <div className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700/50">
                             <div className="flex justify-between mb-4">
                                 <h3 className="text-xl font-bold text-white">📝 Historial</h3>
