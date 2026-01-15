@@ -586,16 +586,6 @@ export default function CaraSello() {
                                     <div className="text-3xl font-bold text-white mb-2">
                                         Saldo: <span className="text-yellow-400">${usuario?.saldo?.toLocaleString() ?? 0}</span>
                                     </div>
-                                    {mensaje && !mostrarResultadoFinal && (
-                                        <div className={`px-6 py-4 rounded-xl font-bold mb-4 ${mensaje.includes("Ganaste") || mensaje.includes("¡Ganaste")
-                                            ? "bg-gradient-to-r from-green-900/50 to-green-800/50 border border-green-500/50 text-green-200"
-                                            : mensaje.includes("Error") || mensaje.includes("insuficiente") || mensaje.includes("Debes") || mensaje.includes("Perdiste")
-                                                ? "bg-gradient-to-r from-red-900/50 to-red-800/50 border border-red-500/50 text-red-200"
-                                                : "bg-gradient-to-r from-blue-900/50 to-blue-800/50 border border-blue-500/50 text-blue-200"
-                                            }`}>
-                                            {mensaje}
-                                        </div>
-                                    )}
                                 </div>
 
                                 {/* Mostrar moneda animada o controles de apuesta */}
