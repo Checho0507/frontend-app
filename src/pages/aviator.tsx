@@ -568,7 +568,6 @@ export default function Aviator() {
                 >
                     <div className="text-4xl"><svg width="900" height="400" viewBox="0 0 900 400" xmlns="http://www.w3.org/2000/svg">
 
-  <!-- CIELO -->
   <defs>
     <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#6db9ef"/>
