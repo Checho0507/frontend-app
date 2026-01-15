@@ -425,7 +425,6 @@ export default function CaraSello() {
                             )}
                         </div>
                         <div className="text-gray-400 mt-2">{resultado.mensaje}</div>
-                        
                         {/* Botón para apostar de nuevo */}
                         <button
                             onClick={() => {
