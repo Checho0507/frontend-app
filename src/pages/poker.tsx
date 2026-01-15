@@ -115,8 +115,8 @@ export default function Poker() {
         const cargarConfiguracion = async () => {
             try {
                 const [resApuestas, resBlinds] = await Promise.all([
-                    axios.get(`${API_URL}/juegos/poker/juegos/poker/apuestas-permitidas`),
-                    axios.get(`${API_URL}/juegos/poker/juegos/poker/blinds`)
+                    axios.get(`${API_URL}/juegos/poker/apuestas-permitidas`),
+                    axios.get(`${API_URL}/juegos/poker/blinds`)
                 ]);
                 setApuestasPermitidas(resApuestas.data.apuestas_permitidas);
                 setBlindsDisponibles(resBlinds.data.blinds_disponibles);
@@ -206,7 +206,7 @@ export default function Poker() {
         try {
             const token = localStorage.getItem("token");
             const res = await axios.post(
-                `${API_URL}/juegos/poker/juegos/poker/iniciar?apuesta=${apuestaSeleccionada}&blind=${blindSeleccionado}`,
+                `${API_URL}/juegos/poker/iniciar?apuesta=${apuestaSeleccionada}&blind=${blindSeleccionado}`,
                 {},
                 {
                     headers: { Authorization: `Bearer ${token}` },
@@ -241,7 +241,7 @@ export default function Poker() {
         try {
             const token = localStorage.getItem("token");
             const res = await axios.post(
-                `${API_URL}/juegos/poker/juegos/poker/${sessionId}/accion?accion=${accion}&cantidad=${cantidad}`,
+                `${API_URL}/juegos/poker/${sessionId}/accion?accion=${accion}&cantidad=${cantidad}`,
                 {},
                 {
                     headers: { Authorization: `Bearer ${token}` },
@@ -325,7 +325,7 @@ export default function Poker() {
         try {
             const token = localStorage.getItem("token");
             const res = await axios.post(
-                `${API_URL}/juegos/poker/juegos/poker/${sessionId}/rendirse`,
+                `${API_URL}/juegos/poker/${sessionId}/rendirse`,
                 {},
                 {
                     headers: { Authorization: `Bearer ${token}` },
@@ -357,7 +357,7 @@ export default function Poker() {
         try {
             const token = localStorage.getItem("token");
             const res = await axios.get(
-                `${API_URL}/juegos/poker/juegos/poker/${sessionId}/estado`,
+                `${API_URL}/juegos/poker/${sessionId}/estado`,
                 {
                     headers: { Authorization: `Bearer ${token}` },
                 }
