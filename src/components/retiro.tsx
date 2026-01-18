@@ -21,8 +21,8 @@ interface RetiroBackend {
     cuenta_destino: string;
     referencia: string;
     estado: "PENDIENTE" | "APROBADO" | "RECHAZADO";
-    fecha_solicitud: Date;
-    fecha_procesamiento: Date | null;
+    fecha_solicitud: string;
+    fecha_procesamiento: string | null;
 }
 
 interface RetiroProps {
