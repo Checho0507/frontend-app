@@ -434,6 +434,9 @@ const Retiro: React.FC<RetiroProps> = ({ usuario, setUsuario, cerrarSesion }) =>
                                 </span>
                             )}
                         </p>
+                        {/* Solo 5% de cobro por tus retiros */}
+                        <div className="inline-block px-5 py-3 bg-gradient-to-r from-green-600/20 to-cyan-600/20 border border-green-500/30 rounded-full text-sm font-bold text-green-400">
+                            🚀 Solo 5% de comisión por retiro
                     </div>
                 </div>
             </section>
