@@ -565,7 +565,14 @@ const Retiro: React.FC<RetiroProps> = ({ usuario, setUsuario, cerrarSesion }) =>
                                         ) : (
                                             `Solicitar retiro de $${monto.toLocaleString()} COP`
                                         )}
+    
                                     </button>
+                                    {/*Total a recibir*/}
+                                    <p className="text-center text-gray-400 text-sm mt-3">
+                                        Total a recibir: <span className="font-bold text-green-400">
+                                            ${ (monto * 0.95).toLocaleString() } COP
+                                        </span> (después de comisión del 5%)
+                                    </p>
 
                                     {!formularioValido && !cargando && (
                                         <p className="text-center text-yellow-400 text-sm mt-3">
