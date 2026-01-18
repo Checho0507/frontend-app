@@ -382,11 +382,9 @@ const Retiro: React.FC<RetiroProps> = ({ usuario, setUsuario, cerrarSesion }) =>
         const dia = fecha.getUTCDate().toString().padStart(2, '0');
         const mes = (fecha.getUTCMonth() + 1).toString().padStart(2, '0');
         const año = fecha.getUTCFullYear();
-        const hora = fecha.getUTCHours().toString().padStart(2, '0');
-        const minutos = fecha.getUTCMinutes().toString().padStart(2, '0');
         
         // Formatear manualmente
-        return `${dia}/${mes}/${año} ${hora}:${minutos}`;
+        return `${dia}/${mes}/${año}`;
     } catch {
         return fechaString;
     }
@@ -747,6 +745,18 @@ const Retiro: React.FC<RetiroProps> = ({ usuario, setUsuario, cerrarSesion }) =>
                                                         <span className="text-gray-400">Total recibido: </span>
                                                         <span className="text-green-400 font-bold">
                                                             ${ (retiro.monto * 0.95).toLocaleString() } COP
+                                                        </span>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-gray-400">Comisión: </span>
+                                                        <span className="text-red-400 font-bold">
+                                                            ${ (retiro.monto * 0.05).toLocaleString() } COP
+                                                        </span>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-gray-400">Procesado el: </span>
+                                                        <span className="text-white">
+                                                            {retiro.fecha_procesamiento ? formatearFecha(retiro.fecha_procesamiento) : '—'}
                                                         </span>
                                                     </div>
                                                 </div>

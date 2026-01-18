@@ -324,21 +324,24 @@ const Deposito: React.FC<DepositoProps> = ({ usuario, setUsuario, cerrarSesion }
         }
     };
 
-    // Función para formatear la fecha
     const formatearFecha = (fechaString: string) => {
-        try {
-            const fecha = new Date(fechaString);
-            return fecha.toLocaleDateString('es-ES', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-        } catch (e) {
+    try {
+        const fecha = new Date(fechaString);
+        if (isNaN(fecha.getTime())) {
             return fechaString;
         }
-    };
+        
+        // Usar los métodos UTC para obtener los componentes
+        const dia = fecha.getUTCDate().toString().padStart(2, '0');
+        const mes = (fecha.getUTCMonth() + 1).toString().padStart(2, '0');
+        const año = fecha.getUTCFullYear();
+        
+        // Formatear manualmente
+        return `${dia}/${mes}/${año};
+    } catch {
+        return fechaString;
+    }
+};
 
     // Obtener nombre del método de pago
     const getMetodoNombre = (metodoId: string) => {
