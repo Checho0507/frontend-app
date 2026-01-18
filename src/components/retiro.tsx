@@ -373,18 +373,12 @@ const Retiro: React.FC<RetiroProps> = ({ usuario, setUsuario, cerrarSesion }) =>
 
     const formatearFecha = (fechaString: string) => {
         try {
+            {/* Convertir la cadena de fecha a un objeto Date */}
             const fecha = new Date(fechaString);
             if (isNaN(fecha.getTime())) {
                 return fechaString;
             }
-            return fecha.toLocaleDateString('es-ES', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: true
-            });
+            return fecha
         } catch {
             return fechaString;
         }
@@ -713,7 +707,9 @@ const Retiro: React.FC<RetiroProps> = ({ usuario, setUsuario, cerrarSesion }) =>
                                                             ${retiro.monto.toLocaleString()} COP
                                                         </p>
                                                         <p className="text-xs text-gray-400">
+                                                            {/*Fecha de solicitud + 1 día*/}
                                                             {formatearFecha(retiro.fecha_solicitud)}
+                                        
                                                         </p>
                                                     </div>
                                                     <span className={`px-3 py-1 rounded-full text-xs font-bold ${retiro.estado === "APROBADO"
