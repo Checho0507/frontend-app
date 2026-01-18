@@ -337,7 +337,7 @@ const Deposito: React.FC<DepositoProps> = ({ usuario, setUsuario, cerrarSesion }
         const año = fecha.getUTCFullYear();
         
         // Formatear manualmente
-        return `${dia}/${mes}/${año};
+        return `${dia}/${mes}/${año}`;
     } catch {
         return fechaString;
     }
