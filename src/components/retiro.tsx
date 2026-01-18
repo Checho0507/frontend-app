@@ -378,7 +378,15 @@ const Retiro: React.FC<RetiroProps> = ({ usuario, setUsuario, cerrarSesion }) =>
             if (isNaN(fecha.getTime())) {
                 return fechaString;
             }
-            return fecha
+            return fecha.toLocaleDateString('es-ES', {
+                timeZone: 'America/Bogota',
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            });
         } catch {
             return fechaString;
         }
