@@ -44,8 +44,74 @@ const Retiro: React.FC<RetiroProps> = ({ usuario, setUsuario, cerrarSesion }) =>
     const [formularioValido, setFormularioValido] = useState<boolean>(false);
 
     const metodosRetiro = [
-        { id: "nequi", nombre: "Nequi", icon: "📱", ejemplo: "3123456789" },
-        { id: "daviplata", nombre: "Daviplata", icon: "💳", ejemplo: "3123456789" }
+        { id: "nequi", nombre: "Nequi", icon: <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 200 200"
+                width="120"
+                height="120"
+            >
+                <rect
+                    x="30"
+                    y="30"
+                    width="140"
+                    height="140"
+                    rx="28"
+                    fill="#32C8D2"
+                    transform="rotate(15 100 100)"
+                    opacity="0.9"
+                />
+
+                <rect
+                    x="30"
+                    y="30"
+                    width="140"
+                    height="140"
+                    rx="28"
+                    fill="#FF2D7A"
+                    transform="rotate(-15 100 100)"
+                    opacity="0.9"
+                />
+                <rect
+                    x="35"
+                    y="35"
+                    width="130"
+                    height="130"
+                    rx="22"
+                    fill="#2E0057"
+                    transform="rotate(45 100 100)"
+                />
+            </svg>, ejemplo: "3123456789" },
+        { id: "daviplata", nombre: "Daviplata", icon:  <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="120"
+                height="120"
+                viewBox="0 0 120 120"
+            >
+                <rect
+                    x="0"
+                    y="0"
+                    width="120"
+                    height="120"
+                    rx="24"
+                    fill="#E10600"
+                />
+
+                <path
+                    d="M42 30
+       H64
+       C78 30 88 40 88 60
+       C88 80 78 90 64 90
+       H42
+       Z
+       M54 42
+       V78
+       H63
+       C71 78 76 72 76 60
+       C76 48 71 42 63 42
+       Z"
+                    fill="#FFFFFF"
+                />
+            </svg>, ejemplo: "3123456789" }
     ];
 
     const showMsg = (text: string, type: "success" | "error" | "info" = "info") => {
