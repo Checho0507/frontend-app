@@ -314,8 +314,8 @@ const Retiro: React.FC<RetiroProps> = ({ usuario, setUsuario, cerrarSesion }) =>
                     monto: monto,
                     metodo_retiro: metodoRetiro,
                     cuenta_destino: cuentaDestino.trim(),
-                    comision: monto * 0.02, // Ejemplo: 2% de comisión
-                    total: monto * 1.02   // Monto + comisión
+                    comision: monto * 0.05, // Ejemplo: 5% de comisión
+                    total: monto * 0.95   // Monto - comisión
                 },
                 {
                     headers: {
