@@ -734,6 +734,16 @@ const Retiro: React.FC<RetiroProps> = ({ usuario, setUsuario, cerrarSesion }) =>
                                                         <span className="text-gray-400">Ref: </span>
                                                         <span className="text-white font-mono">{retiro.referencia}</span>
                                                     </div>
+                                                    <div>
+                                                        <span className="text-gray-400">Cuenta destino: </span>
+                                                        <span className="text-white font-mono">{retiro.cuenta_destino}</span>
+                                                    </div>
+                                                    {/*Total recibido*/}
+                                                    <div className="mt-1">
+                                                        <span className="text-gray-400">Total recibido: </span>
+                                                        <span className="text-green-400 font-bold">
+                                                            ${ (retiro.monto * 0.95).toLocaleString() } COP
+                                                        </span>
                                                 </div>
                                             </div>
                                         ))
