@@ -470,7 +470,7 @@ const Deposito: React.FC<DepositoProps> = ({ usuario, setUsuario, cerrarSesion }
                                                     onClick={() => setMetodoPago(metodo.id)}
                                                     className={`p-4 rounded-xl border-2 transition-all duration-300 flex flex-col items-center justify-center ${metodoPago === metodo.id
                                                         ? 'border-yellow-500 bg-yellow-500/10'
-                                                        : 'border-gray-700 bg-white hover:border-gray-600'
+                                                        : 'border-gray-700 bg-gray-900/50 hover:border-gray-600'
                                                         }`}
                                                 >
                                                     <span className="text-2xl mb-2">{metodo.icon}</span>
