@@ -47,43 +47,26 @@ const Deposito: React.FC<DepositoProps> = ({ usuario, setUsuario, cerrarSesion }
 
     const metodosPago = [
         {
-            id: "nequi", nombre: "Nequi:", cuenta: "320-388-2720", icon: <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 200 200"
-                width="120"
-                height="120"
-            >
-                <rect
-                    x="30"
-                    y="30"
-                    width="140"
-                    height="140"
-                    rx="28"
-                    fill="#32C8D2"
-                    transform="rotate(15 100 100)"
-                    opacity="0.9"
-                />
+            id: "nequi", nombre: "Nequi:", cuenta: "320-388-2720", icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 160">
+  <defs>
+    <linearGradient id="pinkGlow" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FF2FA4"/>
+      <stop offset="100%" stop-color="#C8006A"/>
+    </linearGradient>
+  </defs>
 
-                <rect
-                    x="30"
-                    y="30"
-                    width="140"
-                    height="140"
-                    rx="28"
-                    fill="#FF2D7A"
-                    transform="rotate(-15 100 100)"
-                    opacity="0.9"
-                />
-                <rect
-                    x="35"
-                    y="35"
-                    width="130"
-                    height="130"
-                    rx="22"
-                    fill="#2E0057"
-                    transform="rotate(45 100 100)"
-                />
-            </svg>
+  <rect x="18" y="48" width="18" height="18" rx="4" fill="url(#pinkGlow)"/>
+
+  <g fill="#2B0A3D">
+    <path d="M70 115 V38 h18 l45 55 V38 h18 v77 h-16 l-47-56 v56 Z"/>
+    <path d="M185 115 V38 h65 v15 h-47 v14 h43 v14 h-43 v18 h49 v16 Z"/>
+    <path d="M270 76 c0-23 16-40 40-40s40 17 40 40-16 40-40 40c-6 0-12-1-17-4l-11 12-12-10 12-13c-8-7-12-15-12-25z
+             M294 76 c0 13 8 22 16 22s16-9 16-22-8-22-16-22-16 9-16 22z"/>
+    <path d="M365 38 h18 v45 c0 11 6 18 16 18s16-7 16-18 V38 h18 v47 c0 21-14 34-34 34s-34-13-34-34 Z"/>
+    <path d="M470 38 h18 v77 h-18 Z"/>
+  </g>
+</svg>
+
         },
         {
             id: "daviplata", nombre: "Daviplata", cuenta: "Próximamente", icon: <svg
