@@ -48,12 +48,6 @@ const Deposito: React.FC<DepositoProps> = ({ usuario, setUsuario, cerrarSesion }
     const metodosPago = [
         {
             id: "nequi", nombre: "Nequi:", cuenta: "320-388-2720", icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 160">
-  <defs>
-    <linearGradient id="pinkGlow" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#FF2FA4"/>
-      <stop offset="100%" stop-color="#C8006A"/>
-    </linearGradient>
-  </defs>
 
   <rect x="18" y="48" width="18" height="18" rx="4" fill="url(#pinkGlow)"/>
 
