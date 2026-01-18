@@ -744,6 +744,7 @@ const Retiro: React.FC<RetiroProps> = ({ usuario, setUsuario, cerrarSesion }) =>
                                                         <span className="text-green-400 font-bold">
                                                             ${ (retiro.monto * 0.95).toLocaleString() } COP
                                                         </span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         ))
