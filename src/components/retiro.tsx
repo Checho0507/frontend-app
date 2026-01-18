@@ -372,25 +372,25 @@ const Retiro: React.FC<RetiroProps> = ({ usuario, setUsuario, cerrarSesion }) =>
     };
 
     const formatearFecha = (fechaString: string) => {
-        try {
-            {/* Convertir la cadena de fecha a un objeto Date */}
-            const fecha = new Date(fechaString);
-            if (isNaN(fecha.getTime())) {
-                return fechaString;
-            }
-            return fecha.toLocaleDateString('es-ES', {
-                timeZone: 'America/Bogota',
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: true
-            });
-        } catch {
+    try {
+        const fecha = new Date(fechaString);
+        if (isNaN(fecha.getTime())) {
             return fechaString;
         }
-    };
+        
+        // Usar los métodos UTC para obtener los componentes
+        const dia = fecha.getUTCDate().toString().padStart(2, '0');
+        const mes = (fecha.getUTCMonth() + 1).toString().padStart(2, '0');
+        const año = fecha.getUTCFullYear();
+        const hora = fecha.getUTCHours().toString().padStart(2, '0');
+        const minutos = fecha.getUTCMinutes().toString().padStart(2, '0');
+        
+        // Formatear manualmente
+        return `${dia}/${mes}/${año} ${hora}:${minutos}`;
+    } catch {
+        return fechaString;
+    }
+};
 
     const getMetodoNombre = (metodoId: string) => {
         const metodo = metodosRetiro.find(m => m.id === metodoId);
