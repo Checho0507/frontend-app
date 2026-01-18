@@ -47,7 +47,7 @@ const Deposito: React.FC<DepositoProps> = ({ usuario, setUsuario, cerrarSesion }
 
     const metodosPago = [
         {
-            id: "nequi", nombre: "Nequi:", cuenta: "320-388-2720", icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 160">
+            id: "nequi", nombre: "Nequi:", cuenta: "320-388-2720", icon: <svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 512 512">
 
   <rect x="18" y="48" width="18" height="18" rx="4" fill="url(#pinkGlow)"/>
 
