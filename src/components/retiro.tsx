@@ -18,8 +18,6 @@ interface RetiroBackend {
     id: number;
     monto: number;
     metodo_retiro: string;
-    comision: number;
-    total: number;
     cuenta_destino: string;
     referencia: string;
     estado: "PENDIENTE" | "APROBADO" | "RECHAZADO";
@@ -735,14 +733,6 @@ const Retiro: React.FC<RetiroProps> = ({ usuario, setUsuario, cerrarSesion }) =>
                                                     <div>
                                                         <span className="text-gray-400">Ref: </span>
                                                         <span className="text-white font-mono">{retiro.referencia}</span>
-                                                    </div>
-                                                    <div>
-                                                        <span className="text-gray-400">Cuenta destino: </span>
-                                                        <span className="text-white font-mono">{retiro.cuenta_destino}</span>
-                                                    </div>
-                                                    <div className="mt-1">
-                                                        <span className="text-gray-400">Total recibido: </span>
-                                                        <span className="text-white font-mono">${(retiro.total).toLocaleString()}</span>
                                                     </div>
                                                 </div>
                                             </div>
