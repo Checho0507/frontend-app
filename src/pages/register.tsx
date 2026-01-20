@@ -4,7 +4,6 @@ import { API_URL } from "../api/auth";
 
 // Define el tipo de datos del formulario de registro
 interface RegisterForm {
-  id: number;
   referido_por: string;
   username: string;
   email: string;
@@ -12,11 +11,18 @@ interface RegisterForm {
   confirmPassword: string;
 }
 
+// Tipo para los datos que se enviarán al backend
+interface RegisterSubmitData {
+  referido_por: string | null;
+  username: string;
+  email: string;
+  password: string;
+}
+
 export default function Register() {
   const [searchParams] = useSearchParams();
   
   const [form, setForm] = useState<RegisterForm>({
-    id: 0,
     referido_por: "",
     username: "",
     email: "",
@@ -70,11 +76,12 @@ export default function Register() {
     setLoading(true);
 
     try {
-      // Preparar datos para envío
-      const submitData = {
-        ...form,
-        referido_por: form.referido_por || null,
-        confirmPassword: undefined // Excluir del envío
+      // Preparar datos para envío - SOLO los campos que el backend espera
+      const submitData: RegisterSubmitData = {
+        username: form.username,
+        email: form.email,
+        password: form.password,
+        referido_por: form.referido_por.trim() || null
       };
 
       const res = await fetch(`${API_URL}/register`, {
@@ -88,7 +95,6 @@ export default function Register() {
       if (res.ok) {
         setSuccess(true);
         setForm({
-          id: 0,
           referido_por: "",
           username: "",
           email: "",
@@ -98,10 +104,11 @@ export default function Register() {
         setTermsAccepted(false);
         console.log("Usuario registrado:", data);
       } else {
+        // Mostrar el error específico del backend
         setError(data.detail || "Error al registrar la cuenta");
       }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (err) {
+      console.error("Error en registro:", err);
       setError("Error de conexión. Intenta nuevamente.");
     } finally {
       setLoading(false);
@@ -219,7 +226,6 @@ export default function Register() {
                 </p>
               </div>
 
-              {/* Resto del formulario permanece igual... */}
               {/* Nombre de Usuario */}
               <div>
                 <label className="block text-gray-300 text-sm font-medium mb-2">
