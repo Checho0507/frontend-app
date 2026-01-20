@@ -269,7 +269,7 @@ const Retiro: React.FC<RetiroProps> = ({ usuario, setUsuario, cerrarSesion }) =>
         if (!usuario) return false;
 
         const montoMinimo = 50000;
-        const montoMaximo = usuario.verificado ? 1000000 : 5000000;
+        const montoMaximo = usuario.verificado ? 5000000 : 1000000;
         const montoValido = monto >= montoMinimo && monto <= montoMaximo;
 
         const saldoSuficiente = monto <= usuario.saldo;
