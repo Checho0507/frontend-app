@@ -126,7 +126,7 @@ const Deposito: React.FC<DepositoProps> = ({ usuario, setUsuario, cerrarSesion }
     useEffect(() => {
         const validarFormulario = () => {
             // Validar monto mínimo y máximo
-            const montoValido = monto >= 10000 && monto <= 1000000;
+            const montoValido = monto >= 10000 && monto <= 5000000;
 
             // Validar método de pago seleccionado
             const metodoValido = metodoPago !== "";
@@ -396,7 +396,7 @@ const Deposito: React.FC<DepositoProps> = ({ usuario, setUsuario, cerrarSesion }
                         </h1>
 
                         <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-                            Deposita desde <span className="text-yellow-400 font-bold">$10,000</span> hasta <span className="text-yellow-400 font-bold">$1,000,000</span>.
+                            Deposita desde <span className="text-yellow-400 font-bold">$10,000</span> hasta <span className="text-yellow-400 font-bold">$5,000,000</span>.
                             <span className="text-green-400 font-bold"> ¡Usuarios verificados no requieren comprobante!</span>
                         </p>
                     </div>
@@ -427,24 +427,24 @@ const Deposito: React.FC<DepositoProps> = ({ usuario, setUsuario, cerrarSesion }
                                                 className="w-full pl-10 pr-4 py-4 bg-gray-900/50 border border-gray-700 rounded-xl text-white text-lg focus:outline-none focus:border-yellow-500 transition"
                                                 placeholder="Ej: 100000"
                                                 min="10000"
-                                                max="1000000"
+                                                max="5000000"
                                                 step="1000"
                                                 required
                                             />
                                         </div>
                                         <div className="mt-2">
-                                            <p className={`text-sm ${monto >= 10000 && monto <= 1000000 ? 'text-green-400' : 'text-red-400'}`}>
+                                            <p className={`text-sm ${monto >= 10000 && monto <= 5000000 ? 'text-green-400' : 'text-red-400'}`}>
                                                 {monto > 0 && (
                                                     <>
                                                         {monto < 10000 ? '❌ Monto mínimo: $10,000 COP' :
-                                                            monto > 1000000 ? '❌ Monto máximo: $1,000,000 COP' :
+                                                            monto > 5000000 ? '❌ Monto máximo: $5,000,000 COP' :
                                                                 '✅ Monto válido'}
                                                     </>
                                                 )}
                                             </p>
                                         </div>
                                         <div className="flex flex-wrap gap-2 mt-3">
-                                            {[10000, 50000, 100000, 200000, 500000, 1000000].map((valor) => (
+                                            {[10000, 50000, 100000, 200000, 500000, 1000000, 5000000].map((valor) => (
                                                 <button
                                                     key={valor}
                                                     type="button"
@@ -557,8 +557,8 @@ const Deposito: React.FC<DepositoProps> = ({ usuario, setUsuario, cerrarSesion }
                                             </span>
                                         </div>
                                         <ul className="text-sm space-y-1 text-gray-400">
-                                            <li className={monto >= 10000 && monto <= 1000000 ? 'text-green-400' : 'text-gray-500'}>
-                                                • Monto válido (entre $10,000 y $1,000,000 COP)
+                                            <li className={monto >= 10000 && monto <= 5000000 ? 'text-green-400' : 'text-gray-500'}>
+                                                • Monto válido (entre $10,000 y $5,000,000 COP)
                                             </li>
                                             <li className={metodoPago ? 'text-green-400' : 'text-gray-500'}>
                                                 • Método de pago seleccionado
@@ -638,7 +638,7 @@ const Deposito: React.FC<DepositoProps> = ({ usuario, setUsuario, cerrarSesion }
                                     <div>
                                         <p className="text-gray-400 text-sm">Límites de depósito</p>
                                         <p className="text-sm">Mínimo: $10,000 COP</p>
-                                        <p className="text-sm">Máximo: $1,000,000 COP</p>
+                                        <p className="text-sm">Máximo: $5,000,000 COP</p>
                                     </div>
                                 </div>
                             </div>
