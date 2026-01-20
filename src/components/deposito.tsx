@@ -397,7 +397,7 @@ const Deposito: React.FC<DepositoProps> = ({ usuario, setUsuario, cerrarSesion }
 
                         <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
                             Deposita desde <span className="text-yellow-400 font-bold">$10,000</span> hasta <span className="text-yellow-400 font-bold">$5,000,000</span>.
-                            <span className="text-green-400 font-bold"> ¡Usuarios verificados no requieren comprobante!</span>
+                            Elige tu método de pago favorito y comienza a jugar hoy mismo.
                         </p>
                     </div>
                 </div>
