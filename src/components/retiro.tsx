@@ -269,7 +269,7 @@ const Retiro: React.FC<RetiroProps> = ({ usuario, setUsuario, cerrarSesion }) =>
         if (!usuario) return false;
 
         const montoMinimo = 50000;
-        const montoMaximo = usuario.verificado ? 1000000 : 1000000;
+        const montoMaximo = usuario.verificado ? 1000000 : 5000000;
         const montoValido = monto >= montoMinimo && monto <= montoMaximo;
 
         const saldoSuficiente = monto <= usuario.saldo;
@@ -396,7 +396,7 @@ const Retiro: React.FC<RetiroProps> = ({ usuario, setUsuario, cerrarSesion }) =>
     };
 
     const getLimiteMaximo = () => {
-        return usuario?.verificado ? 1000000 : 1000000;
+        return usuario?.verificado ? 5000000 : 1000000;
     };
 
     const getEjemploCuenta = () => {
@@ -548,7 +548,7 @@ const Retiro: React.FC<RetiroProps> = ({ usuario, setUsuario, cerrarSesion }) =>
                                             </p>
                                         </div>
                                         <div className="flex flex-wrap gap-2 mt-3">
-                                            {[50000, 100000, 200000, 500000, 1000000].map((valor) => (
+                                            {[50000, 100000, 200000, 500000, 1000000, 5000000].map((valor) => (
                                                 <button
                                                     key={valor}
                                                     type="button"
@@ -682,7 +682,7 @@ const Retiro: React.FC<RetiroProps> = ({ usuario, setUsuario, cerrarSesion }) =>
                                             </p>
                                         ) : (
                                             <p className="text-xs text-yellow-400 mt-1">
-                                                Límite máximo: $1,000,000 COP
+                                                Límite máximo: $5,000,000 COP
                                             </p>
                                         )}
                                     </div>
