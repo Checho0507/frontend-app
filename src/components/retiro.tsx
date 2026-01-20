@@ -678,11 +678,11 @@ const Retiro: React.FC<RetiroProps> = ({ usuario, setUsuario, cerrarSesion }) =>
                                         </p>
                                         {usuario.verificado ? (
                                             <p className="text-xs text-green-400 mt-1">
-                                                Límite máximo: $1,000,000 COP
+                                                Límite máximo: $5,000,000 COP
                                             </p>
                                         ) : (
                                             <p className="text-xs text-yellow-400 mt-1">
-                                                Límite máximo: $5,000,000 COP
+                                                Límite máximo: $1,000,000 COP
                                             </p>
                                         )}
                                     </div>
