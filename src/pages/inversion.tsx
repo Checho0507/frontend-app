@@ -126,8 +126,8 @@ export default function Inversion() {
             return;
         }
 
-        if (montoDeposito < 50000 || montoDeposito > 1000000) {
-            showMsg("El monto debe estar entre $50,000 y $1,000,000", "error");
+        if (montoDeposito < 50000 || montoDeposito > 5000000) {
+            showMsg("El monto debe estar entre $50,000 y $5,000,000", "error");
             return;
         }
 
@@ -342,20 +342,20 @@ export default function Inversion() {
 
                                         <div className="mb-6">
                                             <label className="block text-gray-300 mb-3">
-                                                Monto a invertir (entre $50,000 y $1,000,000)
+                                                Monto a invertir (entre $50,000 y $5,000,000)
                                             </label>
                                             <div className="flex items-center space-x-4">
                                                 <input
                                                     type="number"
                                                     min="50000"
-                                                    max="1000000"
+                                                    max="5000000"
                                                     step="1000"
                                                     value={montoDeposito}
                                                     onChange={(e) => setMontoDeposito(Number(e.target.value))}
                                                     className="flex-1 bg-gray-800 border border-teal-500/50 rounded-xl px-6 py-4 text-white text-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                                                 />
                                                 <button
-                                                    onClick={() => setMontoDeposito(1000000)}
+                                                    onClick={() => setMontoDeposito(5000000)}
                                                     className="px-4 py-2 bg-gradient-to-r from-teal-600 to-blue-600 rounded-xl text-white font-bold hover:opacity-90 transition-opacity"
                                                 >
                                                     MAX
@@ -365,7 +365,7 @@ export default function Inversion() {
 
                                         {/* Valores sugeridos */}
                                         <div className="grid grid-cols-4 gap-2 mb-6">
-                                            {[50000, 100000, 500000, 1000000].map((monto) => (
+                                            {[50000, 100000, 500000, 1000000, 5000000].map((monto) => (
                                                 <button
                                                     key={monto}
                                                     onClick={() => setMontoDeposito(monto)}
@@ -700,7 +700,7 @@ export default function Inversion() {
                                 </div>
                                 <h3 className="text-xl font-bold text-white mb-3">Deposita</h3>
                                 <p className="text-gray-400">
-                                    Invierte entre $50,000 y $1,000,000. No hay límite de depósitos.
+                                    Invierte entre $50,000 y $5,000,000. No hay límite de depósitos.
                                 </p>
                             </div>
                             <div className="text-center">
@@ -743,7 +743,8 @@ export default function Inversion() {
                                             { monto: 50000, color: 'text-teal-400' },
                                             { monto: 100000, color: 'text-green-400' },
                                             { monto: 500000, color: 'text-blue-400' },
-                                            { monto: 1000000, color: 'text-purple-400' }
+                                            { monto: 1000000, color: 'text-purple-400' },
+                                            { monto: 5000000, color: 'text-yellow-400' }
                                         ].map((item) => {
                                             const mensual = (item.monto * 300) / (12 * 100);
                                             const trimestral = mensual * 3;
