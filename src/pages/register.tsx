@@ -72,10 +72,10 @@ export default function Register() {
     try {
       // Preparar datos para envío
       const submitData = {
-        ...form,
-        referido_por: form.referido_por || null,
-        id: undefined, // Excluir del envío
-        confirmPassword: undefined // Excluir del envío
+        referido_por: form.referido_por,
+        username: form.username,
+        email: form.email,
+        password: form.password
       };
 
       const res = await fetch(`${API_URL}/register`, {
