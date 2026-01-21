@@ -4,7 +4,6 @@ import { API_URL } from "../api/auth";
 
 // Define el tipo de datos del formulario de registro
 interface RegisterForm {
-  id: number;
   referido_por: string;
   username: string;
   email: string;
@@ -16,7 +15,6 @@ export default function Register() {
   const [searchParams] = useSearchParams();
   
   const [form, setForm] = useState<RegisterForm>({
-    id: 0,
     referido_por: "",
     username: "",
     email: "",
@@ -72,10 +70,13 @@ export default function Register() {
     try {
       // Preparar datos para envío
       const submitData = {
-        ...form,
-        referido_por: form.referido_por || null,
-        confirmPassword: undefined // Excluir del envío
+        username: form.username,
+        email: form.email,
+        password: form.password,
+        referido_por: form.referido_por ? parseInt(form.referido_por) : null
       };
+
+      console.log("Enviando datos:", submitData);
 
       const res = await fetch(`${API_URL}/register`, {
         method: "POST",
@@ -88,7 +89,6 @@ export default function Register() {
       if (res.ok) {
         setSuccess(true);
         setForm({
-          id: 0,
           referido_por: "",
           username: "",
           email: "",
@@ -100,8 +100,8 @@ export default function Register() {
       } else {
         setError(data.detail || "Error al registrar la cuenta");
       }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (err) {
+      console.error("Error completo:", err);
       setError("Error de conexión. Intenta nuevamente.");
     } finally {
       setLoading(false);
@@ -219,7 +219,6 @@ export default function Register() {
                 </p>
               </div>
 
-              {/* Resto del formulario permanece igual... */}
               {/* Nombre de Usuario */}
               <div>
                 <label className="block text-gray-300 text-sm font-medium mb-2">
