@@ -23,6 +23,7 @@ export default function Register() {
   });
 
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
@@ -40,28 +41,95 @@ export default function Register() {
     }
   }, [searchParams]);
 
+  // Función para validar email
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  // Función para validar todo el formulario
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+    let isValid = true;
+
+    // Validar términos
+    if (!termsAccepted) {
+      setError("Debes aceptar los términos y condiciones para registrarte");
+      return false;
+    }
+
+    // Validar username
+    if (!form.username.trim()) {
+      errors.username = "El nombre de usuario es requerido";
+      isValid = false;
+    } else if (form.username.length < 3) {
+      errors.username = "El nombre de usuario debe tener al menos 3 caracteres";
+      isValid = false;
+    }
+
+    // Validar email
+    if (!form.email.trim()) {
+      errors.email = "El correo electrónico es requerido";
+      isValid = false;
+    } else if (!validateEmail(form.email)) {
+      errors.email = "Por favor ingresa un correo electrónico válido (ejemplo: usuario@dominio.com)";
+      isValid = false;
+    }
+
+    // Validar password
+    if (!form.password) {
+      errors.password = "La contraseña es requerida";
+      isValid = false;
+    } else if (form.password.length < 6) {
+      errors.password = "La contraseña debe tener al menos 6 caracteres";
+      isValid = false;
+    }
+
+    // Validar confirmación de password
+    if (!form.confirmPassword) {
+      errors.confirmPassword = "Por favor confirma tu contraseña";
+      isValid = false;
+    } else if (form.password !== form.confirmPassword) {
+      errors.confirmPassword = "Las contraseñas no coinciden";
+      isValid = false;
+    }
+
+    // Validar código de referido (si se proporciona)
+    if (form.referido_por && !/^\d+$/.test(form.referido_por)) {
+      errors.referido_por = "El código de referido debe ser un número válido";
+      isValid = false;
+    }
+
+    setFieldErrors(errors);
+    return isValid;
+  };
+
+  // Limpiar error de un campo específico cuando el usuario empieza a editarlo
+  const clearFieldError = (fieldName: string) => {
+    if (fieldErrors[fieldName]) {
+      setFieldErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[fieldName];
+        return newErrors;
+      });
+    }
+    setError(""); // También limpiamos el error general
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setForm({ ...form, [name]: value });
+    clearFieldError(name); // Limpiar error cuando el usuario empieza a escribir
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setFieldErrors({});
     setSuccess(false);
 
-    // Validaciones
-    if (!termsAccepted) {
-      setError("Debes aceptar los términos y condiciones para registrarte");
-      return;
-    }
-
-    if (form.password !== form.confirmPassword) {
-      setError("Las contraseñas no coinciden");
-      return;
-    }
-
-    if (form.password.length < 6) {
-      setError("La contraseña debe tener al menos 6 caracteres");
+    // Validar formulario antes de enviar
+    if (!validateForm()) {
       return;
     }
 
@@ -70,8 +138,8 @@ export default function Register() {
     try {
       // Preparar datos para envío
       const submitData = {
-        username: form.username,
-        email: form.email,
+        username: form.username.trim(),
+        email: form.email.trim().toLowerCase(),
         password: form.password,
         referido_por: form.referido_por ? parseInt(form.referido_por) : null
       };
@@ -98,7 +166,44 @@ export default function Register() {
         setTermsAccepted(false);
         console.log("Usuario registrado:", data);
       } else {
-        setError(data.detail || "Error al registrar la cuenta");
+        // Manejar errores específicos del backend
+        if (res.status === 422) {
+          const backendErrors = data.detail || {};
+          const errorMessages: Record<string, string> = {};
+          
+          // Mapear errores del backend a campos específicos
+          if (Array.isArray(backendErrors)) {
+            backendErrors.forEach((err: any) => {
+              if (err.loc && err.loc[1]) {
+                const field = err.loc[1];
+                errorMessages[field] = err.msg;
+              }
+            });
+          }
+          
+          if (Object.keys(errorMessages).length > 0) {
+            setFieldErrors(errorMessages);
+            setError("Por favor corrige los errores en el formulario");
+          } else {
+            setError(data.detail || "Error en los datos enviados");
+          }
+        } else if (res.status === 400) {
+          // Manejar errores 400 (bad request)
+          if (data.detail && typeof data.detail === 'string') {
+            // Intentar extraer información del error
+            if (data.detail.includes('email') || data.detail.toLowerCase().includes('correo')) {
+              setFieldErrors({ email: "El correo electrónico no es válido o ya está registrado" });
+            } else if (data.detail.includes('username')) {
+              setFieldErrors({ username: "El nombre de usuario ya existe" });
+            } else {
+              setError(data.detail);
+            }
+          } else {
+            setError("Error en la solicitud. Verifica los datos ingresados.");
+          }
+        } else {
+          setError(data.detail || "Error al registrar la cuenta");
+        }
       }
     } catch (err) {
       console.error("Error completo:", err);
@@ -201,9 +306,15 @@ export default function Register() {
                     placeholder="Ingresa código de referido"
                     value={form.referido_por}
                     onChange={handleChange}
-                    className="w-full pl-10 p-3 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-white placeholder-gray-500"
+                    className={`w-full pl-10 p-3 bg-gray-800 border rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-white placeholder-gray-500 ${
+                      fieldErrors.referido_por 
+                        ? 'border-red-500 focus:ring-red-500' 
+                        : form.referido_por 
+                          ? 'border-green-500' 
+                          : 'border-gray-700'
+                    }`}
                   />
-                  {form.referido_por && (
+                  {form.referido_por && !fieldErrors.referido_por && (
                     <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                       <svg className="h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -211,8 +322,16 @@ export default function Register() {
                     </div>
                   )}
                 </div>
+                {fieldErrors.referido_por && (
+                  <p className="text-red-400 text-xs mt-1 flex items-center">
+                    <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    {fieldErrors.referido_por}
+                  </p>
+                )}
                 <p className="text-xs text-gray-500 mt-1">
-                  {form.referido_por 
+                  {form.referido_por && !fieldErrors.referido_por
                     ? "✓ Código aplicado - Recibirás bonos extras" 
                     : "Si te refirió alguien, gana ambos bonos extras"
                   }
@@ -236,11 +355,21 @@ export default function Register() {
                     placeholder="Ej: apostador_pro"
                     value={form.username}
                     onChange={handleChange}
-                    className="w-full pl-10 p-3 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-white placeholder-gray-500"
+                    className={`w-full pl-10 p-3 bg-gray-800 border rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-white placeholder-gray-500 ${
+                      fieldErrors.username ? 'border-red-500 focus:ring-red-500' : 'border-gray-700'
+                    }`}
                     required
                     minLength={3}
                   />
                 </div>
+                {fieldErrors.username && (
+                  <p className="text-red-400 text-xs mt-1 flex items-center">
+                    <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    {fieldErrors.username}
+                  </p>
+                )}
               </div>
 
               {/* Correo Electrónico */}
@@ -260,10 +389,28 @@ export default function Register() {
                     placeholder="tucorreo@ejemplo.com"
                     value={form.email}
                     onChange={handleChange}
-                    className="w-full pl-10 p-3 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-white placeholder-gray-500"
+                    className={`w-full pl-10 p-3 bg-gray-800 border rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-white placeholder-gray-500 ${
+                      fieldErrors.email ? 'border-red-500 focus:ring-red-500' : 'border-gray-700'
+                    }`}
                     required
                   />
                 </div>
+                {fieldErrors.email && (
+                  <p className="text-red-400 text-xs mt-1 flex items-center">
+                    <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    {fieldErrors.email}
+                  </p>
+                )}
+                {!fieldErrors.email && form.email && !validateEmail(form.email) && (
+                  <p className="text-yellow-400 text-xs mt-1 flex items-center">
+                    <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    Ingresa un correo electrónico válido (ejemplo: usuario@dominio.com)
+                  </p>
+                )}
               </div>
 
               {/* Contraseña */}
@@ -283,7 +430,9 @@ export default function Register() {
                     placeholder="Mínimo 6 caracteres"
                     value={form.password}
                     onChange={handleChange}
-                    className="w-full pl-10 pr-10 p-3 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-white placeholder-gray-500"
+                    className={`w-full pl-10 pr-10 p-3 bg-gray-800 border rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-white placeholder-gray-500 ${
+                      fieldErrors.password ? 'border-red-500 focus:ring-red-500' : 'border-gray-700'
+                    }`}
                     required
                     minLength={6}
                   />
@@ -306,6 +455,14 @@ export default function Register() {
                     </svg>
                   </button>
                 </div>
+                {fieldErrors.password && (
+                  <p className="text-red-400 text-xs mt-1 flex items-center">
+                    <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    {fieldErrors.password}
+                  </p>
+                )}
               </div>
 
               {/* Confirmar Contraseña */}
@@ -319,9 +476,19 @@ export default function Register() {
                   placeholder="Repite tu contraseña"
                   value={form.confirmPassword}
                   onChange={handleChange}
-                  className="w-full p-3 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-white placeholder-gray-500"
+                  className={`w-full p-3 bg-gray-800 border rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-white placeholder-gray-500 ${
+                    fieldErrors.confirmPassword ? 'border-red-500 focus:ring-red-500' : 'border-gray-700'
+                  }`}
                   required
                 />
+                {fieldErrors.confirmPassword && (
+                  <p className="text-red-400 text-xs mt-1 flex items-center">
+                    <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    {fieldErrors.confirmPassword}
+                  </p>
+                )}
               </div>
 
               {/* Términos y Condiciones */}
@@ -331,8 +498,17 @@ export default function Register() {
                     id="terms"
                     type="checkbox"
                     checked={termsAccepted}
-                    onChange={() => setTermsAccepted(!termsAccepted)}
-                    className="h-4 w-4 text-yellow-600 focus:ring-yellow-500 border-gray-700 rounded bg-gray-800"
+                    onChange={() => {
+                      setTermsAccepted(!termsAccepted);
+                      if (error === "Debes aceptar los términos y condiciones para registrarte") {
+                        setError("");
+                      }
+                    }}
+                    className={`h-4 w-4 focus:ring-yellow-500 border rounded bg-gray-800 ${
+                      error === "Debes aceptar los términos y condiciones para registrarte" 
+                        ? 'border-red-500 text-red-600' 
+                        : 'border-gray-700 text-yellow-600'
+                    }`}
                     required
                   />
                 </div>
@@ -356,7 +532,7 @@ export default function Register() {
               {/* Botón de Registro */}
               <button
                 type="submit"
-                disabled={loading || !termsAccepted}
+                disabled={loading}
                 className="w-full bg-gradient-to-r from-yellow-600 to-green-600 hover:from-yellow-700 hover:to-green-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center mt-4"
               >
                 {loading ? (
@@ -383,7 +559,7 @@ export default function Register() {
               </div>
             </form>
 
-            {/* Mensajes de éxito y error */}
+            {/* Mensajes de éxito y error general */}
             {success && (
               <div className="mt-6 p-4 bg-green-900/30 border border-green-700/50 text-green-300 rounded-xl flex items-start">
                 <svg className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -396,7 +572,7 @@ export default function Register() {
               </div>
             )}
 
-            {error && (
+            {error && Object.keys(fieldErrors).length === 0 && (
               <div className="mt-6 p-4 bg-red-900/30 border border-red-700/50 text-red-300 rounded-xl flex items-start">
                 <svg className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
