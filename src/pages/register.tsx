@@ -4,6 +4,7 @@ import { API_URL } from "../api/auth";
 
 // Define el tipo de datos del formulario de registro
 interface RegisterForm {
+  id: number;
   referido_por: string;
   username: string;
   email: string;
@@ -15,6 +16,7 @@ export default function Register() {
   const [searchParams] = useSearchParams();
   
   const [form, setForm] = useState<RegisterForm>({
+    id: 0,
     referido_por: "",
     username: "",
     email: "",
@@ -70,10 +72,9 @@ export default function Register() {
     try {
       // Preparar datos para envío
       const submitData = {
-        referido_por: form.referido_por,
-        username: form.username,
-        email: form.email,
-        password: form.password
+        ...form,
+        referido_por: form.referido_por || null,
+        confirmPassword: undefined // Excluir del envío
       };
 
       const res = await fetch(`${API_URL}/register`, {
@@ -87,6 +88,7 @@ export default function Register() {
       if (res.ok) {
         setSuccess(true);
         setForm({
+          id: 0,
           referido_por: "",
           username: "",
           email: "",
