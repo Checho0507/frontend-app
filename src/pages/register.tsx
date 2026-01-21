@@ -4,7 +4,6 @@ import { API_URL } from "../api/auth";
 
 // Define el tipo de datos del formulario de registro
 interface RegisterForm {
-  id: number;
   referido_por: string;
   username: string;
   email: string;
@@ -16,7 +15,6 @@ export default function Register() {
   const [searchParams] = useSearchParams();
   
   const [form, setForm] = useState<RegisterForm>({
-    id: 0,
     referido_por: "",
     username: "",
     email: "",
@@ -89,7 +87,6 @@ export default function Register() {
       if (res.ok) {
         setSuccess(true);
         setForm({
-          id: 0,
           referido_por: "",
           username: "",
           email: "",
