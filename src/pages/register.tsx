@@ -74,6 +74,7 @@ export default function Register() {
       const submitData = {
         ...form,
         referido_por: form.referido_por || null,
+        id: undefined, // Excluir del envío
         confirmPassword: undefined // Excluir del envío
       };
 
