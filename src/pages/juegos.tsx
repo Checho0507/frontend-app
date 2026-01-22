@@ -87,6 +87,7 @@ export default function Juegos() {
       { nombre: "Cara o Sello", disponible: true },
       { nombre: "Carta Mayor", disponible: true },
       { nombre: "Piedra, Papel o Tijera", disponible: true },
+      { nombre: "Cascadas Tetris", disponible: true },
       { nombre: "Poker", disponible: false },
       { nombre: "Ruleta Europea", disponible: false }
     ];
@@ -203,6 +204,13 @@ export default function Juegos() {
       ruta: "/juegos/piedrapapeltijera",
       icono: "✊",
       color: "from-yellow-500 to-red-500",
+      disponible: true
+    },
+    {      nombre: "Cascadas Tetris",
+      descripcion: "Combina piezas y gana puntos en este emocionante juego",
+      ruta: "/juegos/cascadastetris",
+      icono: "🧩",
+      color: "from-indigo-500 to-blue-500",
       disponible: true
     },
     {

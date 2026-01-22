@@ -23,6 +23,7 @@ import Inversion from '../pages/inversion';
 import RuletaEuropea from '../pages/ruletaeuropea';
 import Poker from '../pages/poker';
 import Tragamonedas2 from '../pages/tragamonedas';
+import Cascadas from '../pages/cascadastetris';
 
 interface Usuario {
   id: number;
@@ -99,6 +100,7 @@ const AppRouter = () => {
         <Route path="/transacciones/admin/retiros/pendientes" element={<AdminPanel />} />
         <Route path="/transacciones/admin/retiros/:retiroId/aprobar" element={<AdminPanel />} />
         <Route path="/transacciones/admin/retiros/:retiroId/rechazar" element={<AdminPanel />} />
+        <Route path="/juegos/cascadastetris" element={<Cascadas />} />
 
         <Route path="/inversiones" element={<Inversion />} />
   
