@@ -80,14 +80,15 @@ export default function Juegos() {
       { nombre: "Ruleta", disponible: true },
       { nombre: "Dados", disponible: true },
       { nombre: "Tragamonedas", disponible: true },
+      { nombre: "Tragamonedas 2.0", disponible: true },
       { nombre: "Blackjack", disponible: true },
       { nombre: "Minas", disponible: true },
       { nombre: "Aviator", disponible: true },
       { nombre: "Cara o Sello", disponible: true },
       { nombre: "Carta Mayor", disponible: true },
       { nombre: "Piedra, Papel o Tijera", disponible: true },
-      { nombre: "Poker", disponible: true },
-      { nombre: "Ruleta Europea", disponible: true }
+      { nombre: "Poker", disponible: false },
+      { nombre: "Ruleta Europea", disponible: false }
     ];
 
     setEstadisticasJuegos({
@@ -144,6 +145,14 @@ export default function Juegos() {
       nombre: "Tragamonedas",
       descripcion: "Gira y alinea símbolos para ganar",
       ruta: "/juegos/tragamonedas",
+      icono: "🎰",
+      color: "from-yellow-500 to-amber-500",
+      disponible: true
+    },
+    {
+      nombre: "Tragamonedas 2.0",
+      descripcion: "Gira y alinea símbolos para ganar",
+      ruta: "/juegos/tragamonedas2",
       icono: "🎰",
       color: "from-yellow-500 to-amber-500",
       disponible: true
