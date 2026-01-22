@@ -22,6 +22,7 @@ import PiedraPapelTijera from '../pages/piedrapapeltijera';
 import Inversion from '../pages/inversion';
 import RuletaEuropea from '../pages/ruletaeuropea';
 import Poker from '../pages/poker';
+import Tragamonedas2 from '../pages/tragamonedas';
 
 interface Usuario {
   id: number;
@@ -87,6 +88,7 @@ const AppRouter = () => {
         <Route path="/juegos/piedrapapeltijera" element={<PiedraPapelTijera />} />
         <Route path='/juegos/ruletaeuropea' element={<RuletaEuropea />} />
         <Route path='/juegos/poker' element={<Poker />} />
+        <Route path='/juegos/tragamonedas2' element={<Tragamonedas2 />} />
 
         <Route path="/transacciones/deposito" element={<Deposito usuario={usuario} cerrarSesion={cerrarSesion} setUsuario={setUsuario} />} />
         <Route path="/transacciones/retiro" element={<Retiro usuario={usuario} cerrarSesion={cerrarSesion} setUsuario={setUsuario} />} />
