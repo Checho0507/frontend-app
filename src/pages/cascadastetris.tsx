@@ -135,6 +135,9 @@ export default function Cascadas() {
                 if (res.data.configuraciones["5x5"]) {
                     setApuesta(res.data.configuraciones["5x5"].apuesta_minima);
                 }
+                if (res.data.configuraciones["7x7"]) {
+                    setApuesta(res.data.configuraciones["7x7"].apuesta_minima);
+                }
                 if (res.data.configuraciones["10x10"]) {
                     setApuesta(res.data.configuraciones["10x10"].apuesta_minima);
                 }
@@ -860,7 +863,7 @@ export default function Cascadas() {
                             <ul className="space-y-2 text-gray-300 text-sm">
                                 <li className="flex items-start space-x-2">
                                     <span className="text-cyan-400">1.</span>
-                                    <span>Elige el tamaño de matriz (5x5 o 10x10)</span>
+                                    <span>Elige el tamaño de matriz (5x5 o 7x7 o 10x10)</span>
                                 </li>
                                 <li className="flex items-start space-x-2">
                                     <span className="text-cyan-400">2.</span>
