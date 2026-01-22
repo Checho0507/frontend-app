@@ -73,8 +73,7 @@ export default function Cascadas() {
         totalJuegos: 0,
         gananciaTotal: 0,
         cascadasTotales: 0,
-        maxCascada: 0,
-        configFavorita: "5x5"
+        maxCascada: 0
     });
     
     // Referencias
@@ -417,8 +416,7 @@ export default function Cascadas() {
                 totalJuegos: prev.totalJuegos + 1,
                 gananciaTotal: prev.gananciaTotal + resultado.ganancia_total,
                 cascadasTotales: prev.cascadasTotales + resultado.niveles_cascada,
-                maxCascada: Math.max(prev.maxCascada, resultado.niveles_cascada),
-                configFavorita: prev.configFavorita
+                maxCascada: Math.max(prev.maxCascada, resultado.niveles_cascada)
             }));
             
         } catch (err: any) {
