@@ -128,7 +128,7 @@ export default function Cascadas() {
     useEffect(() => {
         const cargarConfiguracion = async () => {
             try {
-                const res = await axios.get(`${API_URL}/juegos/cascadas/juegos/cascadas/configuraciones`);
+                const res = await axios.get(`${API_URL}/juegos/cascadas/configuraciones`);
                 setConfiguraciones(res.data.configuraciones);
                 setSimbolosInfo(res.data.simbolos);
                 
@@ -364,7 +364,7 @@ export default function Cascadas() {
         try {
             const token = localStorage.getItem("token");
             const res = await axios.post(
-                `${API_URL}/juegos/cascadas/juegos/cascadas?configuracion=${configSeleccionada}&apuesta=${apuesta}`,
+                `${API_URL}/juegos/cascadas?configuracion=${configSeleccionada}&apuesta=${apuesta}`,
                 {},
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -429,7 +429,7 @@ export default function Cascadas() {
     const simular = async () => {
         try {
             const res = await axios.get(
-                `${API_URL}/juegos/cascadas/juegos/cascadas/simular?configuracion=${configSeleccionada}&pasos=3`
+                `${API_URL}/juegos/cascadas/simular?configuracion=${configSeleccionada}&pasos=3`
             );
             
             setMatriz(res.data.matriz_inicial);
