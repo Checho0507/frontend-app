@@ -136,6 +136,9 @@ export default function Cascadas() {
                 if (res.data.configuraciones["5x5"]) {
                     setApuesta(res.data.configuraciones["5x5"].apuesta_minima);
                 }
+                if (res.data.configuraciones["10x10"]) {
+                    setApuesta(res.data.configuraciones["10x10"].apuesta_minima);
+                }
             } catch (error) {
                 console.error("Error al cargar configuración:", error);
             }
