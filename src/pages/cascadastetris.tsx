@@ -912,12 +912,6 @@ export default function Cascadas() {
                             <div className="mt-4 pt-4 border-t border-gray-700/30">
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="text-center">
-                                        <div className="text-sm text-gray-400">Promedio por juego</div>
-                                        <div className={`text-xl font-bold ${estadisticas.balance / (estadisticas.totalJuegos || 1) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                            ${(estadisticas.balance / (estadisticas.totalJuegos || 1)).toFixed(2)}
-                                        </div>
-                                    </div>
-                                    <div className="text-center">
                                         <div className="text-sm text-gray-400">ROI Promedio</div>
                                         <div className={`text-xl font-bold ${estadisticas.balance / (estadisticas.gastoTotal || 1) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                                             {estadisticas.gastoTotal > 0 ? `${((estadisticas.balance / estadisticas.gastoTotal) * 100).toFixed(1)}%` : '0%'}
