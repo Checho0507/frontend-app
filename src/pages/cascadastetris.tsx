@@ -72,8 +72,19 @@ export default function Cascadas() {
     const [estadisticas, setEstadisticas] = useState({
         totalJuegos: 0,
         gananciaTotal: 0,
+        gastoTotal: 0,
+        balance: 0,
         cascadasTotales: 0,
-        maxCascada: 0
+        maxCascada: 0,
+        configFavorita: "5x5"
+    });
+    
+    const [estadisticasAcumulativas, setEstadisticasAcumulativas] = useState({
+        totalJuegosAcum: 0,
+        gananciaTotalAcum: 0,
+        gastoTotalAcum: 0,
+        cascadasTotalesAcum: 0,
+        maxCascadaAcum: 0
     });
     
     // Referencias
@@ -149,30 +160,49 @@ export default function Cascadas() {
         cargarConfiguracion();
     }, []);
 
-    // Cargar historial
+    // Cargar historial y estadísticas del localStorage
     useEffect(() => {
+        // Cargar historial
         const historialGuardado = localStorage.getItem('historial_cascadas');
         if (historialGuardado) {
-            setHistorial(JSON.parse(historialGuardado).slice(0, 10));
+            const historialParsed = JSON.parse(historialGuardado);
+            setHistorial(historialParsed.slice(0, 10));
         }
-        
-        const stats = localStorage.getItem("estadisticas_cascadas");
-        if (stats) {
-            setEstadisticas(JSON.parse(stats));
+
+        // Cargar estadísticas acumulativas
+        const statsAcum = localStorage.getItem("estadisticas_acumulativas_cascadas");
+        if (statsAcum) {
+            const parsedStats = JSON.parse(statsAcum);
+            setEstadisticasAcumulativas(parsedStats);
+            
+            // Calcular estadísticas iniciales basadas en las acumulativas
+            const balance = parsedStats.gananciaTotalAcum - parsedStats.gastoTotalAcum;
+            setEstadisticas({
+                totalJuegos: parsedStats.totalJuegosAcum,
+                gananciaTotal: parsedStats.gananciaTotalAcum,
+                gastoTotal: parsedStats.gastoTotalAcum,
+                balance: balance,
+                cascadasTotales: parsedStats.cascadasTotalesAcum,
+                maxCascada: parsedStats.maxCascadaAcum,
+                configFavorita: parsedStats.configFavorita || "5x5"
+            });
         }
     }, []);
 
-    // Guardar historial
+    // Guardar historial en localStorage
     useEffect(() => {
         if (historial.length > 0) {
             localStorage.setItem('historial_cascadas', JSON.stringify(historial.slice(0, 10)));
         }
     }, [historial]);
 
-    // Guardar estadísticas
+    // Guardar estadísticas acumulativas en localStorage
     useEffect(() => {
-        localStorage.setItem("estadisticas_cascadas", JSON.stringify(estadisticas));
-    }, [estadisticas]);
+        if (estadisticasAcumulativas.totalJuegosAcum > 0) {
+            localStorage.setItem("estadisticas_acumulativas_cascadas", 
+                JSON.stringify(estadisticasAcumulativas));
+        }
+    }, [estadisticasAcumulativas]);
 
     // Inicializar matriz vacía
     useEffect(() => {
@@ -191,6 +221,45 @@ export default function Cascadas() {
     const showMsg = (text: string, type: "success" | "error" | "info" = "info") => {
         setNotificacion({ text, type });
         setTimeout(() => setNotificacion(null), 5000);
+    };
+
+    const actualizarEstadisticas = (nuevoGiro: HistorialGiro) => {
+        // Actualizar estadísticas acumulativas
+        setEstadisticasAcumulativas(prev => {
+            const nuevoTotalJuegos = prev.totalJuegosAcum + 1;
+            const nuevaGananciaTotal = prev.gananciaTotalAcum + nuevoGiro.ganancia_total;
+            const nuevoGastoTotal = prev.gastoTotalAcum + nuevoGiro.apuesta;
+            const nuevasCascadasTotales = prev.cascadasTotalesAcum + nuevoGiro.niveles_cascada;
+            const nuevoMaxCascada = Math.max(prev.maxCascadaAcum, nuevoGiro.niveles_cascada);
+            
+            return {
+                totalJuegosAcum: nuevoTotalJuegos,
+                gananciaTotalAcum: nuevaGananciaTotal,
+                gastoTotalAcum: nuevoGastoTotal,
+                cascadasTotalesAcum: nuevasCascadasTotales,
+                maxCascadaAcum: nuevoMaxCascada
+            };
+        });
+        
+        // Actualizar estadísticas visibles
+        setEstadisticas(prev => {
+            const nuevoTotalJuegos = prev.totalJuegos + 1;
+            const nuevaGananciaTotal = prev.gananciaTotal + nuevoGiro.ganancia_total;
+            const nuevoGastoTotal = prev.gastoTotal + nuevoGiro.apuesta;
+            const nuevasCascadasTotales = prev.cascadasTotales + nuevoGiro.niveles_cascada;
+            const nuevoMaxCascada = Math.max(prev.maxCascada, nuevoGiro.niveles_cascada);
+            const nuevoBalance = nuevaGananciaTotal - nuevoGastoTotal;
+            
+            return {
+                totalJuegos: nuevoTotalJuegos,
+                gananciaTotal: nuevaGananciaTotal,
+                gastoTotal: nuevoGastoTotal,
+                balance: nuevoBalance,
+                cascadasTotales: nuevasCascadasTotales,
+                maxCascada: nuevoMaxCascada,
+                configFavorita: configSeleccionada
+            };
+        });
     };
 
     const animarCaida = async (movimientos: any[]) => {
@@ -415,12 +484,7 @@ export default function Cascadas() {
             setHistorial(prev => [nuevoHistorial, ...prev.slice(0, 9)]);
             
             // Actualizar estadísticas
-            setEstadisticas(prev => ({
-                totalJuegos: prev.totalJuegos + 1,
-                gananciaTotal: prev.gananciaTotal + resultado.ganancia_total,
-                cascadasTotales: prev.cascadasTotales + resultado.niveles_cascada,
-                maxCascada: Math.max(prev.maxCascada, resultado.niveles_cascada)
-            }));
+            actualizarEstadisticas(nuevoHistorial);
             
         } catch (err: any) {
             console.error("Error al jugar:", err);
@@ -441,6 +505,35 @@ export default function Cascadas() {
         } catch (error) {
             console.error("Error al simular:", error);
         }
+    };
+
+    const limpiarHistorial = () => {
+        setHistorial([]);
+        localStorage.removeItem('historial_cascadas');
+        showMsg("Historial limpiado", "info");
+    };
+
+    const reiniciarEstadisticas = () => {
+        setEstadisticas({
+            totalJuegos: 0,
+            gananciaTotal: 0,
+            gastoTotal: 0,
+            balance: 0,
+            cascadasTotales: 0,
+            maxCascada: 0,
+            configFavorita: "5x5"
+        });
+        
+        setEstadisticasAcumulativas({
+            totalJuegosAcum: 0,
+            gananciaTotalAcum: 0,
+            gastoTotalAcum: 0,
+            cascadasTotalesAcum: 0,
+            maxCascadaAcum: 0
+        });
+        
+        localStorage.removeItem("estadisticas_acumulativas_cascadas");
+        showMsg("Estadísticas reiniciadas completamente", "info");
     };
 
     const renderizarTablaMultiplicadores = () => {
@@ -770,38 +863,65 @@ export default function Cascadas() {
                     <div className="space-y-6">
                         {/* Estadísticas */}
                         <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50">
-                            <h3 className="text-xl font-bold text-white mb-4">📊 Estadísticas</h3>
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-xl font-bold text-white">📊 Estadísticas</h3>
+                                <button
+                                    onClick={reiniciarEstadisticas}
+                                    className="px-3 py-1 text-sm bg-red-900/30 text-red-300 hover:bg-red-800/40 rounded-lg transition-colors"
+                                    title="Reiniciar todas las estadísticas"
+                                >
+                                    Reiniciar
+                                </button>
+                            </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="text-center p-4 bg-gray-800/40 rounded-xl border border-gray-700/50">
                                     <div className="text-sm text-gray-400">Total Juegos</div>
                                     <div className="text-2xl font-bold text-blue-400">{estadisticas.totalJuegos}</div>
+                                    <div className="text-xs text-gray-500 mt-1">Acumulativo</div>
                                 </div>
                                 <div className="text-center p-4 bg-gray-800/40 rounded-xl border border-gray-700/50">
                                     <div className="text-sm text-gray-400">Ganancia Total</div>
                                     <div className="text-2xl font-bold text-green-400">${estadisticas.gananciaTotal.toFixed(2)}</div>
+                                    <div className="text-xs text-gray-500 mt-1">Ganancias brutas</div>
                                 </div>
                                 <div className="text-center p-4 bg-gray-800/40 rounded-xl border border-gray-700/50">
-                                    <div className="text-sm text-gray-400">Cascadas Totales</div>
-                                    <div className="text-2xl font-bold text-cyan-400">{estadisticas.cascadasTotales}</div>
-                                </div>
-                                <div className="text-center p-4 bg-gray-800/40 rounded-xl border border-gray-700/50">
-                                    <div className="text-sm text-gray-400">Máx. Cascada</div>
-                                    <div className="text-2xl font-bold text-purple-400">{estadisticas.maxCascada}</div>
-                                </div>
-                                <div className="text-center p-4 bg-gray-800/40 rounded-xl border border-gray-700/50 col-span-2">
                                     <div className="text-sm text-gray-400">Gasto Total</div>
-                                    <div className="text-2xl font-bold text-red-400">
-                                        ${ (estadisticas.totalJuegos * apuesta).toFixed(2) }
+                                    <div className="text-2xl font-bold text-red-400">${estadisticas.gastoTotal.toFixed(2)}</div>
+                                    <div className="text-xs text-gray-500 mt-1">Total apostado</div>
+                                </div>
+                                <div className="text-center p-4 bg-gray-800/40 rounded-xl border border-gray-700/50">
+                                    <div className="text-sm text-gray-400">Balance</div>
+                                    <div className={`text-2xl font-bold ${estadisticas.balance >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                        ${estadisticas.balance.toFixed(2)}
+                                    </div>
+                                    <div className="text-xs text-gray-500 mt-1">
+                                        {estadisticas.balance >= 0 ? 'Ganancia neta' : 'Pérdida neta'}
                                     </div>
                                 </div>
                                 <div className="text-center p-4 bg-gray-800/40 rounded-xl border border-gray-700/50 col-span-2">
-                                    <div className="text-sm text-gray-400">Balance Neto</div>
-                                    <div className={`text-2xl font-bold ${
-                                        (estadisticas.gananciaTotal - (estadisticas.totalJuegos * apuesta)) >= 0 
-                                            ? 'text-green-400' 
-                                            : 'text-red-400'
-                                    }`}>
-                                        ${ (estadisticas.gananciaTotal - (estadisticas.totalJuegos * apuesta)).toFixed(2) }
+                                    <div className="text-sm text-gray-400">Cascadas Totales</div>
+                                    <div className="text-2xl font-bold text-cyan-400">{estadisticas.cascadasTotales}</div>
+                                    <div className="text-xs text-gray-500 mt-1">Niveles totales</div>
+                                </div>
+                                <div className="text-center p-4 bg-gray-800/40 rounded-xl border border-gray-700/50 col-span-2">
+                                    <div className="text-sm text-gray-400">Máx. Cascada</div>
+                                    <div className="text-2xl font-bold text-purple-400">{estadisticas.maxCascada}</div>
+                                    <div className="text-xs text-gray-500 mt-1">Máximo en un juego</div>
+                                </div>
+                            </div>
+                            <div className="mt-4 pt-4 border-t border-gray-700/30">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="text-center">
+                                        <div className="text-sm text-gray-400">Promedio por juego</div>
+                                        <div className={`text-xl font-bold ${estadisticas.balance / (estadisticas.totalJuegos || 1) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                            ${(estadisticas.balance / (estadisticas.totalJuegos || 1)).toFixed(2)}
+                                        </div>
+                                    </div>
+                                    <div className="text-center">
+                                        <div className="text-sm text-gray-400">ROI Promedio</div>
+                                        <div className={`text-xl font-bold ${estadisticas.balance / (estadisticas.gastoTotal || 1) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                            {estadisticas.gastoTotal > 0 ? `${((estadisticas.balance / estadisticas.gastoTotal) * 100).toFixed(1)}%` : '0%'}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -840,11 +960,23 @@ export default function Cascadas() {
                         
                         {/* Historial */}
                         <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50">
-                            <h3 className="text-xl font-bold text-white mb-4">📝 Historial</h3>
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-xl font-bold text-white">📝 Historial</h3>
+                                {historial.length > 0 && (
+                                    <button
+                                        onClick={limpiarHistorial}
+                                        className="px-3 py-1 text-sm bg-red-900/30 text-red-300 hover:bg-red-800/40 rounded-lg transition-colors"
+                                    >
+                                        Limpiar
+                                    </button>
+                                )}
+                            </div>
+                            
                             {historial.length === 0 ? (
                                 <div className="text-center py-8">
                                     <div className="text-4xl mb-3">🎮</div>
                                     <p className="text-gray-400">No hay juegos registrados</p>
+                                    <p className="text-sm text-gray-500 mt-1">Juega para comenzar</p>
                                 </div>
                             ) : (
                                 <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
@@ -864,6 +996,9 @@ export default function Cascadas() {
                                                     </div>
                                                     <div className="text-xs text-gray-400">
                                                         Apuesta: ${juego.apuesta}
+                                                    </div>
+                                                    <div className="text-xs text-gray-400">
+                                                        Neto: ${(juego.ganancia_total - juego.apuesta).toFixed(2)}
                                                     </div>
                                                 </div>
                                             </div>
