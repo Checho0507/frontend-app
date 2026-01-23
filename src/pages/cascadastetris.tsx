@@ -788,6 +788,22 @@ export default function Cascadas() {
                                     <div className="text-sm text-gray-400">Máx. Cascada</div>
                                     <div className="text-2xl font-bold text-purple-400">{estadisticas.maxCascada}</div>
                                 </div>
+                                <div className="text-center p-4 bg-gray-800/40 rounded-xl border border-gray-700/50 col-span-2">
+                                    <div className="text-sm text-gray-400">Gasto Total</div>
+                                    <div className="text-2xl font-bold text-red-400">
+                                        ${ (estadisticas.totalJuegos * apuesta).toFixed(2) }
+                                    </div>
+                                </div>
+                                <div className="text-center p-4 bg-gray-800/40 rounded-xl border border-gray-700/50 col-span-2">
+                                    <div className="text-sm text-gray-400">Balance Neto</div>
+                                    <div className={`text-2xl font-bold ${
+                                        (estadisticas.gananciaTotal - (estadisticas.totalJuegos * apuesta)) >= 0 
+                                            ? 'text-green-400' 
+                                            : 'text-red-400'
+                                    }`}>
+                                        ${ (estadisticas.gananciaTotal - (estadisticas.totalJuegos * apuesta)).toFixed(2) }
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         
