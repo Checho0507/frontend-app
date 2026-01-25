@@ -182,13 +182,11 @@ const VerificacionPage: React.FC = () => {
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900">
             {/* Header */}
-            {usuario && (
-                <Header 
+            <Header 
                     usuario={usuario}
                     cerrarSesion={() => navigate('/login')}
                     setUsuario={setUsuario}
                 />
-            )}
 
             <main className="container mx-auto px-4 py-8 max-w-4xl">
                 {/* Banner de Verificación */}
