@@ -67,7 +67,7 @@ const VerificacionPage: React.FC = () => {
 
             try {
                 const response = await axios.post<VerificacionResponse>(
-                    `${API_URL}/admin/verificar/${user_id}`
+                    `${API_URL}/admin/verificacion/${user_id}`
                 );
 
                 if (response.data.ok) {
