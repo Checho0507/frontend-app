@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import Header from '../components/header';
 import Footer from '../components/footer';
 import { API_URL } from '../api/auth';
+import { time } from 'console';
 
 interface Usuario {
     id: number;
@@ -102,6 +103,10 @@ const VerificacionPage: React.FC = () => {
                     // Mostrar detalles del bonus
                     setTimeout(() => {
                         setMensaje(prev => prev + `\n\n💰 Bonus recibido: $${response.data.saldo.toLocaleString()} COP`);
+                        {/* Redirigir al usuario después de unos segundos */}
+                        setTimeout(() => {
+                            navigate('/login');
+                        }, 5000);
                     }, 1000);
                 }
             } catch (error: any) {
