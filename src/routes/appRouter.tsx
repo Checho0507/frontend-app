@@ -24,6 +24,7 @@ import RuletaEuropea from '../pages/ruletaeuropea';
 import Poker from '../pages/poker';
 import Tragamonedas2 from '../pages/tragamonedas';
 import Cascadas from '../pages/cascadastetris';
+import VerificacionPage from '../pages/verificacion';
 
 interface Usuario {
   id: number;
@@ -72,6 +73,9 @@ const AppRouter = () => {
         <Route path="/adminpanel/verificaciones" element={<AdminPanel />} />
         <Route path="/transacciones/admin/depositos/pendientes" element={<AdminPanel />} />
         <Route path="/adminpanel/retiros" element={<AdminPanel />} />
+
+        {/* Verificacion */}
+        <Route path="/verificacion/:user_id" element={<VerificacionPage />} />
 
         {/* Usuario verificado */}
         <Route path="/sorteovip" element={<SorteoVIP />} />
