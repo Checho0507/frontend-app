@@ -24,7 +24,7 @@ const Header: React.FC<HeaderProps> = ({ usuario, cerrarSesion, setUsuario }) =>
     const [menuAbierto, setMenuAbierto] = useState(false);
     const [menuNavegacionAbierto, setMenuNavegacionAbierto] = useState(false);
     const [bonoDisponible, setBonoDisponible] = useState(false);
-    const [montoBono, setMontoBono] = useState<number>(500);
+    const [montoBono, setMontoBono] = useState<number>(100);
     const [tiempoRestante, setTiempoRestante] = useState<string>("");
     const [notificacion, setNotificacion] = useState<{ text: string; type?: "success" | "error" | "info" } | null>(null);
     const menuRef = useRef<HTMLDivElement>(null);
@@ -62,7 +62,7 @@ const Header: React.FC<HeaderProps> = ({ usuario, cerrarSesion, setUsuario }) =>
             if (ultimaFechaBono !== hoy) {
                 setBonoDisponible(true);
                 // Bono basado en verificación del usuario
-                const bonoBase = usuario?.verificado ? 500 : 100;
+                const bonoBase = usuario?.verificado ? 100 : 10;
                 setMontoBono(bonoBase);
             } else {
                 setBonoDisponible(false);
@@ -167,7 +167,7 @@ const Header: React.FC<HeaderProps> = ({ usuario, cerrarSesion, setUsuario }) =>
                 setBonoDisponible(false);
                 localStorage.setItem('ultimo_bono_diario', JSON.stringify({
                     fecha: new Date().toDateString(),
-                    monto: usuario?.verificado ? 500 : 100
+                    monto: usuario?.verificado ? 100 : 10
                 }));
                 showMsg(err.response.data.detail, "info");
             } else if (err.response?.status === 401) {
