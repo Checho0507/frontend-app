@@ -473,7 +473,7 @@ const Header: React.FC<HeaderProps> = ({ usuario, cerrarSesion, setUsuario }) =>
                                                     <p className="font-medium">Bono Diario</p>
                                                     <p className="text-xs">
                                                         {bonoDisponible
-                                                            ? `¡Reclama $${usuario.verificado ? 500 : 100} hoy!`
+                                                            ? `¡Reclama $${usuario.verificado ? 100 : 10} hoy!`
                                                             : tiempoRestante
                                                                 ? `Próximo bono en ${tiempoRestante}`
                                                                 : 'Ya reclamado hoy'}
@@ -553,7 +553,7 @@ const Header: React.FC<HeaderProps> = ({ usuario, cerrarSesion, setUsuario }) =>
                                                 <div className="text-right">
                                                     <p className="text-xs text-gray-500">Bono diario</p>
                                                     <p className="text-xs font-bold text-green-400">
-                                                        ${usuario.verificado ? "500" : "100"}
+                                                        ${usuario.verificado ? "100" : "10"}
                                                     </p>
                                                 </div>
                                             </div>
@@ -692,7 +692,7 @@ const Header: React.FC<HeaderProps> = ({ usuario, cerrarSesion, setUsuario }) =>
                         <span className="text-2xl">🎁</span>
                         <div className="text-left">
                             <div className="font-bold">¡Bono Diario!</div>
-                            <div className="text-sm">${usuario.verificado ? "500" : "100"} disponibles</div>
+                            <div className="text-sm">${usuario.verificado ? "100" : "10"} disponibles</div>
                         </div>
                     </button>
                 </div>
