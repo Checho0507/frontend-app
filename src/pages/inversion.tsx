@@ -76,23 +76,16 @@ interface InfoVIP {
     puede_subir: boolean;
 }
 
-const VIP_COLORES: Record<string, string> = {
-    PLATA: "from-gray-400 to-gray-300",
-    ORO: "from-yellow-500 to-yellow-300",
-    DIAMANTE: "from-cyan-400 to-blue-400",
-};
+const NIVELES = [
+    { id: null,       label: "Sin Pase",     tasa: 50,  emoji: "⬜", costo: null,    costoLabel: "Gratis",    gradient: "from-gray-500 to-gray-400",   ring: "ring-gray-400",  text: "text-gray-300",   border: "border-gray-500/40" },
+    { id: "PLATA",    label: "VIP Plata",    tasa: 100, emoji: "🥈", costo: 50000,   costoLabel: "$50.000",   gradient: "from-slate-400 to-gray-300",  ring: "ring-slate-300", text: "text-slate-300",  border: "border-slate-400/50" },
+    { id: "ORO",      label: "VIP Oro",      tasa: 200, emoji: "🥇", costo: 100000,  costoLabel: "$100.000",  gradient: "from-yellow-500 to-amber-400", ring: "ring-yellow-400",text: "text-yellow-400", border: "border-yellow-500/50" },
+    { id: "DIAMANTE", label: "VIP Diamante", tasa: 300, emoji: "💎", costo: 200000,  costoLabel: "$200.000",  gradient: "from-cyan-400 to-blue-400",   ring: "ring-cyan-400",  text: "text-cyan-400",   border: "border-cyan-400/50" },
+];
 
-const VIP_BORDER: Record<string, string> = {
-    PLATA: "border-gray-400/50",
-    ORO: "border-yellow-400/50",
-    DIAMANTE: "border-cyan-400/50",
-};
-
-const VIP_TEXT: Record<string, string> = {
-    PLATA: "text-gray-300",
-    ORO: "text-yellow-400",
-    DIAMANTE: "text-cyan-400",
-};
+function getNivelIndex(pase: string | null) {
+    return NIVELES.findIndex(n => n.id === pase);
+}
 
 export default function Inversion() {
     const navigate = useNavigate();
@@ -104,29 +97,15 @@ export default function Inversion() {
     const [cargando, setCargando] = useState(false);
     const [cargandoVIP, setCargandoVIP] = useState(false);
     const [notificacion, setNotificacion] = useState<{ text: string; type?: "success" | "error" | "info" } | null>(null);
-    const [mostrarHistorial, setMostrarHistorial] = useState(false);
+    const [tab, setTab] = useState<"activas" | "historial">("activas");
 
     useEffect(() => {
         const token = localStorage.getItem("token");
-        if (!token) {
-            navigate('/login');
-            return;
-        }
+        if (!token) { navigate('/login'); return; }
 
-        axios.get(`${API_URL}/me`, {
-            headers: { Authorization: `Bearer ${token}` }
-        })
-        .then((res) => {
-            setUsuario({
-                id: res.data.id,
-                username: res.data.username,
-                saldo: res.data.saldo,
-                verificado: res.data.verificado
-            });
-        })
-        .catch(() => {
-            navigate('/login');
-        });
+        axios.get(`${API_URL}/me`, { headers: { Authorization: `Bearer ${token}` } })
+            .then(res => setUsuario({ id: res.data.id, username: res.data.username, saldo: res.data.saldo, verificado: res.data.verificado }))
+            .catch(() => navigate('/login'));
 
         cargarEstado();
         cargarHistorial();
@@ -139,37 +118,25 @@ export default function Inversion() {
     const cargarEstado = async () => {
         try {
             const token = localStorage.getItem("token");
-            const response = await axios.get(`${API_URL}/inversiones/inversion/estado`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setEstado(response.data);
-        } catch (error) {
-            console.error("Error al cargar estado:", error);
-        }
+            const r = await axios.get(`${API_URL}/inversiones/inversion/estado`, { headers: { Authorization: `Bearer ${token}` } });
+            setEstado(r.data);
+        } catch {}
     };
 
     const cargarHistorial = async () => {
         try {
             const token = localStorage.getItem("token");
-            const response = await axios.get(`${API_URL}/inversiones/inversion/historial`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setHistorial(response.data.historial || []);
-        } catch (error) {
-            console.error("Error al cargar historial:", error);
-        }
+            const r = await axios.get(`${API_URL}/inversiones/inversion/historial`, { headers: { Authorization: `Bearer ${token}` } });
+            setHistorial(r.data.historial || []);
+        } catch {}
     };
 
     const cargarInfoVIP = async () => {
         try {
             const token = localStorage.getItem("token");
-            const response = await axios.get(`${API_URL}/inversiones/vip/info`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setInfoVIP(response.data);
-        } catch (error) {
-            console.error("Error al cargar info VIP:", error);
-        }
+            const r = await axios.get(`${API_URL}/inversiones/vip/info`, { headers: { Authorization: `Bearer ${token}` } });
+            setInfoVIP(r.data);
+        } catch {}
     };
 
     const comprarPaseVIP = async () => {
@@ -177,99 +144,62 @@ export default function Inversion() {
         setCargandoVIP(true);
         try {
             const token = localStorage.getItem("token");
-            const response = await axios.post(
-                `${API_URL}/inversiones/vip/comprar`,
-                {},
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            showMsg(response.data.message, "success");
-            setUsuario(prev => prev ? { ...prev, saldo: response.data.nuevo_saldo } : prev);
+            const r = await axios.post(`${API_URL}/inversiones/vip/comprar`, {}, { headers: { Authorization: `Bearer ${token}` } });
+            showMsg(r.data.message, "success");
+            setUsuario(prev => prev ? { ...prev, saldo: r.data.nuevo_saldo } : prev);
             await cargarInfoVIP();
             await cargarEstado();
-        } catch (error: any) {
-            showMsg(error.response?.data?.detail || "Error al comprar pase VIP", "error");
+        } catch (e: any) {
+            showMsg(e.response?.data?.detail || "Error al comprar pase VIP", "error");
         } finally {
             setCargandoVIP(false);
         }
     };
 
     const realizarDeposito = async () => {
-        if (!usuario) {
-            showMsg("Debes iniciar sesión para invertir", "error");
-            return;
-        }
-
-        if (montoDeposito < 50000 || montoDeposito > 5000000) {
-            showMsg("El monto debe estar entre $50,000 y $5,000,000", "error");
-            return;
-        }
-
-        if (usuario.saldo < montoDeposito) {
-            showMsg("Saldo insuficiente para realizar la inversión", "error");
-            return;
-        }
-
+        if (!usuario) return;
+        if (montoDeposito < 50000 || montoDeposito > 5000000) { showMsg("El monto debe estar entre $50,000 y $5,000,000", "error"); return; }
+        if (usuario.saldo < montoDeposito) { showMsg("Saldo insuficiente", "error"); return; }
         setCargando(true);
         try {
             const token = localStorage.getItem("token");
-            const response = await axios.post(
-                `${API_URL}/inversiones/inversion/depositar`,
-                { monto: montoDeposito },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-
-            showMsg(response.data.message, "success");
-            setUsuario(prev => prev ? { ...prev, saldo: response.data.nuevo_saldo } : prev);
+            const r = await axios.post(`${API_URL}/inversiones/inversion/depositar`, { monto: montoDeposito }, { headers: { Authorization: `Bearer ${token}` } });
+            showMsg(r.data.message, "success");
+            setUsuario(prev => prev ? { ...prev, saldo: r.data.nuevo_saldo } : prev);
             setMontoDeposito(50000);
             await cargarEstado();
             await cargarHistorial();
-        } catch (error: any) {
-            showMsg(error.response?.data?.detail || "Error al realizar depósito", "error");
+        } catch (e: any) {
+            showMsg(e.response?.data?.detail || "Error al depositar", "error");
         } finally {
             setCargando(false);
         }
     };
 
-    const retirarIntereses = async (inversionId: number) => {
-        if (!usuario) return;
+    const retirarIntereses = async (id: number) => {
         setCargando(true);
         try {
             const token = localStorage.getItem("token");
-            const response = await axios.post(
-                `${API_URL}/inversiones/inversion/retirar/intereses`,
-                { inversion_id: inversionId },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            showMsg(response.data.message, "success");
-            setUsuario(prev => prev ? { ...prev, saldo: response.data.nuevo_saldo } : prev);
-            await cargarEstado();
-            await cargarHistorial();
-        } catch (error: any) {
-            showMsg(error.response?.data?.detail || "Error al retirar intereses", "error");
-        } finally {
-            setCargando(false);
-        }
+            const r = await axios.post(`${API_URL}/inversiones/inversion/retirar/intereses`, { inversion_id: id }, { headers: { Authorization: `Bearer ${token}` } });
+            showMsg(r.data.message, "success");
+            setUsuario(prev => prev ? { ...prev, saldo: r.data.nuevo_saldo } : prev);
+            await cargarEstado(); await cargarHistorial();
+        } catch (e: any) {
+            showMsg(e.response?.data?.detail || "Error", "error");
+        } finally { setCargando(false); }
     };
 
-    const retirarCapital = async (inversionId: number) => {
-        if (!usuario) return;
+    const retirarCapital = async (id: number) => {
         setCargando(true);
         try {
             const token = localStorage.getItem("token");
-            const response = await axios.post(
-                `${API_URL}/inversiones/inversion/retirar/capital`,
-                { inversion_id: inversionId },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            showMsg(response.data.message, "success");
-            setUsuario(prev => prev ? { ...prev, saldo: response.data.nuevo_saldo } : prev);
-            await cargarEstado();
-            await cargarHistorial();
-        } catch (error: any) {
-            showMsg(error.response?.data?.detail || "Error al retirar capital", "error");
-        } finally {
-            setCargando(false);
-        }
+            const r = await axios.post(`${API_URL}/inversiones/inversion/retirar/capital`, { inversion_id: id }, { headers: { Authorization: `Bearer ${token}` } });
+            showMsg(r.data.message, "success");
+            setUsuario(prev => prev ? { ...prev, saldo: r.data.nuevo_saldo } : prev);
+            await cargarEstado(); await cargarHistorial();
+        } catch (e: any) {
+            showMsg(e.response?.data?.detail || "Error", "error");
+        } finally { setCargando(false); }
     };
 
     const showMsg = (text: string, type: "success" | "error" | "info" = "info") => {
@@ -277,650 +207,537 @@ export default function Inversion() {
         setTimeout(() => setNotificacion(null), 5000);
     };
 
-    const formatearFecha = (fechaStr: string) => {
-        return new Date(fechaStr).toLocaleDateString('es-ES', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    };
-
-    const cerrarSesion = () => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("usuario");
-        setUsuario(null);
-        showMsg("Sesión cerrada correctamente", "success");
-        setTimeout(() => navigate('/login'), 1500);
-    };
+    const fmt = (fechaStr: string) => new Date(fechaStr).toLocaleDateString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+    const cerrarSesion = () => { localStorage.removeItem("token"); localStorage.removeItem("usuario"); navigate('/login'); };
 
     const tasaActual = infoVIP?.nivel_actual?.tasa ?? 50;
-
-    const calcularGananciaDiaria = (monto: number, tasa: number = tasaActual) => {
-        return (monto * tasa) / (365 * 100);
-    };
-
-    const vipNivel = infoVIP?.pase_vip ?? null;
-    const vipColor = vipNivel ? VIP_COLORES[vipNivel] : "from-gray-600 to-gray-500";
-    const vipBorder = vipNivel ? VIP_BORDER[vipNivel] : "border-gray-600/50";
-    const vipText = vipNivel ? VIP_TEXT[vipNivel] : "text-gray-400";
+    const nivelIdx = getNivelIndex(infoVIP?.pase_vip ?? null);
+    const nivelInfo = NIVELES[nivelIdx] ?? NIVELES[0];
+    const ganDiaria = (monto: number) => (monto * tasaActual) / (365 * 100);
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900">
-            {/* Notificación */}
+        <div className="min-h-screen bg-[#0d1117]">
+            {/* Toast */}
             {notificacion && (
-                <div className={`fixed top-6 right-6 z-50 px-6 py-4 rounded-xl font-bold flex items-center space-x-3 shadow-2xl animate-slideIn ${
-                    notificacion.type === "success"
-                        ? "bg-gradient-to-r from-green-900/90 to-green-800/90 border border-green-500/50 text-green-200"
-                        : notificacion.type === "error"
-                        ? "bg-gradient-to-r from-red-900/90 to-red-800/90 border border-red-500/50 text-red-200"
-                        : "bg-gradient-to-r from-blue-900/90 to-blue-800/90 border border-blue-500/50 text-blue-200"
+                <div className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-4 rounded-2xl font-semibold shadow-2xl border backdrop-blur-sm transition-all ${
+                    notificacion.type === "success" ? "bg-green-950/95 border-green-500/40 text-green-200" :
+                    notificacion.type === "error"   ? "bg-red-950/95 border-red-500/40 text-red-200" :
+                    "bg-blue-950/95 border-blue-500/40 text-blue-200"
                 }`}>
-                    <span className="text-xl">
-                        {notificacion.type === "success" ? "✅" : notificacion.type === "error" ? "❌" : "ℹ️"}
-                    </span>
+                    <span className="text-lg">{notificacion.type === "success" ? "✅" : notificacion.type === "error" ? "❌" : "ℹ️"}</span>
                     <span>{notificacion.text}</span>
                 </div>
             )}
 
             <Header usuario={usuario} cerrarSesion={cerrarSesion} setUsuario={setUsuario} />
 
-            {/* Hero Section */}
-            <section className="relative overflow-hidden bg-gradient-to-r from-green-600/20 via-teal-600/20 to-blue-600/20">
-                <div className="absolute inset-0">
-                    <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-r from-green-500 to-teal-500 rounded-full blur-3xl opacity-20"></div>
-                    <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full blur-3xl opacity-20"></div>
-                </div>
-
-                <div className="container mx-auto px-4 py-16 md:py-20 relative z-10">
-                    <div className="text-center max-w-4xl mx-auto">
-                        <div className="inline-block mb-4">
-                            <span className="px-4 py-2 bg-gradient-to-r from-green-600/20 to-teal-600/20 border border-teal-500/30 rounded-full text-sm font-bold text-teal-400 animate-pulse">
-                                💰 CRECIMIENTO EXPONENCIAL
-                            </span>
+            {/* ── PAGE HEADER ── */}
+            <div className="border-b border-white/5 bg-gradient-to-b from-gray-900/60 to-transparent">
+                <div className="max-w-6xl mx-auto px-4 py-10">
+                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                        <div>
+                            <p className="text-xs font-semibold tracking-widest text-teal-400 uppercase mb-2">💰 Inversiones</p>
+                            <h1 className="text-3xl md:text-4xl font-bold text-white">
+                                Haz crecer tu dinero
+                            </h1>
+                            <p className="text-gray-400 mt-2 text-sm">
+                                Interés acumulado en tiempo real · Retira cada 30 días
+                            </p>
                         </div>
 
-                        <h1 className="text-4xl md:text-6xl font-bold mb-4">
-                            <span className="bg-gradient-to-r from-teal-400 via-green-400 to-blue-400 bg-clip-text text-transparent">
-                                INVIERTE Y GANA
-                            </span>
-                            <br />
-                            <span className="text-white">
-                                ¡{tasaActual}% de Interés Anual!
-                            </span>
-                        </h1>
-
-                        <p className="text-xl text-gray-300 mb-6 max-w-2xl mx-auto">
-                            La forma más inteligente de hacer crecer tu dinero.
-                            <span className="text-teal-400 font-bold"> Interés en tiempo real.</span>
-                        </p>
-
+                        {/* Quick stats */}
                         {estado && (
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl mx-auto">
-                                <div className="bg-gradient-to-br from-green-900/30 to-teal-900/30 backdrop-blur-sm rounded-xl p-4 border border-teal-500/30">
-                                    <div className="text-2xl font-bold text-white">
-                                        ${estado.total_invertido.toLocaleString()}
-                                    </div>
-                                    <div className="text-sm text-gray-400">💰 Total Invertido</div>
+                            <div className="flex gap-3 flex-wrap">
+                                <div className="bg-gray-800/60 border border-white/8 rounded-xl px-4 py-3 min-w-[120px]">
+                                    <div className="text-xs text-gray-500 mb-1">Invertido</div>
+                                    <div className="text-lg font-bold text-white">${Number(estado.total_invertido).toLocaleString()}</div>
                                 </div>
-                                <div className="bg-gradient-to-br from-blue-900/30 to-purple-900/30 backdrop-blur-sm rounded-xl p-4 border border-blue-500/30">
-                                    <div className="text-2xl font-bold text-white">
-                                        ${estado.total_intereses.toLocaleString()}
-                                    </div>
-                                    <div className="text-sm text-gray-400">📈 Intereses Acumulados</div>
+                                <div className="bg-gray-800/60 border border-white/8 rounded-xl px-4 py-3 min-w-[120px]">
+                                    <div className="text-xs text-gray-500 mb-1">Intereses</div>
+                                    <div className="text-lg font-bold text-teal-400">${Number(estado.total_intereses).toLocaleString()}</div>
                                 </div>
-                                <div className="bg-gradient-to-br from-teal-900/30 to-green-900/30 backdrop-blur-sm rounded-xl p-4 border border-green-500/30">
-                                    <div className="text-2xl font-bold text-white">
-                                        ${estado.total_intereses_disponibles.toLocaleString()}
-                                    </div>
-                                    <div className="text-sm text-gray-400">🎯 Disponibles</div>
+                                <div className="bg-gray-800/60 border border-white/8 rounded-xl px-4 py-3 min-w-[120px]">
+                                    <div className="text-xs text-gray-500 mb-1">Disponibles</div>
+                                    <div className="text-lg font-bold text-green-400">${Number(estado.total_intereses_disponibles).toLocaleString()}</div>
                                 </div>
-                                <div className={`bg-gradient-to-br from-gray-900/30 to-gray-800/30 backdrop-blur-sm rounded-xl p-4 border ${vipBorder}`}>
-                                    <div className={`text-2xl font-bold ${vipText}`}>{tasaActual}%</div>
-                                    <div className="text-sm text-gray-400">🚀 Tasa Anual</div>
+                                <div className={`bg-gray-800/60 border ${nivelInfo.border} rounded-xl px-4 py-3 min-w-[100px]`}>
+                                    <div className="text-xs text-gray-500 mb-1">Tu tasa</div>
+                                    <div className={`text-lg font-bold ${nivelInfo.text}`}>{tasaActual}% / año</div>
                                 </div>
                             </div>
                         )}
                     </div>
                 </div>
-            </section>
+            </div>
 
-            {/* ===== SECCIÓN VIP ===== */}
-            <section className="container mx-auto px-4 py-10">
-                <div className="max-w-6xl mx-auto">
+            <div className="max-w-6xl mx-auto px-4 py-8 space-y-8">
 
-                    {/* Tarjeta de pase VIP actual */}
-                    {infoVIP && (
-                        <div className={`mb-8 rounded-2xl p-6 border ${vipBorder} bg-gradient-to-r from-gray-800/80 to-gray-900/80 backdrop-blur-sm`}>
-                            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-                                {/* Info nivel actual */}
-                                <div className="flex items-center gap-4">
-                                    <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${vipColor} flex items-center justify-center text-3xl shadow-lg`}>
-                                        {infoVIP.nivel_actual.emoji}
-                                    </div>
-                                    <div>
-                                        <p className="text-gray-400 text-sm font-medium">Tu Pase VIP Actual</p>
-                                        <h3 className={`text-2xl font-bold ${vipText}`}>
-                                            {infoVIP.nivel_actual.nombre}
-                                        </h3>
-                                        <p className="text-gray-300">
-                                            Ganancia: <span className={`font-bold ${vipText}`}>{infoVIP.nivel_actual.tasa}% anual</span>
-                                        </p>
-                                    </div>
+                {/* ── VIP PROGRESS TRACK ── */}
+                {infoVIP && (
+                    <div className="bg-gray-900/70 border border-white/8 rounded-2xl p-6">
+                        <div className="flex items-center justify-between mb-6">
+                            <div>
+                                <h2 className="text-lg font-bold text-white">Pase VIP</h2>
+                                <p className="text-sm text-gray-500">Sube de nivel para aumentar tu tasa de interés</p>
+                            </div>
+                            {infoVIP.nivel_siguiente && (
+                                <button
+                                    onClick={comprarPaseVIP}
+                                    disabled={cargandoVIP || !infoVIP.puede_subir}
+                                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 ${
+                                        infoVIP.puede_subir
+                                            ? `bg-gradient-to-r ${NIVELES.find(n => n.id === infoVIP.nivel_siguiente?.nivel)?.gradient ?? "from-gray-500 to-gray-400"} text-gray-900 hover:scale-105 hover:shadow-lg`
+                                            : "bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700"
+                                    }`}
+                                >
+                                    {cargandoVIP ? (
+                                        <><div className="w-4 h-4 border-2 border-gray-900 border-t-transparent rounded-full animate-spin" /> Procesando…</>
+                                    ) : infoVIP.puede_subir ? (
+                                        <>{infoVIP.nivel_siguiente.emoji} Subir a {infoVIP.nivel_siguiente.nombre} — ${infoVIP.nivel_siguiente.costo.toLocaleString()}</>
+                                    ) : (
+                                        <>🔒 Faltan ${(infoVIP.nivel_siguiente.costo - infoVIP.saldo_usuario).toLocaleString()}</>
+                                    )}
+                                </button>
+                            )}
+                            {!infoVIP.nivel_siguiente && (
+                                <div className="flex items-center gap-2 bg-cyan-950/60 border border-cyan-500/30 px-4 py-2 rounded-xl">
+                                    <span>👑</span><span className="text-cyan-400 font-bold text-sm">Nivel máximo</span>
                                 </div>
-
-                                {/* Flecha y siguiente nivel */}
-                                {infoVIP.nivel_siguiente ? (
-                                    <div className="flex flex-col md:flex-row items-start md:items-center gap-4 flex-1 justify-center">
-                                        <div className="hidden md:block text-gray-600 text-3xl">→</div>
-                                        <div className={`rounded-xl p-4 border ${VIP_BORDER[infoVIP.nivel_siguiente.nivel] || "border-gray-500/50"} bg-gray-800/50 min-w-[200px]`}>
-                                            <p className="text-gray-400 text-xs mb-1">Siguiente nivel</p>
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-2xl">{infoVIP.nivel_siguiente.emoji}</span>
-                                                <span className={`font-bold ${VIP_TEXT[infoVIP.nivel_siguiente.nivel] || "text-gray-300"}`}>
-                                                    {infoVIP.nivel_siguiente.nombre}
-                                                </span>
-                                            </div>
-                                            <p className={`text-sm font-bold ${VIP_TEXT[infoVIP.nivel_siguiente.nivel] || "text-gray-300"} mt-1`}>
-                                                {infoVIP.nivel_siguiente.tasa}% anual
-                                            </p>
-                                            <p className="text-gray-400 text-xs mt-1">
-                                                Costo: <span className="text-white font-bold">${infoVIP.nivel_siguiente.costo.toLocaleString()}</span>
-                                            </p>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="flex items-center gap-3 bg-gradient-to-r from-cyan-900/30 to-blue-900/30 rounded-xl px-6 py-3 border border-cyan-500/30">
-                                        <span className="text-2xl">👑</span>
-                                        <span className="text-cyan-400 font-bold">¡Nivel máximo alcanzado!</span>
-                                    </div>
-                                )}
-
-                                {/* Botón de compra */}
-                                {infoVIP.nivel_siguiente && (
-                                    <button
-                                        onClick={comprarPaseVIP}
-                                        disabled={cargandoVIP || !infoVIP.puede_subir}
-                                        className={`px-6 py-3 rounded-xl font-bold transition-all duration-300 whitespace-nowrap ${
-                                            infoVIP.puede_subir
-                                                ? `bg-gradient-to-r ${VIP_COLORES[infoVIP.nivel_siguiente.nivel] || "from-gray-500 to-gray-400"} text-gray-900 hover:scale-105 hover:shadow-xl`
-                                                : "bg-gray-700 text-gray-500 cursor-not-allowed"
-                                        }`}
-                                    >
-                                        {cargandoVIP ? (
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-4 h-4 border-2 border-gray-900 border-t-transparent rounded-full animate-spin"></div>
-                                                Procesando...
-                                            </div>
-                                        ) : infoVIP.puede_subir ? (
-                                            <>
-                                                {infoVIP.nivel_siguiente.emoji} Subir a {infoVIP.nivel_siguiente.nombre}
-                                                <br />
-                                                <span className="text-xs font-normal">${infoVIP.nivel_siguiente.costo.toLocaleString()}</span>
-                                            </>
-                                        ) : (
-                                            <>
-                                                Necesitas ${(infoVIP.nivel_siguiente.costo - infoVIP.saldo_usuario).toLocaleString()} más
-                                            </>
-                                        )}
-                                    </button>
-                                )}
-                            </div>
+                            )}
                         </div>
-                    )}
 
-                    {/* Tabla comparativa de niveles VIP */}
-                    <div className="mb-10 bg-gradient-to-r from-gray-800/60 to-gray-900/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50">
-                        <h3 className="text-xl font-bold text-white mb-4 text-center">🏆 Niveles de Pase VIP</h3>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            {/* Sin pase */}
-                            <div className={`rounded-xl p-4 border ${!vipNivel ? "border-gray-400 ring-2 ring-gray-400/50" : "border-gray-700"} bg-gray-800/50 text-center`}>
-                                <div className="text-2xl mb-1">⬜</div>
-                                <div className="font-bold text-gray-300 text-sm">Sin Pase</div>
-                                <div className="text-2xl font-bold text-gray-400 mt-1">50%</div>
-                                <div className="text-xs text-gray-500">anual</div>
-                                {!vipNivel && <div className="mt-2 text-xs text-gray-400 font-bold">← Tu nivel</div>}
-                            </div>
-                            {/* Plata */}
-                            <div className={`rounded-xl p-4 border ${vipNivel === "PLATA" ? "border-gray-400 ring-2 ring-gray-400/50" : "border-gray-700"} bg-gray-800/50 text-center`}>
-                                <div className="text-2xl mb-1">🥈</div>
-                                <div className="font-bold text-gray-300 text-sm">VIP Plata</div>
-                                <div className="text-2xl font-bold text-gray-300 mt-1">100%</div>
-                                <div className="text-xs text-gray-500">anual</div>
-                                <div className="text-xs text-gray-500 mt-1">Costo: $50,000</div>
-                                {vipNivel === "PLATA" && <div className="mt-2 text-xs text-gray-300 font-bold">← Tu nivel</div>}
-                            </div>
-                            {/* Oro */}
-                            <div className={`rounded-xl p-4 border ${vipNivel === "ORO" ? "border-yellow-400 ring-2 ring-yellow-400/50" : "border-gray-700"} bg-gray-800/50 text-center`}>
-                                <div className="text-2xl mb-1">🥇</div>
-                                <div className="font-bold text-yellow-400 text-sm">VIP Oro</div>
-                                <div className="text-2xl font-bold text-yellow-400 mt-1">200%</div>
-                                <div className="text-xs text-gray-500">anual</div>
-                                <div className="text-xs text-gray-500 mt-1">Costo: $100,000</div>
-                                {vipNivel === "ORO" && <div className="mt-2 text-xs text-yellow-400 font-bold">← Tu nivel</div>}
-                            </div>
-                            {/* Diamante */}
-                            <div className={`rounded-xl p-4 border ${vipNivel === "DIAMANTE" ? "border-cyan-400 ring-2 ring-cyan-400/50" : "border-gray-700"} bg-gray-800/50 text-center`}>
-                                <div className="text-2xl mb-1">💎</div>
-                                <div className="font-bold text-cyan-400 text-sm">VIP Diamante</div>
-                                <div className="text-2xl font-bold text-cyan-400 mt-1">300%</div>
-                                <div className="text-xs text-gray-500">anual</div>
-                                <div className="text-xs text-gray-500 mt-1">Costo: $200,000</div>
-                                {vipNivel === "DIAMANTE" && <div className="mt-2 text-xs text-cyan-400 font-bold">← Tu nivel</div>}
-                            </div>
-                        </div>
-                    </div>
+                        {/* Stepper */}
+                        <div className="relative">
+                            {/* Connecting line */}
+                            <div className="absolute top-7 left-0 right-0 h-0.5 bg-gray-700/60 mx-8 hidden md:block" />
+                            <div
+                                className="absolute top-7 left-0 h-0.5 hidden md:block transition-all duration-700"
+                                style={{
+                                    background: "linear-gradient(to right, #14b8a6, #22c55e)",
+                                    width: nivelIdx === 0 ? "0%" : nivelIdx === 1 ? "33%" : nivelIdx === 2 ? "66%" : "100%",
+                                    marginLeft: "2rem",
+                                    marginRight: "2rem",
+                                }}
+                            />
 
-                </div>
-            </section>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 relative z-10">
+                                {NIVELES.map((nivel, idx) => {
+                                    const isCurrent = idx === nivelIdx;
+                                    const isPast = idx < nivelIdx;
+                                    const isNext = idx === nivelIdx + 1;
+                                    const isLocked = idx > nivelIdx + 1;
 
-            {/* ===== CALCULADORA Y DEPÓSITO ===== */}
-            <section className="container mx-auto px-4 pb-16">
-                <div className="max-w-6xl mx-auto">
-                    <div className="bg-gradient-to-r from-gray-800/80 to-gray-900/80 backdrop-blur-sm rounded-2xl p-8 border border-teal-500/30">
-                        <h2 className="text-3xl font-bold text-white mb-6 text-center">
-                            🚀 Realiza tu Inversión
-                        </h2>
-
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                            {/* Panel de depósito */}
-                            <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl p-6 border border-gray-700">
-                                <h3 className="text-2xl font-bold text-white mb-6 flex items-center">
-                                    <span className="mr-3">💵</span> Nueva Inversión
-                                </h3>
-
-                                {usuario && (
-                                    <>
-                                        <div className="mb-6">
-                                            <p className="text-gray-300 mb-2">Saldo disponible</p>
-                                            <p className="text-3xl font-bold text-teal-400">
-                                                ${usuario.saldo.toLocaleString()}
-                                            </p>
-                                        </div>
-
-                                        {/* Aviso de tasa actual */}
-                                        <div className={`mb-4 flex items-center gap-3 rounded-xl px-4 py-3 border ${vipBorder} bg-gray-800/60`}>
-                                            <span className="text-xl">{infoVIP?.nivel_actual.emoji ?? "⬜"}</span>
-                                            <div>
-                                                <p className="text-xs text-gray-400">Tu tasa de inversión ({infoVIP?.nivel_actual.nombre ?? "Sin Pase"})</p>
-                                                <p className={`text-lg font-bold ${vipText}`}>{tasaActual}% anual</p>
-                                            </div>
-                                            {infoVIP?.nivel_siguiente && (
-                                                <div className="ml-auto text-right">
-                                                    <p className="text-xs text-gray-500">Con {infoVIP.nivel_siguiente.emoji}</p>
-                                                    <p className="text-sm font-bold text-green-400">+{infoVIP.nivel_siguiente.tasa - tasaActual}% más</p>
+                                    return (
+                                        <div
+                                            key={idx}
+                                            className={`relative rounded-xl p-4 transition-all duration-300 ${
+                                                isCurrent
+                                                    ? `bg-gradient-to-br from-gray-800 to-gray-900 border-2 ${nivel.border} shadow-lg`
+                                                    : isPast
+                                                    ? "bg-gray-800/40 border border-green-500/20"
+                                                    : isNext
+                                                    ? "bg-gray-800/40 border border-dashed border-gray-600/60"
+                                                    : "bg-gray-800/20 border border-gray-800/60 opacity-50"
+                                            }`}
+                                        >
+                                            {/* Badge actual */}
+                                            {isCurrent && (
+                                                <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-teal-500 text-gray-900 text-[10px] font-black px-2 py-0.5 rounded-full whitespace-nowrap">
+                                                    TU NIVEL
                                                 </div>
                                             )}
-                                        </div>
-
-                                        <div className="mb-6">
-                                            <label className="block text-gray-300 mb-3">
-                                                Monto a invertir (entre $50,000 y $5,000,000)
-                                            </label>
-                                            <div className="flex items-center space-x-4">
-                                                <input
-                                                    type="number"
-                                                    min="50000"
-                                                    max="5000000"
-                                                    step="1000"
-                                                    value={montoDeposito}
-                                                    onChange={(e) => setMontoDeposito(Number(e.target.value))}
-                                                    className="flex-1 bg-gray-800 border border-teal-500/50 rounded-xl px-6 py-4 text-white text-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                                                />
-                                                <button
-                                                    onClick={() => setMontoDeposito(5000000)}
-                                                    className="px-4 py-2 bg-gradient-to-r from-teal-600 to-blue-600 rounded-xl text-white font-bold hover:opacity-90 transition-opacity"
-                                                >
-                                                    MAX
-                                                </button>
-                                            </div>
-                                        </div>
-
-                                        {/* Valores sugeridos */}
-                                        <div className="grid grid-cols-4 gap-2 mb-6">
-                                            {[50000, 100000, 500000, 1000000, 5000000].map((monto) => (
-                                                <button
-                                                    key={monto}
-                                                    onClick={() => setMontoDeposito(monto)}
-                                                    className={`py-2 rounded-lg text-center transition-all ${
-                                                        montoDeposito === monto
-                                                            ? 'bg-gradient-to-r from-teal-600 to-green-600 text-white'
-                                                            : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                                                    }`}
-                                                >
-                                                    ${(monto / 1000).toFixed(0)}K
-                                                </button>
-                                            ))}
-                                        </div>
-
-                                        {/* Calculadora de ganancias */}
-                                        <div className="bg-gradient-to-r from-teal-900/20 to-green-900/20 border border-teal-500/30 rounded-xl p-4 mb-6">
-                                            <h4 className="text-lg font-bold text-white mb-3">📊 Proyección de ganancias ({tasaActual}% anual)</h4>
-                                            <div className="space-y-2 text-gray-300">
-                                                <div className="flex justify-between">
-                                                    <span>Ganancia diaria:</span>
-                                                    <span className="text-teal-400 font-bold">
-                                                        ${calcularGananciaDiaria(montoDeposito).toFixed(0)}
-                                                    </span>
+                                            {isPast && (
+                                                <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-green-600/80 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                                    ✓
                                                 </div>
-                                                <div className="flex justify-between">
-                                                    <span>Ganancia mensual (30 días):</span>
-                                                    <span className="text-green-400 font-bold">
-                                                        ${(calcularGananciaDiaria(montoDeposito) * 30).toFixed(0)}
-                                                    </span>
+                                            )}
+
+                                            <div className="text-center">
+                                                <div className={`text-3xl mb-2 ${isLocked ? "grayscale opacity-40" : ""}`}>{nivel.emoji}</div>
+                                                <div className={`font-bold text-sm mb-1 ${isCurrent ? nivel.text : isPast ? "text-green-400" : "text-gray-400"}`}>
+                                                    {nivel.label}
                                                 </div>
-                                                <div className="flex justify-between">
-                                                    <span>Ganancia anual ({tasaActual}%):</span>
-                                                    <span className="text-yellow-400 font-bold">
-                                                        ${(montoDeposito * tasaActual / 100).toLocaleString()}
-                                                    </span>
+                                                <div className={`text-2xl font-black ${isCurrent ? nivel.text : isPast ? "text-green-400" : "text-gray-500"}`}>
+                                                    {nivel.tasa}%
                                                 </div>
-                                                {infoVIP?.nivel_siguiente && (
-                                                    <div className="mt-2 pt-2 border-t border-gray-700">
-                                                        <p className="text-xs text-gray-500 mb-1">Con {infoVIP.nivel_siguiente.emoji} {infoVIP.nivel_siguiente.nombre} ganarías:</p>
-                                                        <div className="flex justify-between text-sm">
-                                                            <span className="text-gray-400">Anual adicional:</span>
-                                                            <span className="text-green-400 font-bold">
-                                                                +${((montoDeposito * infoVIP.nivel_siguiente.tasa / 100) - (montoDeposito * tasaActual / 100)).toLocaleString()}
-                                                            </span>
-                                                        </div>
+                                                <div className="text-[11px] text-gray-600 mt-0.5">anual</div>
+                                                {nivel.costo && (
+                                                    <div className={`mt-2 text-[11px] font-semibold ${isNext ? "text-yellow-400" : "text-gray-600"}`}>
+                                                        {isNext ? `Costo: ${nivel.costoLabel}` : nivel.costoLabel}
                                                     </div>
                                                 )}
                                             </div>
                                         </div>
-
-                                        <button
-                                            onClick={realizarDeposito}
-                                            disabled={cargando || usuario.saldo < montoDeposito}
-                                            className={`w-full py-4 rounded-xl font-bold text-lg transition-all duration-300 ${
-                                                usuario.saldo >= montoDeposito
-                                                    ? 'bg-gradient-to-r from-teal-600 to-green-600 hover:from-teal-700 hover:to-green-700 hover:scale-[1.02] shadow-2xl shadow-teal-500/25'
-                                                    : 'bg-gray-600 cursor-not-allowed'
-                                            }`}
-                                        >
-                                            {cargando ? (
-                                                <div className="flex items-center justify-center">
-                                                    <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin mr-3"></div>
-                                                    Procesando...
-                                                </div>
-                                            ) : usuario.saldo >= montoDeposito ? (
-                                                `INVERTIR $${montoDeposito.toLocaleString()} al ${tasaActual}%`
-                                            ) : (
-                                                'SALDO INSUFICIENTE'
-                                            )}
-                                        </button>
-
-                                        {usuario.saldo < montoDeposito && (
-                                            <p className="text-red-400 mt-4 text-center font-bold">
-                                                ⚠️ Necesitas ${(montoDeposito - usuario.saldo).toLocaleString()} más
-                                            </p>
-                                        )}
-                                    </>
-                                )}
+                                    );
+                                })}
                             </div>
+                        </div>
 
-                            {/* Información de la inversión */}
-                            <div className="space-y-6">
-                                <div className="bg-gradient-to-br from-teal-900/30 to-green-900/30 border border-teal-500/30 rounded-2xl p-6">
-                                    <h3 className="text-2xl font-bold text-white mb-4 flex items-center">
-                                        <span className="mr-3">🏆</span> Beneficios
-                                    </h3>
-                                    <ul className="space-y-3 text-gray-300">
-                                        <li className="flex items-start">
-                                            <span className="mr-2 text-teal-400 text-xl">✓</span>
-                                            <span><strong>{tasaActual}% de interés anual</strong> — según tu pase VIP</span>
-                                        </li>
-                                        <li className="flex items-start">
-                                            <span className="mr-2 text-teal-400 text-xl">✓</span>
-                                            <span><strong>Interés en tiempo real</strong> — tu dinero crece cada segundo</span>
-                                        </li>
-                                        <li className="flex items-start">
-                                            <span className="mr-2 text-teal-400 text-xl">✓</span>
-                                            <span><strong>Retiro de intereses cada 30 días</strong></span>
-                                        </li>
-                                        <li className="flex items-start">
-                                            <span className="mr-2 text-teal-400 text-xl">✓</span>
-                                            <span><strong>Retiro del capital a los 6 meses</strong></span>
-                                        </li>
-                                        <li className="flex items-start">
-                                            <span className="mr-2 text-teal-400 text-xl">✓</span>
-                                            <span><strong>Depósitos ilimitados</strong> — invierte cuando quieras</span>
-                                        </li>
-                                        {infoVIP?.nivel_siguiente && (
-                                            <li className="flex items-start mt-2 pt-2 border-t border-teal-500/20">
-                                                <span className="mr-2 text-yellow-400 text-xl">⬆️</span>
-                                                <span>
-                                                    <strong className="text-yellow-400">Sube a {infoVIP.nivel_siguiente.nombre}</strong> por solo $
-                                                    {infoVIP.nivel_siguiente.costo.toLocaleString()} y gana <strong className="text-yellow-400">{infoVIP.nivel_siguiente.tasa}% anual</strong>
-                                                </span>
-                                            </li>
-                                        )}
-                                    </ul>
+                        {/* Upgrade incentive */}
+                        {infoVIP.nivel_siguiente && (
+                            <div className="mt-4 bg-gradient-to-r from-yellow-950/40 to-amber-950/40 border border-yellow-500/20 rounded-xl px-5 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                <div className="flex items-center gap-3">
+                                    <span className="text-xl">{infoVIP.nivel_siguiente.emoji}</span>
+                                    <div>
+                                        <span className="text-yellow-300 font-bold text-sm">
+                                            Con {infoVIP.nivel_siguiente.nombre} ganarías {infoVIP.nivel_siguiente.tasa - tasaActual}% más al año
+                                        </span>
+                                        <p className="text-xs text-gray-500 mt-0.5">
+                                            Por ejemplo, en $1.000.000 serían +${((1000000 * (infoVIP.nivel_siguiente.tasa - tasaActual)) / 100).toLocaleString()} anuales extra
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                    Saldo actual: <span className="text-white font-semibold">${infoVIP.saldo_usuario.toLocaleString()}</span>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* ── NUEVA INVERSIÓN + BENEFICIOS ── */}
+                <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+
+                    {/* Formulario */}
+                    <div className="lg:col-span-3 bg-gray-900/70 border border-white/8 rounded-2xl p-6">
+                        <h2 className="text-lg font-bold text-white mb-5 flex items-center gap-2">
+                            <span className="w-8 h-8 bg-teal-500/20 rounded-lg flex items-center justify-center text-teal-400">💵</span>
+                            Nueva Inversión
+                        </h2>
+
+                        {usuario && (
+                            <>
+                                {/* Saldo */}
+                                <div className="flex items-center justify-between bg-gray-800/60 border border-white/5 rounded-xl px-4 py-3 mb-5">
+                                    <div>
+                                        <p className="text-xs text-gray-500">Saldo disponible</p>
+                                        <p className="text-xl font-bold text-white">${Number(usuario.saldo).toLocaleString()}</p>
+                                    </div>
+                                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-700/60 border ${nivelInfo.border}`}>
+                                        <span className="text-sm">{nivelInfo.emoji}</span>
+                                        <span className={`text-sm font-bold ${nivelInfo.text}`}>{tasaActual}% / año</span>
+                                    </div>
                                 </div>
 
-                                <div className="bg-gradient-to-br from-blue-900/30 to-purple-900/30 border border-blue-500/30 rounded-2xl p-6">
-                                    <h3 className="text-2xl font-bold text-white mb-4 flex items-center">
-                                        <span className="mr-3">📈</span> Tiempos de Retiro
-                                    </h3>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="text-center p-4 bg-gradient-to-br from-teal-900/20 to-green-900/20 rounded-xl">
-                                            <div className="text-3xl font-bold text-teal-400 mb-2">30</div>
-                                            <div className="text-gray-300">Días para retirar intereses</div>
+                                {/* Input monto */}
+                                <label className="block text-sm text-gray-400 mb-2">Monto a invertir</label>
+                                <div className="flex gap-2 mb-3">
+                                    <div className="relative flex-1">
+                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$</span>
+                                        <input
+                                            type="number" min="50000" max="5000000" step="1000"
+                                            value={montoDeposito}
+                                            onChange={e => setMontoDeposito(Number(e.target.value))}
+                                            className="w-full bg-gray-800 border border-gray-700 focus:border-teal-500 rounded-xl pl-8 pr-4 py-3 text-white text-lg font-bold focus:outline-none focus:ring-2 focus:ring-teal-500/30 transition-colors"
+                                        />
+                                    </div>
+                                    <button
+                                        onClick={() => setMontoDeposito(Math.min(5000000, Number(usuario.saldo)))}
+                                        className="px-4 py-3 bg-gray-700 hover:bg-gray-600 border border-gray-600 rounded-xl text-white text-sm font-bold transition-colors"
+                                    >
+                                        MAX
+                                    </button>
+                                </div>
+
+                                {/* Quick amounts */}
+                                <div className="grid grid-cols-5 gap-1.5 mb-5">
+                                    {[50000, 100000, 500000, 1000000, 5000000].map(m => (
+                                        <button key={m}
+                                            onClick={() => setMontoDeposito(m)}
+                                            className={`py-1.5 rounded-lg text-xs font-bold transition-all ${montoDeposito === m ? "bg-teal-600 text-white" : "bg-gray-800 text-gray-400 hover:bg-gray-700 border border-gray-700"}`}
+                                        >
+                                            ${m >= 1000000 ? `${m/1000000}M` : `${m/1000}K`}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                {/* Proyección */}
+                                <div className="bg-gray-800/50 border border-white/5 rounded-xl p-4 mb-5">
+                                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Proyección ({tasaActual}% anual)</p>
+                                    <div className="grid grid-cols-3 gap-3">
+                                        <div className="text-center">
+                                            <div className="text-sm font-bold text-teal-400">${ganDiaria(montoDeposito).toFixed(0)}</div>
+                                            <div className="text-[11px] text-gray-600 mt-0.5">por día</div>
                                         </div>
-                                        <div className="text-center p-4 bg-gradient-to-br from-blue-900/20 to-purple-900/20 rounded-xl">
-                                            <div className="text-3xl font-bold text-blue-400 mb-2">180</div>
-                                            <div className="text-gray-300">Días para retirar capital</div>
+                                        <div className="text-center border-x border-gray-700">
+                                            <div className="text-sm font-bold text-green-400">${(ganDiaria(montoDeposito) * 30).toFixed(0)}</div>
+                                            <div className="text-[11px] text-gray-600 mt-0.5">al mes</div>
                                         </div>
+                                        <div className="text-center">
+                                            <div className="text-sm font-bold text-yellow-400">${(montoDeposito * tasaActual / 100).toLocaleString()}</div>
+                                            <div className="text-[11px] text-gray-600 mt-0.5">al año</div>
+                                        </div>
+                                    </div>
+                                    {infoVIP?.nivel_siguiente && (
+                                        <div className="mt-3 pt-3 border-t border-gray-700/60 flex items-center justify-between">
+                                            <span className="text-[11px] text-gray-500">Con {infoVIP.nivel_siguiente.emoji} {infoVIP.nivel_siguiente.nombre} ganarías anualmente:</span>
+                                            <span className="text-xs font-bold text-green-400">+${((montoDeposito * (infoVIP.nivel_siguiente.tasa - tasaActual)) / 100).toLocaleString()}</span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* CTA */}
+                                <button
+                                    onClick={realizarDeposito}
+                                    disabled={cargando || !usuario || usuario.saldo < montoDeposito}
+                                    className={`w-full py-4 rounded-xl font-bold text-base transition-all duration-200 ${
+                                        usuario.saldo >= montoDeposito
+                                            ? "bg-gradient-to-r from-teal-600 to-green-600 hover:from-teal-500 hover:to-green-500 text-white hover:scale-[1.01] shadow-lg shadow-teal-500/20"
+                                            : "bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700"
+                                    }`}
+                                >
+                                    {cargando ? (
+                                        <span className="flex items-center justify-center gap-2">
+                                            <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                            Procesando…
+                                        </span>
+                                    ) : usuario.saldo >= montoDeposito
+                                        ? `Invertir $${montoDeposito.toLocaleString()} · ${tasaActual}% anual`
+                                        : `Faltan $${(montoDeposito - usuario.saldo).toLocaleString()} en tu saldo`
+                                    }
+                                </button>
+                            </>
+                        )}
+                    </div>
+
+                    {/* Info / beneficios */}
+                    <div className="lg:col-span-2 flex flex-col gap-4">
+
+                        {/* Plazos */}
+                        <div className="bg-gray-900/70 border border-white/8 rounded-2xl p-5">
+                            <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
+                                <span className="text-teal-400">⏱</span> Plazos de retiro
+                            </h3>
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between bg-teal-950/40 border border-teal-500/20 rounded-xl px-4 py-3">
+                                    <div>
+                                        <div className="text-white font-bold">Intereses</div>
+                                        <div className="text-xs text-gray-500">Retiro disponible cada</div>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="text-3xl font-black text-teal-400">30</div>
+                                        <div className="text-xs text-gray-500">días</div>
+                                    </div>
+                                </div>
+                                <div className="flex items-center justify-between bg-blue-950/40 border border-blue-500/20 rounded-xl px-4 py-3">
+                                    <div>
+                                        <div className="text-white font-bold">Capital</div>
+                                        <div className="text-xs text-gray-500">Disponible a los</div>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="text-3xl font-black text-blue-400">180</div>
+                                        <div className="text-xs text-gray-500">días</div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </section>
 
-            {/* ===== INVERSIONES ACTIVAS ===== */}
-            <section className="container mx-auto px-4 pb-16">
-                <div className="max-w-6xl mx-auto">
-                    <div className="bg-gradient-to-r from-gray-800/80 to-gray-900/80 backdrop-blur-sm rounded-2xl p-8 border border-blue-500/30">
-                        <div className="flex justify-between items-center mb-8">
-                            <h2 className="text-3xl font-bold text-white">
-                                📊 Tus Inversiones Activas
-                            </h2>
-                            <button
-                                onClick={() => setMostrarHistorial(!mostrarHistorial)}
-                                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl text-white font-bold hover:opacity-90 transition-opacity"
-                            >
-                                {mostrarHistorial ? "Ver Inversiones Activas" : "Ver Historial Completo"}
-                            </button>
+                        {/* Beneficios */}
+                        <div className="bg-gray-900/70 border border-white/8 rounded-2xl p-5 flex-1">
+                            <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
+                                <span className="text-green-400">✓</span> Beneficios
+                            </h3>
+                            <ul className="space-y-2.5 text-sm text-gray-400">
+                                {[
+                                    ["💹", "Interés acumulado en tiempo real"],
+                                    ["🔄", "Depósitos múltiples ilimitados"],
+                                    ["📅", "Retiro de intereses mensual"],
+                                    ["🔒", "Capital seguro a 6 meses"],
+                                    ["⬆️", "Sube de nivel VIP para más rentabilidad"],
+                                ].map(([icon, txt], i) => (
+                                    <li key={i} className="flex items-start gap-2.5">
+                                        <span className="text-base mt-0.5">{icon}</span>
+                                        <span>{txt}</span>
+                                    </li>
+                                ))}
+                            </ul>
                         </div>
 
-                        {!mostrarHistorial ? (
+                    </div>
+                </div>
+
+                {/* ── INVERSIONES / HISTORIAL ── */}
+                <div className="bg-gray-900/70 border border-white/8 rounded-2xl overflow-hidden">
+                    {/* Tabs */}
+                    <div className="flex border-b border-white/5">
+                        <button
+                            onClick={() => setTab("activas")}
+                            className={`flex-1 py-4 text-sm font-bold transition-colors ${tab === "activas" ? "text-teal-400 border-b-2 border-teal-400 bg-teal-500/5" : "text-gray-500 hover:text-gray-300"}`}
+                        >
+                            📊 Inversiones Activas
+                            {estado && estado.inversiones.length > 0 && (
+                                <span className="ml-2 bg-teal-500/20 text-teal-400 text-[10px] font-black px-2 py-0.5 rounded-full">
+                                    {estado.inversiones.length}
+                                </span>
+                            )}
+                        </button>
+                        <button
+                            onClick={() => setTab("historial")}
+                            className={`flex-1 py-4 text-sm font-bold transition-colors ${tab === "historial" ? "text-blue-400 border-b-2 border-blue-400 bg-blue-500/5" : "text-gray-500 hover:text-gray-300"}`}
+                        >
+                            📜 Historial
+                        </button>
+                    </div>
+
+                    <div className="p-6">
+                        {tab === "activas" ? (
                             estado && estado.inversiones.length > 0 ? (
                                 <div className="space-y-4">
-                                    {estado.inversiones.map((inversion) => (
-                                        <div
-                                            key={inversion.id}
-                                            className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700 hover:border-teal-500/50 transition-all duration-300"
-                                        >
-                                            <div className="flex items-center justify-between mb-4">
-                                                <span className="text-sm text-gray-400">Inversión #{inversion.id}</span>
-                                                <span className={`text-sm font-bold px-3 py-1 rounded-full ${
-                                                    inversion.tasa_interes >= 300 ? "bg-cyan-900/40 text-cyan-400" :
-                                                    inversion.tasa_interes >= 200 ? "bg-yellow-900/40 text-yellow-400" :
-                                                    inversion.tasa_interes >= 100 ? "bg-gray-700/40 text-gray-300" :
-                                                    "bg-gray-800/40 text-gray-400"
-                                                }`}>
-                                                    {inversion.tasa_interes >= 300 ? "💎" : inversion.tasa_interes >= 200 ? "🥇" : inversion.tasa_interes >= 100 ? "🥈" : "⬜"} {inversion.tasa_interes}% anual
-                                                </span>
-                                            </div>
+                                    {estado.inversiones.map(inv => {
+                                        const nIdx = NIVELES.findIndex(n => n.tasa === inv.tasa_interes);
+                                        const nInfo = NIVELES[nIdx] ?? NIVELES[0];
+                                        const progresoCapital = Math.min(100, (inv.dias_transcurridos / 180) * 100);
 
-                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                                                <div>
-                                                    <p className="text-gray-400 mb-1">Monto Invertido</p>
-                                                    <p className="text-2xl font-bold text-white">
-                                                        ${inversion.monto.toLocaleString()}
-                                                    </p>
+                                        return (
+                                            <div key={inv.id} className="bg-gray-800/50 border border-white/6 rounded-xl p-5 hover:border-teal-500/20 transition-colors">
+                                                {/* Header de la inversión */}
+                                                <div className="flex items-center justify-between mb-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="bg-gray-700/60 border border-white/5 rounded-xl w-10 h-10 flex items-center justify-center text-lg">
+                                                            💰
+                                                        </div>
+                                                        <div>
+                                                            <div className="text-white font-bold">${Number(inv.monto).toLocaleString()}</div>
+                                                            <div className="text-xs text-gray-500">Inversión #{inv.id} · {inv.dias_transcurridos} días</div>
+                                                        </div>
+                                                    </div>
+                                                    <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-700/60 border ${nInfo.border}`}>
+                                                        <span className="text-sm">{nInfo.emoji}</span>
+                                                        <span className={`text-sm font-bold ${nInfo.text}`}>{inv.tasa_interes}%</span>
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <p className="text-gray-400 mb-1">Interés Acumulado</p>
-                                                    <p className="text-2xl font-bold text-teal-400">
-                                                        ${inversion.interes_acumulado.toLocaleString()}
-                                                    </p>
-                                                </div>
-                                                <div>
-                                                    <p className="text-gray-400 mb-1">Ganancia Diaria</p>
-                                                    <p className="text-2xl font-bold text-green-400">
-                                                        ${inversion.interes_diario.toFixed(2)}
-                                                    </p>
-                                                </div>
-                                            </div>
 
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                                                <div className="bg-gradient-to-r from-teal-900/20 to-green-900/20 border border-teal-500/30 rounded-xl p-4">
-                                                    <p className="text-gray-400 mb-1">Próximo retiro de intereses</p>
-                                                    <p className="text-lg font-bold text-white">
-                                                        {inversion.puede_retirar_intereses ? (
-                                                            <span className="text-green-400">¡DISPONIBLE AHORA!</span>
-                                                        ) : (
-                                                            `En ${inversion.dias_faltantes_intereses} días`
-                                                        )}
-                                                    </p>
-                                                    <p className="text-sm text-gray-400">
-                                                        {formatearFecha(inversion.fecha_proximo_retiro_intereses)}
-                                                    </p>
+                                                {/* Métricas */}
+                                                <div className="grid grid-cols-3 gap-3 mb-4">
+                                                    <div className="bg-gray-900/60 rounded-xl p-3 text-center">
+                                                        <div className="text-teal-400 font-bold text-sm">${Number(inv.interes_acumulado).toLocaleString()}</div>
+                                                        <div className="text-[11px] text-gray-600 mt-0.5">Acumulado</div>
+                                                    </div>
+                                                    <div className="bg-gray-900/60 rounded-xl p-3 text-center">
+                                                        <div className="text-green-400 font-bold text-sm">${Number(inv.interes_diario).toFixed(0)}</div>
+                                                        <div className="text-[11px] text-gray-600 mt-0.5">Por día</div>
+                                                    </div>
+                                                    <div className="bg-gray-900/60 rounded-xl p-3 text-center">
+                                                        <div className="text-yellow-400 font-bold text-sm">${(Number(inv.interes_diario) * 30).toFixed(0)}</div>
+                                                        <div className="text-[11px] text-gray-600 mt-0.5">Por mes</div>
+                                                    </div>
                                                 </div>
-                                                <div className="bg-gradient-to-r from-blue-900/20 to-purple-900/20 border border-blue-500/30 rounded-xl p-4">
-                                                    <p className="text-gray-400 mb-1">Próximo retiro de capital</p>
-                                                    <p className="text-lg font-bold text-white">
-                                                        {inversion.puede_retirar_capital ? (
-                                                            <span className="text-green-400">¡DISPONIBLE AHORA!</span>
-                                                        ) : (
-                                                            `En ${inversion.dias_faltantes_capital} días`
-                                                        )}
-                                                    </p>
-                                                    <p className="text-sm text-gray-400">
-                                                        {formatearFecha(inversion.fecha_proximo_retiro_capital)}
-                                                    </p>
-                                                </div>
-                                            </div>
 
-                                            <div className="flex space-x-4">
-                                                <button
-                                                    onClick={() => retirarIntereses(inversion.id)}
-                                                    disabled={!inversion.puede_retirar_intereses || cargando}
-                                                    className={`flex-1 py-3 rounded-xl font-bold transition-all ${
-                                                        inversion.puede_retirar_intereses
-                                                            ? 'bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700'
-                                                            : 'bg-gray-700 cursor-not-allowed'
-                                                    }`}
-                                                >
-                                                    RETIRAR INTERESES (${inversion.interes_acumulado.toLocaleString()})
-                                                </button>
-                                                <button
-                                                    onClick={() => retirarCapital(inversion.id)}
-                                                    disabled={!inversion.puede_retirar_capital || cargando}
-                                                    className={`flex-1 py-3 rounded-xl font-bold transition-all ${
-                                                        inversion.puede_retirar_capital
-                                                            ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700'
-                                                            : 'bg-gray-700 cursor-not-allowed'
-                                                    }`}
-                                                >
-                                                    RETIRAR CAPITAL
-                                                </button>
+                                                {/* Progreso capital */}
+                                                <div className="mb-4">
+                                                    <div className="flex justify-between text-xs text-gray-500 mb-1.5">
+                                                        <span>Progreso capital ({inv.dias_transcurridos}/180 días)</span>
+                                                        <span>{progresoCapital.toFixed(0)}%</span>
+                                                    </div>
+                                                    <div className="h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                                                        <div
+                                                            className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all duration-500"
+                                                            style={{ width: `${progresoCapital}%` }}
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                {/* Botones de retiro */}
+                                                <div className="flex gap-3">
+                                                    <button
+                                                        onClick={() => retirarIntereses(inv.id)}
+                                                        disabled={!inv.puede_retirar_intereses || cargando}
+                                                        className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                                                            inv.puede_retirar_intereses
+                                                                ? "bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-500 hover:to-teal-500 text-white shadow-md shadow-green-900/30"
+                                                                : "bg-gray-800 text-gray-600 cursor-not-allowed border border-gray-700"
+                                                        }`}
+                                                    >
+                                                        {inv.puede_retirar_intereses
+                                                            ? `✅ Retirar $${Number(inv.interes_acumulado).toLocaleString()}`
+                                                            : `⏳ Intereses en ${inv.dias_faltantes_intereses}d`
+                                                        }
+                                                    </button>
+                                                    <button
+                                                        onClick={() => retirarCapital(inv.id)}
+                                                        disabled={!inv.puede_retirar_capital || cargando}
+                                                        className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                                                            inv.puede_retirar_capital
+                                                                ? "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white shadow-md shadow-blue-900/30"
+                                                                : "bg-gray-800 text-gray-600 cursor-not-allowed border border-gray-700"
+                                                        }`}
+                                                    >
+                                                        {inv.puede_retirar_capital
+                                                            ? `💰 Retirar Capital`
+                                                            : `🔒 Capital en ${inv.dias_faltantes_capital}d`
+                                                        }
+                                                    </button>
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             ) : (
-                                <div className="text-center py-12">
-                                    <div className="text-6xl mb-4">💸</div>
-                                    <h3 className="text-2xl font-bold text-white mb-4">
-                                        Aún no tienes inversiones
-                                    </h3>
-                                    <p className="text-gray-400 mb-8">
-                                        Comienza invirtiendo para hacer crecer tu dinero con tu tasa VIP actual de {tasaActual}% anual
-                                    </p>
+                                <div className="text-center py-16">
+                                    <div className="text-5xl mb-3">💸</div>
+                                    <h3 className="text-lg font-bold text-white mb-2">Aún no tienes inversiones activas</h3>
+                                    <p className="text-gray-500 text-sm">Realiza tu primera inversión arriba para empezar a ganar al {tasaActual}% anual</p>
                                 </div>
                             )
                         ) : (
-                            <div className="overflow-x-auto">
-                                <table className="w-full">
-                                    <thead>
-                                        <tr className="bg-gradient-to-r from-gray-900 to-gray-800">
-                                            <th className="p-4 text-left text-gray-300 font-bold">Fecha</th>
-                                            <th className="p-4 text-left text-gray-300 font-bold">Monto</th>
-                                            <th className="p-4 text-left text-gray-300 font-bold">Estado</th>
-                                            <th className="p-4 text-left text-gray-300 font-bold">Retiros</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {historial.length > 0 ? (
-                                            historial.map((inv) => (
-                                                <tr
-                                                    key={inv.id}
-                                                    className="border-b border-gray-700/50 hover:bg-gray-800/30 transition-colors"
-                                                >
-                                                    <td className="p-4 text-gray-300">
-                                                        {formatearFecha(inv.fecha_deposito)}
-                                                    </td>
-                                                    <td className="p-4">
-                                                        <p className="text-xl font-bold text-white">
-                                                            ${inv.monto.toLocaleString()}
-                                                        </p>
-                                                        <p className="text-sm text-gray-400">
-                                                            {inv.tasa_interes}% anual
-                                                        </p>
-                                                    </td>
-                                                    <td className="p-4">
-                                                        <span className={`px-3 py-1 rounded-full text-sm font-bold ${
-                                                            inv.activa
-                                                                ? 'bg-gradient-to-r from-green-600/30 to-teal-600/30 text-green-400'
-                                                                : 'bg-gradient-to-r from-gray-600/30 to-gray-700/30 text-gray-400'
-                                                        }`}>
-                                                            {inv.activa ? 'Activa' : 'Finalizada'}
+                            historial.length > 0 ? (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-sm">
+                                        <thead>
+                                            <tr className="text-left text-xs text-gray-500 border-b border-white/5">
+                                                <th className="pb-3 font-semibold">Fecha</th>
+                                                <th className="pb-3 font-semibold">Monto</th>
+                                                <th className="pb-3 font-semibold">Tasa</th>
+                                                <th className="pb-3 font-semibold">Estado</th>
+                                                <th className="pb-3 font-semibold">Retiros</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-white/4">
+                                            {historial.map(inv => (
+                                                <tr key={inv.id} className="hover:bg-white/2 transition-colors">
+                                                    <td className="py-3 text-gray-400">{fmt(inv.fecha_deposito)}</td>
+                                                    <td className="py-3 font-bold text-white">${Number(inv.monto).toLocaleString()}</td>
+                                                    <td className="py-3">
+                                                        <span className={`font-bold ${NIVELES.find(n => n.tasa === Number(inv.tasa_interes))?.text ?? "text-gray-400"}`}>
+                                                            {inv.tasa_interes}%
                                                         </span>
                                                     </td>
-                                                    <td className="p-4">
+                                                    <td className="py-3">
+                                                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${inv.activa ? "bg-green-900/40 text-green-400 border border-green-500/20" : "bg-gray-800 text-gray-500 border border-gray-700"}`}>
+                                                            {inv.activa ? "Activa" : "Finalizada"}
+                                                        </span>
+                                                    </td>
+                                                    <td className="py-3">
                                                         {inv.retiros.length > 0 ? (
-                                                            <div className="space-y-2">
-                                                                {inv.retiros.map((retiro, idx) => (
-                                                                    <div key={idx} className="bg-gray-800/50 rounded-lg p-3">
-                                                                        <div className="flex justify-between items-center">
-                                                                            <span className={`font-bold ${retiro.tipo === 'intereses' ? 'text-green-400' : 'text-blue-400'}`}>
-                                                                                {retiro.tipo.toUpperCase()}
-                                                                            </span>
-                                                                            <span className="text-white font-bold">
-                                                                                ${retiro.monto.toLocaleString()}
-                                                                            </span>
-                                                                        </div>
-                                                                        <p className="text-sm text-gray-400">
-                                                                            {formatearFecha(retiro.fecha)}
-                                                                        </p>
+                                                            <div className="flex flex-col gap-1">
+                                                                {inv.retiros.map((r, i) => (
+                                                                    <div key={i} className="flex items-center gap-2 text-xs">
+                                                                        <span className={r.tipo === "intereses" ? "text-green-400" : "text-blue-400"}>{r.tipo}</span>
+                                                                        <span className="text-white font-semibold">${Number(r.monto).toLocaleString()}</span>
+                                                                        <span className="text-gray-600">{fmt(r.fecha)}</span>
                                                                     </div>
                                                                 ))}
                                                             </div>
                                                         ) : (
-                                                            <span className="text-gray-500">Sin retiros</span>
+                                                            <span className="text-gray-700">—</span>
                                                         )}
                                                     </td>
                                                 </tr>
-                                            ))
-                                        ) : (
-                                            <tr>
-                                                <td colSpan={4} className="p-8 text-center text-gray-400">
-                                                    No hay historial de inversiones
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ) : (
+                                <div className="text-center py-16 text-gray-600">
+                                    <div className="text-4xl mb-3">📜</div>
+                                    <p>No hay historial de inversiones aún</p>
+                                </div>
+                            )
                         )}
                     </div>
                 </div>
-            </section>
+
+            </div>
 
             <Footer />
         </div>
