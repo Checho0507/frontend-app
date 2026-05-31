@@ -54,9 +54,6 @@ export default function Dados() {
 
   // Obtener usuario al cargar
   useEffect(() => {
-          console.log('Usuario en Referidos:', usuario);
-          
-  
           if (!usuario) {
               const token = localStorage.getItem("token");
               if (!token) {
@@ -69,7 +66,6 @@ export default function Dados() {
                   try {
                       const usuarioParsed = JSON.parse(usuarioGuardado);
                       setUsuario(usuarioParsed);
-                      console.log('Usuario cargado desde localStorage:', usuarioParsed);
                   } catch (error) {
                       console.error('Error al parsear usuario:', error);
                   }

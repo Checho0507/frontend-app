@@ -77,9 +77,6 @@ export default function Ruleta() {
 
     // Obtener usuario al cargar (igual que en la página de juegos)
     useEffect(() => {
-            console.log('Usuario en Referidos:', usuario);
-            
-    
             if (!usuario) {
                 const token = localStorage.getItem("token");
                 if (!token) {
@@ -92,7 +89,6 @@ export default function Ruleta() {
                     try {
                         const usuarioParsed = JSON.parse(usuarioGuardado);
                         setUsuario(usuarioParsed);
-                        console.log('Usuario cargado desde localStorage:', usuarioParsed);
                     } catch (error) {
                         console.error('Error al parsear usuario:', error);
                     }
@@ -143,24 +139,13 @@ export default function Ruleta() {
     const actualizarEstadisticas = (nuevoGiro: HistorialGiro) => {
         const esGiroGratis = nuevoGiro.resultado === "Free";
         
-        console.log("Actualizando estadísticas. Giro gratis:", esGiroGratis);
-        console.log("Nuevo giro:", nuevoGiro);
-
         // 🔴 CORRECCIÓN: Si es giro gratis, NO sumar al gasto
         if (esGiroGratis) {
             // Actualizar estadísticas acumulativas
             setEstadisticasAcumulativas(prev => {
                 const nuevoTotalGiros = prev.totalGirosAcum + 1;
-                // Ganancia es 0 para giros gratis
-                const nuevaGananciaTotal = prev.gananciaTotalAcum + 0; // Giro gratis no da ganancia
-                // 🔴 IMPORTANTE: No sumar al gasto cuando es giro gratis
-                const nuevoGastoTotal = prev.gastoTotalAcum + 0; // Giro gratis no cuesta
-
-                console.log("Giro gratis - Acumulativas actualizadas:", {
-                    nuevoTotalGiros,
-                    nuevaGananciaTotal,
-                    nuevoGastoTotal
-                });
+                const nuevaGananciaTotal = prev.gananciaTotalAcum + 0;
+                const nuevoGastoTotal = prev.gastoTotalAcum + 0;
 
                 return {
                     totalGirosAcum: nuevoTotalGiros,
@@ -172,17 +157,9 @@ export default function Ruleta() {
             // Actualizar estadísticas visibles
             setEstadisticas(prev => {
                 const nuevoTotalGiros = prev.totalGiros + 1;
-                const nuevaGananciaTotal = prev.gananciaTotal + 0; // Giro gratis no da ganancia
-                // 🔴 IMPORTANTE: No sumar al gasto cuando es giro gratis
-                const nuevoGastoTotal = prev.gastoTotal + 0; // Giro gratis no cuesta
+                const nuevaGananciaTotal = prev.gananciaTotal + 0;
+                const nuevoGastoTotal = prev.gastoTotal + 0;
                 const nuevoBalance = nuevaGananciaTotal - nuevoGastoTotal;
-
-                console.log("Giro gratis - Estadísticas visibles actualizadas:", {
-                    nuevoTotalGiros,
-                    nuevaGananciaTotal,
-                    nuevoGastoTotal,
-                    nuevoBalance
-                });
 
                 return {
                     totalGiros: nuevoTotalGiros,
@@ -197,13 +174,7 @@ export default function Ruleta() {
             setEstadisticasAcumulativas(prev => {
                 const nuevoTotalGiros = prev.totalGirosAcum + 1;
                 const nuevaGananciaTotal = prev.gananciaTotalAcum + (nuevoGiro.ganancia || 0);
-                const nuevoGastoTotal = prev.gastoTotalAcum + nuevoGiro.apostado; // Sumar el costo del giro
-
-                console.log("Giro normal - Acumulativas actualizadas:", {
-                    nuevoTotalGiros,
-                    nuevaGananciaTotal,
-                    nuevoGastoTotal
-                });
+                const nuevoGastoTotal = prev.gastoTotalAcum + nuevoGiro.apostado;
 
                 return {
                     totalGirosAcum: nuevoTotalGiros,
@@ -216,15 +187,8 @@ export default function Ruleta() {
             setEstadisticas(prev => {
                 const nuevoTotalGiros = prev.totalGiros + 1;
                 const nuevaGananciaTotal = prev.gananciaTotal + (nuevoGiro.ganancia || 0);
-                const nuevoGastoTotal = prev.gastoTotal + nuevoGiro.apostado; // Sumar el costo del giro
+                const nuevoGastoTotal = prev.gastoTotal + nuevoGiro.apostado;
                 const nuevoBalance = nuevaGananciaTotal - nuevoGastoTotal;
-
-                console.log("Giro normal - Estadísticas visibles actualizadas:", {
-                    nuevoTotalGiros,
-                    nuevaGananciaTotal,
-                    nuevoGastoTotal,
-                    nuevoBalance
-                });
 
                 return {
                     totalGiros: nuevoTotalGiros,
@@ -317,7 +281,6 @@ export default function Ruleta() {
             );
 
             const resultado = res.data?.resultado ?? "Sin Premio";
-            console.log("Resultado del servidor:", resultado);
             const msgServidor = res.data?.mensaje ?? "";
             const ganancia = typeof res.data?.ganancia === "number" ? res.data.ganancia : 0;
             const nuevo_saldo = typeof res.data?.nuevo_saldo === "number" ? res.data.nuevo_saldo : usuario.saldo - COSTO;

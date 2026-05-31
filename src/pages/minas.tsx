@@ -10,7 +10,6 @@ import { API_URL } from "../api/auth";
 // Configurar interceptor de axios para manejar errores
 axios.interceptors.response.use(
     response => {
-        console.log(`✅ ${response.config.method?.toUpperCase()} ${response.config.url}: ${response.status}`);
         return response;
     },
     error => {

@@ -72,9 +72,6 @@ export default function Tragamonedas() {
 
     // Obtener usuario al cargar
     useEffect(() => {
-            console.log('Usuario en Referidos:', usuario);
-            
-    
             if (!usuario) {
                 const token = localStorage.getItem("token");
                 if (!token) {

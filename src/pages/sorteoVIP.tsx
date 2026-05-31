@@ -13,13 +13,16 @@ interface Ganador {
     verificado: boolean;
     premio?: number;
     saldo_anterior?: number;
+    fichas?: number;
 }
 
 interface ResultadoSorteo {
     id: number;
     fecha: string;
-    numero_ganador: number;
+    numero_ganador: string;
     ganadores: Ganador[];
+    total_participantes: number;
+    total_ganadores: number;
 }
 
 interface Usuario {
@@ -73,9 +76,6 @@ export default function SorteoVIP() {
     }, []);
 
     useEffect(() => {
-        console.log('Usuario en Referidos:', usuario);
-        console.log('Token en localStorage:', localStorage.getItem('token'));
-
         if (!usuario) {
             const token = localStorage.getItem("token");
             if (!token) {
@@ -138,17 +138,13 @@ export default function SorteoVIP() {
         return () => clearInterval(intervalId);
     }, []);
 
-    const calcularProbabilidad = (inversion: number) => {
-        let basePersonal = 0;
-        if (inversion === 10000) basePersonal = 1;
-        if (inversion === 20000) basePersonal = 3;
-        if (inversion === 50000) basePersonal = 10;
-        if (inversion === 100000) basePersonal = 25;
+    const TOTAL_SLOTS = 100;
 
-        const probabilidadTotal = 50 + basePersonal;
-        const chance = `${probabilidadTotal} / ${(probabilidadTotal - 50).toLocaleString()}`;
-        const porcentaje = (((probabilidadTotal - 50) / (probabilidadTotal)) * 100).toFixed(1);
-        return { chance, porcentaje, basePersonal };
+    const calcularProbabilidad = (inversion: number) => {
+        const fichas = calcularFichas(inversion);
+        const porcentaje = ((fichas / TOTAL_SLOTS) * 100).toFixed(0);
+        const chance = `${fichas} / ${TOTAL_SLOTS}`;
+        return { chance, porcentaje, basePersonal: fichas };
     };
 
     const participar = async (costo: number) => {
@@ -202,13 +198,12 @@ export default function SorteoVIP() {
         setTimeout(() => navigate('/login'), 1500);
     };
 
-    const formatearGanadores = (ganadores: Ganador[]) => {
-        if (!ganadores || ganadores.length === 0) {
-            return "Sin ganadores";
+    const formatearGanadores = (ganadores: Ganador[], total_ganadores?: number) => {
+        if (!ganadores || ganadores.length === 0 || total_ganadores === 0) {
+            return null; // renderizado especial en JSX
         }
-
         return ganadores.map(g =>
-            `${g.username} (Premio: $${g.premio?.toLocaleString() || 0})`
+            `${g.username} — Premio: $${(g.premio ?? 0).toLocaleString()} (${g.fichas ?? '?'} fichas)`
         ).join(", ");
     };
 
@@ -361,24 +356,24 @@ export default function SorteoVIP() {
                             {/* Explicación del sistema */}
                             <div className="bg-gradient-to-r from-yellow-600/10 to-green-600/10 border border-yellow-500/30 rounded-xl p-6">
                                 <h4 className="text-xl font-bold text-white mb-4 flex items-center">
-                                    <span className="mr-2">💡</span> ¿Cómo funciona el sistema?
+                                    <span className="mr-2">💡</span> ¿Cómo funciona el sistema de 100 slots?
                                 </h4>
                                 <ul className="space-y-3 text-gray-300">
                                     <li className="flex items-start">
                                         <span className="mr-2 text-green-400">✓</span>
-                                        <span><strong>Sorteo automático cada 24 horas</strong> con número ganador de 8 dígitos</span>
+                                        <span><strong>Siempre 100 números</strong> — el sorteo elige un número al azar entre 1 y 100. El resultado se guarda siempre.</span>
                                     </li>
                                     <li className="flex items-start">
                                         <span className="mr-2 text-green-400">✓</span>
-                                        <span><strong>Inversión base:</strong> $10.000 = Factor base de 10.000</span>
+                                        <span><strong>Tus fichas = tus slots</strong> — al participar ocupas slots consecutivos del 1 al 100. Con {fichas} ficha{fichas !== 1 ? 's' : ''} tienes <span className="text-yellow-400 font-bold">{fichas}% de probabilidad</span>.</span>
                                     </li>
                                     <li className="flex items-start">
                                         <span className="mr-2 text-green-400">✓</span>
-                                        <span><strong>Mejor probabilidad:</strong> ${montoInversion.toLocaleString()} = {fichas} {fichas === 1 ? 'ficha' : 'fichas'}</span>
+                                        <span><strong>Slots vacíos = nadie gana</strong> — si el número sorteado cae en un slot sin participante, el resultado se registra como "nadie ganó".</span>
                                     </li>
                                     <li className="flex items-start">
-                                        <span className="mr-2 text-green-400">✓</span>
-                                        <span><strong>Los ganadores son determinados</strong> comparando los últimos 8 dígitos del ID de usuario con el número ganador</span>
+                                        <span className="mr-2 text-yellow-400">⏰</span>
+                                        <span><strong>Sorteo automático diario</strong> — se ejecuta cada 24 horas y el historial queda registrado para siempre.</span>
                                     </li>
                                 </ul>
                             </div>
@@ -535,9 +530,12 @@ export default function SorteoVIP() {
 
                     {/* Resultados del Sorteo VIP */}
                     <div className="bg-gradient-to-r from-gray-800/80 to-gray-900/80 backdrop-blur-sm rounded-2xl p-8 border border-yellow-500/30">
-                        <h2 className="text-3xl font-bold text-white mb-6 text-center">
+                        <h2 className="text-3xl font-bold text-white mb-2 text-center">
                             📊 Historial de Sorteos VIP
                         </h2>
+                        <p className="text-center text-gray-400 mb-8 text-sm">
+                            Cada sorteo usa <span className="text-yellow-400 font-bold">100 números</span> (1–100). Si el número sorteado cae en un slot vacío, nadie gana.
+                        </p>
 
                         {cargandoResultados && (
                             <div className="text-center py-8">
@@ -556,45 +554,75 @@ export default function SorteoVIP() {
                             <div className="overflow-x-auto">
                                 <table className="w-full">
                                     <thead>
-                                        <tr className="bg-gradient-to-r from-gray-900 to-gray-800">
-                                            <th className="p-4 text-left text-gray-300 font-bold">Fecha del Sorteo</th>
-                                            <th className="p-4 text-center text-gray-300 font-bold">Número Ganador (8 dígitos)</th>
-                                            <th className="p-4 text-left text-gray-300 font-bold">Ganadores y Premios</th>
+                                        <tr className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-xl">
+                                            <th className="p-4 text-left text-gray-300 font-bold rounded-tl-xl">Fecha del Sorteo</th>
+                                            <th className="p-4 text-center text-gray-300 font-bold">Nº Sorteado</th>
+                                            <th className="p-4 text-center text-gray-300 font-bold">Participantes</th>
+                                            <th className="p-4 text-left text-gray-300 font-bold rounded-tr-xl">Resultado</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {resultados.length === 0 ? (
                                             <tr>
-                                                <td colSpan={3} className="p-8 text-center text-gray-500 italic">
-                                                    No hay resultados disponibles
+                                                <td colSpan={4} className="p-8 text-center text-gray-500 italic">
+                                                    No hay sorteos registrados aún
                                                 </td>
                                             </tr>
                                         ) : (
-                                            resultados.slice(0, 5).map((resultado, index) => (
-                                                <tr
-                                                    key={resultado.id}
-                                                    className={`border-b border-gray-700/50 ${index % 2 === 0 ? 'bg-gray-800/30' : 'bg-gray-900/30'
-                                                        } hover:bg-gray-700/30 transition-colors`}
-                                                >
-                                                    <td className="p-4 text-gray-300">
-                                                        {new Date(resultado.fecha).toLocaleDateString('es-ES', {
-                                                            year: 'numeric',
-                                                            month: '2-digit',
-                                                            day: '2-digit',
-                                                            hour: '2-digit',
-                                                            minute: '2-digit'
-                                                        })}
-                                                    </td>
-                                                    <td className="p-4 text-center">
-                                                        <div className="font-bold text-2xl text-yellow-400 font-mono tracking-wider">
-                                                            {resultado.numero_ganador.toString().padStart(8, '0')}
-                                                        </div>
-                                                    </td>
-                                                    <td className="p-4 text-gray-300">
-                                                        {formatearGanadores(resultado.ganadores)}
-                                                    </td>
-                                                </tr>
-                                            ))
+                                            resultados.slice(0, 10).map((resultado, index) => {
+                                                const hayGanador = resultado.total_ganadores > 0 && resultado.ganadores.length > 0;
+                                                return (
+                                                    <tr
+                                                        key={resultado.id}
+                                                        className={`border-b border-gray-700/50 ${index % 2 === 0 ? 'bg-gray-800/30' : 'bg-gray-900/30'} hover:bg-gray-700/30 transition-colors`}
+                                                    >
+                                                        <td className="p-4 text-gray-300 text-sm">
+                                                            {new Date(resultado.fecha).toLocaleDateString('es-ES', {
+                                                                year: 'numeric',
+                                                                month: '2-digit',
+                                                                day: '2-digit',
+                                                                hour: '2-digit',
+                                                                minute: '2-digit'
+                                                            })}
+                                                        </td>
+                                                        <td className="p-4 text-center">
+                                                            <span className="inline-block bg-gray-900/60 border border-yellow-500/40 px-3 py-1 rounded-lg font-bold text-xl text-yellow-400 font-mono">
+                                                                {resultado.numero_ganador.toString().padStart(3, '0')}
+                                                            </span>
+                                                        </td>
+                                                        <td className="p-4 text-center text-gray-300 text-sm">
+                                                            {resultado.total_participantes ?? '—'}
+                                                        </td>
+                                                        <td className="p-4">
+                                                            {hayGanador ? (
+                                                                <div className="flex items-start space-x-2">
+                                                                    <span className="text-green-400 text-lg">🏆</span>
+                                                                    <div>
+                                                                        {resultado.ganadores.map(g => (
+                                                                            <div key={g.id} className="text-green-300 font-bold text-sm">
+                                                                                {g.username}
+                                                                                <span className="text-yellow-400 ml-2">+${(g.premio ?? 0).toLocaleString()}</span>
+                                                                                {g.fichas && (
+                                                                                    <span className="text-gray-400 ml-2 font-normal">({g.fichas} fichas)</span>
+                                                                                )}
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            ) : (
+                                                                <div className="flex items-center space-x-2">
+                                                                    <span className="text-gray-500 text-lg">💨</span>
+                                                                    <span className="text-gray-500 italic text-sm">
+                                                                        {resultado.total_participantes === 0
+                                                                            ? "Sin participantes — nadie ganó"
+                                                                            : "Slot vacío — nadie ganó"}
+                                                                    </span>
+                                                                </div>
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })
                                         )}
                                     </tbody>
                                 </table>

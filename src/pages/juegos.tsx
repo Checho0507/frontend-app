@@ -25,7 +25,6 @@ export default function Juegos() {
   });
 
   useEffect(() => {
-    console.log('Usuario en Referidos:', usuario);
     axios.get(`${API_URL}/me`, {
       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
     })
