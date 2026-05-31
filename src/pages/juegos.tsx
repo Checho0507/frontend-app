@@ -218,7 +218,7 @@ export default function Juegos() {
       ruta: "/juegos/poker",
       icono: "♠️",
       color: "from-green-500 to-teal-500",
-      disponible: false
+      disponible: true
     },
     {
       nombre: "Ruleta Europea",
@@ -226,7 +226,7 @@ export default function Juegos() {
       ruta: "/juegos/ruletaeuropea",
       icono: "🎡",
       color: "from-purple-500 to-pink-500",
-      disponible: false
+      disponible: true
     }
   ];
 
