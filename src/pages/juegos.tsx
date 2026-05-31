@@ -87,8 +87,8 @@ export default function Juegos() {
       { nombre: "Carta Mayor", disponible: true },
       { nombre: "Piedra, Papel o Tijera", disponible: true },
       { nombre: "Cascadas Tetris", disponible: true },
-      { nombre: "Poker", disponible: false },
-      { nombre: "Ruleta Europea", disponible: false }
+      { nombre: "Poker", disponible: true },
+      { nombre: "Ruleta Europea", disponible: true }
     ];
 
     setEstadisticasJuegos({
