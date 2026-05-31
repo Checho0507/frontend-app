@@ -468,93 +468,92 @@ const Inicio: React.FC = () => {
         </div>
       </section>
 
-      {/* Sección: Pases VIP */}
+      {/* Sección: Niveles VIP de Inversiones */}
       <section className="container mx-auto px-4 py-16">
         <div className="text-center mb-12">
           <div className="inline-block mb-4">
-            <span className="px-4 py-2 bg-gradient-to-r from-yellow-600/20 to-amber-600/20 border border-yellow-500/30 rounded-full text-sm font-bold text-yellow-400 animate-pulse">
-              🎰 SORTEO VIP DIARIO
+            <span className="px-4 py-2 bg-gradient-to-r from-teal-600/20 to-green-600/20 border border-teal-500/30 rounded-full text-sm font-bold text-teal-400">
+              💰 NIVELES VIP DE INVERSIONES
             </span>
           </div>
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-            🏆 Pases VIP — Gana hasta{" "}
-            <span className="bg-gradient-to-r from-yellow-400 to-amber-400 bg-clip-text text-transparent">
-              $500,000 diarios
+            📈 Sube de nivel y gana hasta{" "}
+            <span className="bg-gradient-to-r from-cyan-400 to-teal-400 bg-clip-text text-transparent">
+              300% anual
             </span>
           </h2>
           <p className="text-gray-400 max-w-3xl mx-auto text-lg">
-            Elige tu pase, acumula fichas y participa en el sorteo diario.
-            Cuantas más fichas tengas, mayor es tu probabilidad de ganar el premio.
+            Comienza gratis con 50% anual. Desbloquea niveles VIP para multiplicar tu tasa de interés
+            y hacer crecer tu dinero mucho más rápido.
           </p>
         </div>
 
-        {/* Cards de pases */}
+        {/* Cards de niveles */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
-          {/* Pase BRONCE */}
-          <div className="relative bg-gradient-to-br from-orange-900/30 to-amber-900/20 rounded-2xl p-6 border border-orange-500/30 hover:border-orange-500/60 transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl hover:shadow-orange-500/10">
+          {/* Sin Pase */}
+          <div className="relative bg-gradient-to-br from-gray-800/50 to-gray-900/40 rounded-2xl p-6 border border-gray-600/30 hover:border-gray-500/60 transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl hover:shadow-gray-500/10">
             <div className="text-center mb-5">
-              <div className="w-16 h-16 bg-gradient-to-br from-orange-600 to-amber-700 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg shadow-orange-500/20">
-                <span className="text-3xl">🥉</span>
+              <div className="w-16 h-16 bg-gradient-to-br from-gray-600 to-gray-700 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg shadow-gray-500/20">
+                <span className="text-3xl">⬜</span>
               </div>
-              <h3 className="text-xl font-bold text-white">Pase BRONCE</h3>
-              <div className="text-3xl font-bold text-orange-400 mt-2">$10,000</div>
-            </div>
-            <div className="space-y-3 text-sm">
-              <div className="flex items-center justify-between bg-orange-900/20 rounded-xl px-3 py-2">
-                <span className="text-gray-300">Fichas obtenidas</span>
-                <span className="text-orange-300 font-bold text-lg">🎫 1</span>
-              </div>
-              <div className="flex items-center justify-between bg-orange-900/20 rounded-xl px-3 py-2">
-                <span className="text-gray-300">Premio diario</span>
-                <span className="text-yellow-300 font-bold">$500,000</span>
-              </div>
-              <div className="flex items-center justify-between bg-orange-900/20 rounded-xl px-3 py-2">
-                <span className="text-gray-300">Sorteo</span>
-                <span className="text-orange-300 font-bold">Diario</span>
-              </div>
-            </div>
-            <Link
-              to="/sorteovip"
-              className="mt-5 block text-center bg-gradient-to-r from-orange-700 to-amber-700 hover:from-orange-600 hover:to-amber-600 text-white px-4 py-3 rounded-xl font-bold transition-all duration-300 hover:scale-[1.02]"
-            >
-              Participar →
-            </Link>
-          </div>
-
-          {/* Pase PLATA */}
-          <div className="relative bg-gradient-to-br from-gray-700/40 to-slate-800/30 rounded-2xl p-6 border border-gray-400/30 hover:border-gray-300/60 transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl hover:shadow-gray-400/10">
-            <div className="text-center mb-5">
-              <div className="w-16 h-16 bg-gradient-to-br from-gray-500 to-slate-600 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg shadow-gray-400/20">
-                <span className="text-3xl">🥈</span>
-              </div>
-              <h3 className="text-xl font-bold text-white">Pase PLATA</h3>
-              <div className="text-3xl font-bold text-gray-300 mt-2">$20,000</div>
+              <h3 className="text-xl font-bold text-white">Sin Pase</h3>
+              <div className="text-3xl font-bold text-gray-300 mt-2">Gratis</div>
             </div>
             <div className="space-y-3 text-sm">
               <div className="flex items-center justify-between bg-gray-700/30 rounded-xl px-3 py-2">
-                <span className="text-gray-300">Fichas obtenidas</span>
-                <span className="text-gray-200 font-bold text-lg">🎫 3</span>
+                <span className="text-gray-300">Tasa anual</span>
+                <span className="text-gray-200 font-bold text-lg">50%</span>
               </div>
               <div className="flex items-center justify-between bg-gray-700/30 rounded-xl px-3 py-2">
-                <span className="text-gray-300">Premio diario</span>
-                <span className="text-yellow-300 font-bold">$500,000</span>
+                <span className="text-gray-300">Ganancia en $1M</span>
+                <span className="text-gray-200 font-bold">$500,000/año</span>
               </div>
               <div className="flex items-center justify-between bg-gray-700/30 rounded-xl px-3 py-2">
-                <span className="text-gray-300">Sorteo</span>
-                <span className="text-gray-200 font-bold">Diario</span>
+                <span className="text-gray-300">Costo del pase</span>
+                <span className="text-green-300 font-bold">Gratis</span>
               </div>
             </div>
             <Link
-              to="/sorteovip"
+              to="/inversiones"
               className="mt-5 block text-center bg-gradient-to-r from-gray-600 to-slate-600 hover:from-gray-500 hover:to-slate-500 text-white px-4 py-3 rounded-xl font-bold transition-all duration-300 hover:scale-[1.02]"
             >
-              Participar →
+              Empezar →
             </Link>
           </div>
 
-          {/* Pase ORO — destacado */}
+          {/* VIP Plata */}
+          <div className="relative bg-gradient-to-br from-gray-700/40 to-slate-800/30 rounded-2xl p-6 border border-slate-400/30 hover:border-slate-300/60 transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl hover:shadow-slate-400/10">
+            <div className="text-center mb-5">
+              <div className="w-16 h-16 bg-gradient-to-br from-slate-400 to-gray-500 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg shadow-slate-400/20">
+                <span className="text-3xl">🥈</span>
+              </div>
+              <h3 className="text-xl font-bold text-white">VIP Plata</h3>
+              <div className="text-3xl font-bold text-slate-300 mt-2">$50,000</div>
+            </div>
+            <div className="space-y-3 text-sm">
+              <div className="flex items-center justify-between bg-gray-700/30 rounded-xl px-3 py-2">
+                <span className="text-gray-300">Tasa anual</span>
+                <span className="text-slate-200 font-bold text-lg">100%</span>
+              </div>
+              <div className="flex items-center justify-between bg-gray-700/30 rounded-xl px-3 py-2">
+                <span className="text-gray-300">Ganancia en $1M</span>
+                <span className="text-slate-200 font-bold">$1.000.000/año</span>
+              </div>
+              <div className="flex items-center justify-between bg-gray-700/30 rounded-xl px-3 py-2">
+                <span className="text-gray-300">Costo del pase</span>
+                <span className="text-slate-300 font-bold">$50.000</span>
+              </div>
+            </div>
+            <Link
+              to="/inversiones"
+              className="mt-5 block text-center bg-gradient-to-r from-slate-500 to-gray-500 hover:from-slate-400 hover:to-gray-400 text-white px-4 py-3 rounded-xl font-bold transition-all duration-300 hover:scale-[1.02]"
+            >
+              Desbloquear →
+            </Link>
+          </div>
+
+          {/* VIP Oro — destacado */}
           <div className="relative bg-gradient-to-br from-yellow-900/40 to-amber-900/30 rounded-2xl p-6 border-2 border-yellow-500/60 hover:border-yellow-400/80 transition-all duration-300 hover:scale-[1.04] hover:shadow-2xl hover:shadow-yellow-500/20">
-            {/* Badge popular */}
             <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
               <span className="px-4 py-1 bg-gradient-to-r from-yellow-500 to-amber-500 text-black rounded-full text-xs font-bold shadow-lg whitespace-nowrap">
                 ⭐ MÁS POPULAR
@@ -564,101 +563,101 @@ const Inicio: React.FC = () => {
               <div className="w-16 h-16 bg-gradient-to-br from-yellow-500 to-amber-600 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg shadow-yellow-500/30">
                 <span className="text-3xl">🥇</span>
               </div>
-              <h3 className="text-xl font-bold text-white">Pase ORO</h3>
-              <div className="text-3xl font-bold text-yellow-400 mt-2">$50,000</div>
+              <h3 className="text-xl font-bold text-white">VIP Oro</h3>
+              <div className="text-3xl font-bold text-yellow-400 mt-2">$100,000</div>
             </div>
             <div className="space-y-3 text-sm">
               <div className="flex items-center justify-between bg-yellow-900/30 rounded-xl px-3 py-2">
-                <span className="text-gray-300">Fichas obtenidas</span>
-                <span className="text-yellow-300 font-bold text-lg">🎫 10</span>
+                <span className="text-gray-300">Tasa anual</span>
+                <span className="text-yellow-300 font-bold text-lg">200%</span>
               </div>
               <div className="flex items-center justify-between bg-yellow-900/30 rounded-xl px-3 py-2">
-                <span className="text-gray-300">Premio diario</span>
-                <span className="text-yellow-300 font-bold">$500,000</span>
+                <span className="text-gray-300">Ganancia en $1M</span>
+                <span className="text-yellow-300 font-bold">$2.000.000/año</span>
               </div>
               <div className="flex items-center justify-between bg-yellow-900/30 rounded-xl px-3 py-2">
-                <span className="text-gray-300">Sorteo</span>
-                <span className="text-yellow-300 font-bold">Diario</span>
+                <span className="text-gray-300">Costo del pase</span>
+                <span className="text-yellow-300 font-bold">$100.000</span>
               </div>
             </div>
             <Link
-              to="/sorteovip"
+              to="/inversiones"
               className="mt-5 block text-center bg-gradient-to-r from-yellow-600 to-amber-600 hover:from-yellow-500 hover:to-amber-500 text-white px-4 py-3 rounded-xl font-bold transition-all duration-300 hover:scale-[1.02] shadow-lg shadow-yellow-500/20"
             >
-              Participar →
+              Desbloquear →
             </Link>
           </div>
 
-          {/* Pase DIAMANTE */}
+          {/* VIP Diamante */}
           <div className="relative bg-gradient-to-br from-cyan-900/30 to-blue-900/25 rounded-2xl p-6 border border-cyan-400/30 hover:border-cyan-400/60 transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl hover:shadow-cyan-500/10">
             <div className="absolute -top-3 right-4">
               <span className="px-3 py-1 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-full text-xs font-bold shadow-lg whitespace-nowrap">
-                💎 ELITE
+                💎 MÁXIMO
               </span>
             </div>
             <div className="text-center mb-5">
               <div className="w-16 h-16 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg shadow-cyan-500/30">
                 <span className="text-3xl">💎</span>
               </div>
-              <h3 className="text-xl font-bold text-white">Pase DIAMANTE</h3>
-              <div className="text-3xl font-bold text-cyan-300 mt-2">$100,000</div>
+              <h3 className="text-xl font-bold text-white">VIP Diamante</h3>
+              <div className="text-3xl font-bold text-cyan-300 mt-2">$200,000</div>
             </div>
             <div className="space-y-3 text-sm">
               <div className="flex items-center justify-between bg-cyan-900/20 rounded-xl px-3 py-2">
-                <span className="text-gray-300">Fichas obtenidas</span>
-                <span className="text-cyan-300 font-bold text-lg">🎫 25</span>
+                <span className="text-gray-300">Tasa anual</span>
+                <span className="text-cyan-300 font-bold text-lg">300%</span>
               </div>
               <div className="flex items-center justify-between bg-cyan-900/20 rounded-xl px-3 py-2">
-                <span className="text-gray-300">Premio diario</span>
-                <span className="text-yellow-300 font-bold">$500,000</span>
+                <span className="text-gray-300">Ganancia en $1M</span>
+                <span className="text-cyan-300 font-bold">$3.000.000/año</span>
               </div>
               <div className="flex items-center justify-between bg-cyan-900/20 rounded-xl px-3 py-2">
-                <span className="text-gray-300">Sorteo</span>
-                <span className="text-cyan-300 font-bold">Diario</span>
+                <span className="text-gray-300">Costo del pase</span>
+                <span className="text-cyan-300 font-bold">$200.000</span>
               </div>
             </div>
             <Link
-              to="/sorteovip"
+              to="/inversiones"
               className="mt-5 block text-center bg-gradient-to-r from-cyan-700 to-blue-700 hover:from-cyan-600 hover:to-blue-600 text-white px-4 py-3 rounded-xl font-bold transition-all duration-300 hover:scale-[1.02] shadow-lg shadow-cyan-500/20"
             >
-              Participar →
+              Desbloquear →
             </Link>
           </div>
         </div>
 
         {/* Cómo funciona */}
-        <div className="mt-12 bg-gradient-to-r from-yellow-900/15 to-purple-900/15 border border-yellow-500/20 rounded-2xl p-8 max-w-6xl mx-auto">
-          <h3 className="text-2xl font-bold text-white text-center mb-8">¿Cómo funcionan los Pases VIP?</h3>
+        <div className="mt-12 bg-gradient-to-r from-teal-900/15 to-blue-900/15 border border-teal-500/20 rounded-2xl p-8 max-w-6xl mx-auto">
+          <h3 className="text-2xl font-bold text-white text-center mb-8">¿Cómo funcionan los Niveles VIP?</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
             <div>
-              <div className="w-14 h-14 bg-gradient-to-br from-yellow-600/30 to-amber-600/30 border border-yellow-500/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <div className="w-14 h-14 bg-gradient-to-br from-teal-600/30 to-green-600/30 border border-teal-500/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <span className="text-2xl">1️⃣</span>
               </div>
-              <h4 className="text-lg font-bold text-white mb-2">Elige tu pase</h4>
-              <p className="text-gray-400 text-sm">Selecciona el monto a invertir en el sorteo. Cuanto mayor el monto, más fichas recibes.</p>
+              <h4 className="text-lg font-bold text-white mb-2">Empieza gratis</h4>
+              <p className="text-gray-400 text-sm">Cualquier usuario verificado puede invertir desde $50,000 y ganar 50% anual sin costo adicional.</p>
             </div>
             <div>
-              <div className="w-14 h-14 bg-gradient-to-br from-yellow-600/30 to-amber-600/30 border border-yellow-500/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <div className="w-14 h-14 bg-gradient-to-br from-teal-600/30 to-green-600/30 border border-teal-500/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <span className="text-2xl">2️⃣</span>
               </div>
-              <h4 className="text-lg font-bold text-white mb-2">Acumula fichas</h4>
-              <p className="text-gray-400 text-sm">Cada ficha es un número en el sorteo. Más fichas = más posibilidades de ganar el premio del día.</p>
+              <h4 className="text-lg font-bold text-white mb-2">Sube de nivel</h4>
+              <p className="text-gray-400 text-sm">Compra un Pase VIP una sola vez desde tu saldo. A mayor nivel, mayor tasa de interés anual.</p>
             </div>
             <div>
-              <div className="w-14 h-14 bg-gradient-to-br from-yellow-600/30 to-amber-600/30 border border-yellow-500/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <div className="w-14 h-14 bg-gradient-to-br from-teal-600/30 to-green-600/30 border border-teal-500/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <span className="text-2xl">3️⃣</span>
               </div>
-              <h4 className="text-lg font-bold text-white mb-2">Gana el premio</h4>
-              <p className="text-gray-400 text-sm">El sorteo se realiza diariamente. El ganador recibe hasta <span className="text-yellow-400 font-bold">$500,000</span> directo a su saldo.</p>
+              <h4 className="text-lg font-bold text-white mb-2">Cobra tus intereses</h4>
+              <p className="text-gray-400 text-sm">Los intereses se acumulan en tiempo real. Puedes retirarlos cada 30 días y el capital a los 6 meses.</p>
             </div>
           </div>
           <div className="text-center mt-8">
             <Link
-              to="/sorteovip"
-              className="inline-flex items-center space-x-3 bg-gradient-to-r from-yellow-600 to-amber-600 hover:from-yellow-500 hover:to-amber-500 text-white px-8 py-4 rounded-2xl font-bold text-lg transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-yellow-500/25"
+              to="/inversiones"
+              className="inline-flex items-center space-x-3 bg-gradient-to-r from-teal-600 to-green-600 hover:from-teal-500 hover:to-green-500 text-white px-8 py-4 rounded-2xl font-bold text-lg transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-teal-500/25"
             >
-              <span>🎰</span>
-              <span>Ver Sorteo VIP</span>
+              <span>💰</span>
+              <span>Ver Inversiones</span>
               <span>→</span>
             </Link>
           </div>

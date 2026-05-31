@@ -38,7 +38,6 @@ interface Probabilidad {
 
 const APUESTA_MINIMA = 10;
 
-// Configuración de la ruleta europea
 const NUMEROS_RULETA = [
     0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5,
     24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26
@@ -54,25 +53,37 @@ const COLORES: { [key: number]: string } = {
     7: "rojo", 28: "negro", 12: "rojo", 35: "negro", 3: "rojo", 26: "negro"
 };
 
-// Tipos de apuestas
 const TIPOS_APUESTA = [
-    { id: "numero_pleno", nombre: "Número Pleno", multiplicador: 35, color: "bg-purple-600" },
-    { id: "docena", nombre: "Docena", multiplicador: 2, color: "bg-indigo-600" },
-    { id: "columna", nombre: "Columna", multiplicador: 2, color: "bg-teal-600" },
-    { id: "rojo_negro", nombre: "Rojo/Negro", multiplicador: 2, color: "bg-red-600" },
-    { id: "par_impar", nombre: "Par/Impar", multiplicador: 2, color: "bg-orange-600" },
-    { id: "bajo_alto", nombre: "Bajo/Alto", multiplicador: 2, color: "bg-cyan-600" }
+    { id: "numero_pleno", nombre: "Pleno", multiplicador: 35, icon: "🎯", color: "#9333EA" },
+    { id: "docena", nombre: "Docena", multiplicador: 2, icon: "3️⃣", color: "#4F46E5" },
+    { id: "columna", nombre: "Columna", multiplicador: 2, icon: "📊", color: "#0D9488" },
+    { id: "rojo_negro", nombre: "Rojo/Negro", multiplicador: 2, icon: "🔴", color: "#DC2626" },
+    { id: "par_impar", nombre: "Par/Impar", multiplicador: 2, icon: "♾️", color: "#D97706" },
+    { id: "bajo_alto", nombre: "Bajo/Alto", multiplicador: 2, icon: "📈", color: "#0891B2" }
+];
+
+const FICHAS = [
+    { valor: 10, color: "#3B82F6", borde: "#93C5FD", label: "10" },
+    { valor: 25, color: "#10B981", borde: "#6EE7B7", label: "25" },
+    { valor: 50, color: "#EF4444", borde: "#FCA5A5", label: "50" },
+    { valor: 100, color: "#8B5CF6", borde: "#C4B5FD", label: "100" },
+    { valor: 200, color: "#F59E0B", borde: "#FCD34D", label: "200" },
+    { valor: 500, color: "#EC4899", borde: "#F9A8D4", label: "500" },
+    { valor: 1000, color: "#14B8A6", borde: "#5EEAD4", label: "1K" },
+    { valor: 5000, color: "#F97316", borde: "#FDBA74", label: "5K" },
 ];
 
 export default function RuletaEuropea() {
     const navigate = useNavigate();
-    const wheelRef = useRef<HTMLDivElement | null>(null);
+    const wheelRef = useRef<SVGGElement | null>(null);
+    const animFrameRef = useRef<number | null>(null);
     const [usuario, setUsuario] = useState<Usuario | null>(null);
     const [apuestas, setApuestas] = useState<Apuesta[]>([]);
     const [tipoApuestaSeleccionado, setTipoApuestaSeleccionado] = useState<string>("numero_pleno");
     const [montoApuesta, setMontoApuesta] = useState<number>(APUESTA_MINIMA);
     const [valorApuesta, setValorApuesta] = useState<any>(null);
     const [girando, setGirando] = useState(false);
+    const [wheelAngle, setWheelAngle] = useState(0);
     const [mensaje, setMensaje] = useState<string | null>(null);
     const [resultado, setResultado] = useState<any>(null);
     const [historial, setHistorial] = useState<HistorialJuego[]>([]);
@@ -90,531 +101,213 @@ export default function RuletaEuropea() {
         gastoTotalAcum: 0,
     });
     const [notificacion, setNotificacion] = useState<{ text: string; type?: "success" | "error" | "info" } | null>(null);
+    const [activeTab, setActiveTab] = useState<"historial" | "estadisticas" | "probabilidades">("historial");
 
-    // Obtener usuario al cargar
     useEffect(() => {
         if (!usuario) {
             const token = localStorage.getItem("token");
-            if (!token) {
-                navigate('/login');
-                return;
-            }
+            if (!token) { navigate('/login'); return; }
             const usuarioGuardado = localStorage.getItem('usuario');
             if (usuarioGuardado) {
-                try {
-                    const usuarioParsed = JSON.parse(usuarioGuardado);
-                    setUsuario(usuarioParsed);
-                } catch (error) {
-                    console.error('Error al parsear usuario:', error);
-                }
+                try { setUsuario(JSON.parse(usuarioGuardado)); } catch (e) { console.error(e); }
             }
         }
     }, [navigate, usuario]);
 
-    // Cargar probabilidades al iniciar
     useEffect(() => {
         const cargarProbabilidades = async () => {
             try {
                 const res = await axios.get(`${API_URL}/juegos/ruletaeuropea/probabilidades`);
                 setProbabilidades(res.data.probabilidades);
-            } catch (error) {
-                console.error("Error al cargar probabilidades:", error);
-            }
+            } catch (e) { console.error(e); }
         };
         cargarProbabilidades();
     }, []);
 
-    // Cargar historial y estadísticas desde localStorage al iniciar
     useEffect(() => {
-        const historialGuardado = localStorage.getItem("historial_ruletaeuropea");
-        if (historialGuardado) {
-            const historialParsed = JSON.parse(historialGuardado);
-            setHistorial(historialParsed);
-        }
-
-        const statsAcum = localStorage.getItem("estadisticas_acumulativas_ruletaeuropea");
-        if (statsAcum) {
-            const parsedStats = JSON.parse(statsAcum);
-            setEstadisticasAcumulativas(parsedStats);
-
-            const balance = parsedStats.gananciaTotalAcum - parsedStats.gastoTotalAcum;
+        const h = localStorage.getItem("historial_ruletaeuropea");
+        if (h) setHistorial(JSON.parse(h));
+        const s = localStorage.getItem("estadisticas_acumulativas_ruletaeuropea");
+        if (s) {
+            const ps = JSON.parse(s);
+            setEstadisticasAcumulativas(ps);
             setEstadisticas(prev => ({
                 ...prev,
-                totalJuegos: parsedStats.totalJuegosAcum,
-                gananciaTotal: parsedStats.gananciaTotalAcum,
-                gastoTotal: parsedStats.gastoTotalAcum,
-                balance: balance
+                totalJuegos: ps.totalJuegosAcum,
+                gananciaTotal: ps.gananciaTotalAcum,
+                gastoTotal: ps.gastoTotalAcum,
+                balance: ps.gananciaTotalAcum - ps.gastoTotalAcum
             }));
         }
-
-        // Cargar números más frecuentes
-        const numerosFrecuentes = localStorage.getItem("numeros_frecuentes_ruletaeuropea");
-        if (numerosFrecuentes) {
-            setEstadisticas(prev => ({
-                ...prev,
-                numerosMasFrecuentes: JSON.parse(numerosFrecuentes)
-            }));
-        }
+        const nf = localStorage.getItem("numeros_frecuentes_ruletaeuropea");
+        if (nf) setEstadisticas(prev => ({ ...prev, numerosMasFrecuentes: JSON.parse(nf) }));
     }, []);
 
-    // Guardar historial en localStorage
     useEffect(() => {
-        if (historial.length > 0) {
-            localStorage.setItem("historial_ruletaeuropea", JSON.stringify(historial.slice(0, 20)));
-        }
+        if (historial.length > 0) localStorage.setItem("historial_ruletaeuropea", JSON.stringify(historial.slice(0, 20)));
     }, [historial]);
 
-    // Guardar estadísticas acumulativas en localStorage
     useEffect(() => {
-        if (estadisticasAcumulativas.totalJuegosAcum > 0) {
+        if (estadisticasAcumulativas.totalJuegosAcum > 0)
             localStorage.setItem("estadisticas_acumulativas_ruletaeuropea", JSON.stringify(estadisticasAcumulativas));
-        }
     }, [estadisticasAcumulativas]);
 
-    // Guardar números más frecuentes
     useEffect(() => {
-        if (estadisticas.numerosMasFrecuentes.length > 0) {
+        if (estadisticas.numerosMasFrecuentes.length > 0)
             localStorage.setItem("numeros_frecuentes_ruletaeuropea", JSON.stringify(estadisticas.numerosMasFrecuentes));
-        }
     }, [estadisticas.numerosMasFrecuentes]);
 
-    const actualizarEstadisticas = (nuevoJuego: HistorialJuego) => {
-        // Actualizar estadísticas acumulativas
-        setEstadisticasAcumulativas(prev => {
-            const nuevoTotal = prev.totalJuegosAcum + 1;
-            const nuevaGananciaTotal = prev.gananciaTotalAcum + nuevoJuego.ganancia_total;
-            const nuevoGastoTotal = prev.gastoTotalAcum + nuevoJuego.total_apostado;
-
-            return {
-                totalJuegosAcum: nuevoTotal,
-                gananciaTotalAcum: nuevaGananciaTotal,
-                gastoTotalAcum: nuevoGastoTotal
+    // Animación de la rueda
+    useEffect(() => {
+        if (girando) {
+            let speed = 8;
+            const spin = () => {
+                setWheelAngle(a => (a + speed) % 360);
+                speed = Math.min(speed + 0.3, 18);
+                animFrameRef.current = requestAnimationFrame(spin);
             };
-        });
+            animFrameRef.current = requestAnimationFrame(spin);
+        } else {
+            if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+        }
+        return () => { if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current); };
+    }, [girando]);
 
-        // Actualizar estadísticas visibles
+    const actualizarEstadisticas = (nuevoJuego: HistorialJuego) => {
+        setEstadisticasAcumulativas(prev => ({
+            totalJuegosAcum: prev.totalJuegosAcum + 1,
+            gananciaTotalAcum: prev.gananciaTotalAcum + nuevoJuego.ganancia_total,
+            gastoTotalAcum: prev.gastoTotalAcum + nuevoJuego.total_apostado
+        }));
         setEstadisticas(prev => {
-            const nuevoTotal = prev.totalJuegos + 1;
-            const nuevaGananciaTotal = prev.gananciaTotal + nuevoJuego.ganancia_total;
-            const nuevoGastoTotal = prev.gastoTotal + nuevoJuego.total_apostado;
-            const nuevoBalance = nuevaGananciaTotal - nuevoGastoTotal;
-
-            // Actualizar números más frecuentes
-            const nuevoNumero = nuevoJuego.numero_ganador;
             const numerosActualizados = [...prev.numerosMasFrecuentes];
-            const index = numerosActualizados.findIndex(n => n.numero === nuevoNumero);
-
-            if (index !== -1) {
-                numerosActualizados[index].frecuencia += 1;
-            } else {
-                numerosActualizados.push({ numero: nuevoNumero, frecuencia: 1 });
-            }
-
-            // Ordenar por frecuencia
+            const idx = numerosActualizados.findIndex(n => n.numero === nuevoJuego.numero_ganador);
+            if (idx !== -1) numerosActualizados[idx].frecuencia += 1;
+            else numerosActualizados.push({ numero: nuevoJuego.numero_ganador, frecuencia: 1 });
             numerosActualizados.sort((a, b) => b.frecuencia - a.frecuencia);
-
             return {
-                totalJuegos: nuevoTotal,
-                gananciaTotal: nuevaGananciaTotal,
-                gastoTotal: nuevoGastoTotal,
-                balance: nuevoBalance,
-                numerosMasFrecuentes: numerosActualizados.slice(0, 10) // Solo los 10 más frecuentes
+                totalJuegos: prev.totalJuegos + 1,
+                gananciaTotal: prev.gananciaTotal + nuevoJuego.ganancia_total,
+                gastoTotal: prev.gastoTotal + nuevoJuego.total_apostado,
+                balance: prev.balance + nuevoJuego.ganancia_total - nuevoJuego.total_apostado,
+                numerosMasFrecuentes: numerosActualizados.slice(0, 10)
             };
         });
     };
 
-    const agregarAlHistorial = (
-        numero_ganador: number,
-        color_ganador: string,
-        ganancia_total: number,
-        total_apostado: number
-    ) => {
+    const agregarAlHistorial = (numero_ganador: number, color_ganador: string, ganancia_total: number, total_apostado: number) => {
         const nuevoJuego: HistorialJuego = {
-            id: Date.now(),
-            numero_ganador,
-            color_ganador,
-            ganancia_total,
+            id: Date.now(), numero_ganador, color_ganador, ganancia_total,
             fecha: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             total_apostado
         };
-
         const nuevoHistorial = [nuevoJuego, ...historial.slice(0, 19)];
         setHistorial(nuevoHistorial);
         actualizarEstadisticas(nuevoJuego);
     };
 
     const animarConfetti = () => {
-        confetti({
-            particleCount: 200,
-            spread: 100,
-            origin: { y: 0.6 }
-        });
+        confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 }, colors: ['#FFD700', '#FFA500', '#FF4500', '#00FF00'] });
         setTimeout(() => {
-            confetti({
-                particleCount: 150,
-                angle: 60,
-                spread: 55,
-                origin: { x: 0 }
-            });
-            confetti({
-                particleCount: 150,
-                angle: 120,
-                spread: 55,
-                origin: { x: 1 }
-            });
+            confetti({ particleCount: 150, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#FFD700', '#FF0000'] });
+            confetti({ particleCount: 150, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#FFD700', '#FF0000'] });
         }, 250);
     };
 
     const agregarApuesta = () => {
-        if (!valorApuesta) {
-            setMensaje("Debes seleccionar un valor para la apuesta.");
-            return;
-        }
-
-        if (montoApuesta < APUESTA_MINIMA) {
-            setMensaje(`El monto mínimo por apuesta es $${APUESTA_MINIMA}.`);
-            return;
-        }
-
-        if (usuario && montoApuesta > usuario.saldo) {
-            setMensaje("Saldo insuficiente para agregar esta apuesta.");
-            return;
-        }
-
-        const nuevaApuesta: Apuesta = {
-            tipo: tipoApuestaSeleccionado,
-            valor: valorApuesta,
-            monto: montoApuesta
-        };
-
-        setApuestas(prev => [...prev, nuevaApuesta]);
+        if (!valorApuesta) { setMensaje("Selecciona un valor para apostar."); return; }
+        if (montoApuesta < APUESTA_MINIMA) { setMensaje(`Mínimo $${APUESTA_MINIMA}.`); return; }
+        if (usuario && montoApuesta > usuario.saldo) { setMensaje("Saldo insuficiente."); return; }
+        setApuestas(prev => [...prev, { tipo: tipoApuestaSeleccionado, valor: valorApuesta, monto: montoApuesta }]);
         setValorApuesta(null);
         setMontoApuesta(APUESTA_MINIMA);
-        setMensaje(`Apuesta agregada: ${tipoApuestaSeleccionado} - $${montoApuesta}`);
+        setMensaje(null);
     };
 
-    const eliminarApuesta = (index: number) => {
-        setApuestas(prev => prev.filter((_, i) => i !== index));
-    };
-
-    const limpiarApuestas = () => {
-        setApuestas([]);
-        setMensaje("Todas las apuestas han sido eliminadas.");
-    };
-
-    const calcularTotalApostado = () => {
-        return apuestas.reduce((total, apuesta) => total + apuesta.monto, 0);
-    };
+    const eliminarApuesta = (index: number) => setApuestas(prev => prev.filter((_, i) => i !== index));
+    const limpiarApuestas = () => { setApuestas([]); setMensaje(null); };
+    const calcularTotalApostado = () => apuestas.reduce((t, a) => t + a.monto, 0);
 
     const realizarJugada = async () => {
-        if (!usuario) {
-            setMensaje("Debes iniciar sesión para jugar.");
-            return;
-        }
-
-        if (apuestas.length === 0) {
-            setMensaje("Debes agregar al menos una apuesta.");
-            return;
-        }
-
-        const totalApostado = calcularTotalApostado();
-        if (totalApostado > usuario.saldo) {
-            setMensaje("Saldo insuficiente para realizar estas apuestas.");
-            return;
-        }
-
-        setGirando(true);
-        setMensaje(null);
-        setResultado(null);
-
+        if (!usuario) { setMensaje("Inicia sesión para jugar."); return; }
+        if (apuestas.length === 0) { setMensaje("Agrega al menos una apuesta."); return; }
+        if (calcularTotalApostado() > usuario.saldo) { setMensaje("Saldo insuficiente."); return; }
+        setGirando(true); setMensaje(null); setResultado(null);
         try {
             const token = localStorage.getItem("token");
-
-            // Preparar apuestas para enviar al backend
-            const apuestasArray = apuestas.map(apuesta => ({
-                tipo: apuesta.tipo,
-                valor: apuesta.valor,
-                monto: apuesta.monto
-            }));
-
-            console.log("Enviando apuestas:", apuestasArray); // Para depuración
-
+            const apuestasArray = apuestas.map(a => ({ tipo: a.tipo, valor: a.valor, monto: a.monto }));
             const res = await axios.post(
                 `${API_URL}/juegos/ruletaeuropea?apuestas=${JSON.stringify(apuestasArray)}`,
-                {},  // ENVIAR EN EL BODY, no en query string
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+                {},
+                { headers: { Authorization: `Bearer ${token}` } }
             );
-
             const data = res.data;
-
-            // Actualizar saldo del usuario
+            await new Promise(r => setTimeout(r, 2500));
             setUsuario(prev => prev ? { ...prev, saldo: data.nuevo_saldo } : null);
-
-            // Mostrar resultado
             setResultado(data);
-
-            // Animación de confetti si hay ganancias
-            if (data.ganancia_total > 0) {
-                animarConfetti();
-            }
-
-            // Agregar al historial
-            agregarAlHistorial(
-                data.numero_ganador,
-                data.color_ganador,
-                data.ganancia_total,
-                data.total_apostado
-            );
-
+            if (data.ganancia_total > 0) animarConfetti();
+            agregarAlHistorial(data.numero_ganador, data.color_ganador, data.ganancia_total, data.total_apostado);
             setMensaje(data.mensaje);
-
-            // Limpiar apuestas después del juego
             setApuestas([]);
-
         } catch (err: any) {
-            console.error("Error al realizar apuesta:", err);
-            console.error("Respuesta del servidor:", err.response?.data);
-            setMensaje(err.response?.data?.detail || err.response?.data?.message || "Error al procesar las apuestas");
+            setMensaje(err.response?.data?.detail || "Error al procesar las apuestas");
         } finally {
             setGirando(false);
         }
     };
 
     const limpiarHistorial = () => {
-        setHistorial([]);
-        localStorage.removeItem("historial_ruletaeuropea");
+        setHistorial([]); localStorage.removeItem("historial_ruletaeuropea");
         showMsg("Historial limpiado", "info");
     };
-
     const limpiarTodasEstadisticas = () => {
         setHistorial([]);
-        setEstadisticas({
-            totalJuegos: 0,
-            gananciaTotal: 0,
-            gastoTotal: 0,
-            balance: 0,
-            numerosMasFrecuentes: []
-        });
-        setEstadisticasAcumulativas({
-            totalJuegosAcum: 0,
-            gananciaTotalAcum: 0,
-            gastoTotalAcum: 0,
-        });
+        setEstadisticas({ totalJuegos: 0, gananciaTotal: 0, gastoTotal: 0, balance: 0, numerosMasFrecuentes: [] });
+        setEstadisticasAcumulativas({ totalJuegosAcum: 0, gananciaTotalAcum: 0, gastoTotalAcum: 0 });
         localStorage.removeItem("historial_ruletaeuropea");
         localStorage.removeItem("estadisticas_acumulativas_ruletaeuropea");
         localStorage.removeItem("numeros_frecuentes_ruletaeuropea");
-        showMsg("Estadísticas reiniciadas completamente", "info");
+        showMsg("Estadísticas reiniciadas", "info");
     };
-
     const showMsg = (text: string, type: "success" | "error" | "info" = "info") => {
-        setNotificacion({ text, type });
-        setTimeout(() => setNotificacion(null), 5000);
+        setNotificacion({ text, type }); setTimeout(() => setNotificacion(null), 5000);
     };
-
-    const cerrarSesion = () => {
-        setUsuario(null);
-    };
-
-    const valoresApuesta = [10, 25, 50, 100, 200, 500, 1000, 5000];
-
-    const renderSelectorApuesta = () => {
-        switch (tipoApuestaSeleccionado) {
-            case "numero_pleno":
-                return (
-                    <div className="grid grid-cols-6 md:grid-cols-12 gap-2">
-                        {NUMEROS_RULETA.map(numero => (
-                            <button
-                                key={numero}
-                                onClick={() => setValorApuesta(numero)}
-                                className={`p-3 rounded-lg font-bold transition-all ${valorApuesta === numero
-                                    ? COLORES[numero] === "rojo"
-                                        ? 'bg-red-600 text-white scale-110'
-                                        : COLORES[numero] === "negro"
-                                            ? 'bg-gray-900 text-white scale-110'
-                                            : 'bg-green-600 text-white scale-110'
-                                    : COLORES[numero] === "rojo"
-                                        ? 'bg-red-900/50 text-red-200 hover:bg-red-800'
-                                        : COLORES[numero] === "negro"
-                                            ? 'bg-gray-800 text-gray-200 hover:bg-gray-700'
-                                            : 'bg-green-900/50 text-green-200 hover:bg-green-800'
-                                    }`}
-                            >
-                                {numero}
-                            </button>
-                        ))}
-                    </div>
-                );
-
-            case "rojo_negro":
-                return (
-                    <div className="flex space-x-4">
-                        <button
-                            onClick={() => setValorApuesta("rojo")}
-                            className={`px-8 py-4 rounded-xl font-bold text-xl transition-all ${valorApuesta === "rojo"
-                                ? 'bg-red-600 text-white scale-110'
-                                : 'bg-red-900/50 text-red-200 hover:bg-red-800'
-                                }`}
-                        >
-                            ROJO
-                        </button>
-                        <button
-                            onClick={() => setValorApuesta("negro")}
-                            className={`px-8 py-4 rounded-xl font-bold text-xl transition-all ${valorApuesta === "negro"
-                                ? 'bg-gray-900 text-white scale-110'
-                                : 'bg-gray-800 text-gray-200 hover:bg-gray-700'
-                                }`}
-                        >
-                            NEGRO
-                        </button>
-                    </div>
-                );
-
-            case "par_impar":
-                return (
-                    <div className="flex space-x-4">
-                        <button
-                            onClick={() => setValorApuesta("par")}
-                            className={`px-8 py-4 rounded-xl font-bold text-xl transition-all ${valorApuesta === "par"
-                                ? 'bg-blue-600 text-white scale-110'
-                                : 'bg-blue-900/50 text-blue-200 hover:bg-blue-800'
-                                }`}
-                        >
-                            PAR
-                        </button>
-                        <button
-                            onClick={() => setValorApuesta("impar")}
-                            className={`px-8 py-4 rounded-xl font-bold text-xl transition-all ${valorApuesta === "impar"
-                                ? 'bg-yellow-600 text-white scale-110'
-                                : 'bg-yellow-900/50 text-yellow-200 hover:bg-yellow-800'
-                                }`}
-                        >
-                            IMPAR
-                        </button>
-                    </div>
-                );
-
-            case "bajo_alto":
-                return (
-                    <div className="flex space-x-4">
-                        <button
-                            onClick={() => setValorApuesta("bajo")}
-                            className={`px-8 py-4 rounded-xl font-bold text-xl transition-all ${valorApuesta === "bajo"
-                                ? 'bg-green-600 text-white scale-110'
-                                : 'bg-green-900/50 text-green-200 hover:bg-green-800'
-                                }`}
-                        >
-                            1-18 (BAJO)
-                        </button>
-                        <button
-                            onClick={() => setValorApuesta("alto")}
-                            className={`px-8 py-4 rounded-xl font-bold text-xl transition-all ${valorApuesta === "alto"
-                                ? 'bg-purple-600 text-white scale-110'
-                                : 'bg-purple-900/50 text-purple-200 hover:bg-purple-800'
-                                }`}
-                        >
-                            19-36 (ALTO)
-                        </button>
-                    </div>
-                );
-
-            case "docena":
-                return (
-                    <div className="grid grid-cols-3 gap-4">
-                        <button
-                            onClick={() => setValorApuesta(1)}
-                            className={`px-6 py-4 rounded-xl font-bold text-xl transition-all ${valorApuesta === 1
-                                ? 'bg-indigo-600 text-white scale-110'
-                                : 'bg-indigo-900/50 text-indigo-200 hover:bg-indigo-800'
-                                }`}
-                        >
-                            1-12
-                        </button>
-                        <button
-                            onClick={() => setValorApuesta(2)}
-                            className={`px-6 py-4 rounded-xl font-bold text-xl transition-all ${valorApuesta === 2
-                                ? 'bg-indigo-600 text-white scale-110'
-                                : 'bg-indigo-900/50 text-indigo-200 hover:bg-indigo-800'
-                                }`}
-                        >
-                            13-24
-                        </button>
-                        <button
-                            onClick={() => setValorApuesta(3)}
-                            className={`px-6 py-4 rounded-xl font-bold text-xl transition-all ${valorApuesta === 3
-                                ? 'bg-indigo-600 text-white scale-110'
-                                : 'bg-indigo-900/50 text-indigo-200 hover:bg-indigo-800'
-                                }`}
-                        >
-                            25-36
-                        </button>
-                    </div>
-                );
-
-            case "columna":
-                return (
-                    <div className="grid grid-cols-3 gap-4">
-                        <button
-                            onClick={() => setValorApuesta(1)}
-                            className={`px-6 py-4 rounded-xl font-bold text-xl transition-all ${valorApuesta === 1
-                                ? 'bg-teal-600 text-white scale-110'
-                                : 'bg-teal-900/50 text-teal-200 hover:bg-teal-800'
-                                }`}
-                        >
-                            Columna 1
-                        </button>
-                        <button
-                            onClick={() => setValorApuesta(2)}
-                            className={`px-6 py-4 rounded-xl font-bold text-xl transition-all ${valorApuesta === 2
-                                ? 'bg-teal-600 text-white scale-110'
-                                : 'bg-teal-900/50 text-teal-200 hover:bg-teal-800'
-                                }`}
-                        >
-                            Columna 2
-                        </button>
-                        <button
-                            onClick={() => setValorApuesta(3)}
-                            className={`px-6 py-4 rounded-xl font-bold text-xl transition-all ${valorApuesta === 3
-                                ? 'bg-teal-600 text-white scale-110'
-                                : 'bg-teal-900/50 text-teal-200 hover:bg-teal-800'
-                                }`}
-                        >
-                            Columna 3
-                        </button>
-                    </div>
-                );
-
-            default:
-                return (
-                    <div className="text-center text-gray-400">
-                        Selecciona un tipo de apuesta para ver las opciones
-                    </div>
-                );
-        }
-    };
+    const cerrarSesion = () => setUsuario(null);
 
     const renderRuedaRuleta = () => {
-        const radius = 200;
-        const cx = 220;
-        const cy = 220;
+        const radius = 195;
+        const innerRadius = 40;
+        const cx = 220, cy = 220;
         const sectorAngle = (2 * Math.PI) / NUMEROS_RULETA.length;
-
         return (
-            <svg width={440} height={440} viewBox="0 0 440 440" className="block mx-auto">
+            <svg width={440} height={440} viewBox="0 0 440 440" className="block mx-auto drop-shadow-2xl">
                 <defs>
-                    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-                        <feGaussianBlur stdDeviation="3" result="coloredBlur" />
-                        <feMerge>
-                            <feMergeNode in="coloredBlur" />
-                            <feMergeNode in="SourceGraphic" />
-                        </feMerge>
+                    <radialGradient id="wheelCenter" cx="50%" cy="50%" r="50%">
+                        <stop offset="0%" stopColor="#2D1B00" />
+                        <stop offset="100%" stopColor="#0A0A0A" />
+                    </radialGradient>
+                    <filter id="glow">
+                        <feGaussianBlur stdDeviation="4" result="coloredBlur" />
+                        <feMerge><feMergeNode in="coloredBlur" /><feMergeNode in="SourceGraphic" /></feMerge>
                     </filter>
+                    <filter id="goldGlow">
+                        <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+                        <feMerge><feMergeNode in="coloredBlur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                    </filter>
+                    <linearGradient id="goldRing" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#FFD700" />
+                        <stop offset="50%" stopColor="#FFA500" />
+                        <stop offset="100%" stopColor="#FFD700" />
+                    </linearGradient>
                 </defs>
 
-                <g transform={`translate(${cx}, ${cy})`}>
+                {/* Anillo exterior dorado decorativo */}
+                <circle cx={cx} cy={cy} r={218} fill="url(#goldRing)" />
+                <circle cx={cx} cy={cy} r={212} fill="#1A0A00" />
+                <circle cx={cx} cy={cy} r={206} fill="url(#goldRing)" opacity="0.6" />
+                <circle cx={cx} cy={cy} r={200} fill="#0A0A0A" />
+
+                <g ref={wheelRef} transform={`translate(${cx}, ${cy}) rotate(${wheelAngle})`}>
                     {NUMEROS_RULETA.map((numero, i) => {
                         const startAngle = i * sectorAngle - Math.PI / 2;
                         const endAngle = startAngle + sectorAngle;
@@ -624,39 +317,26 @@ export default function RuletaEuropea() {
                         const y2 = Math.sin(endAngle) * radius;
                         const largeArcFlag = sectorAngle > Math.PI ? 1 : 0;
                         const path = `M 0 0 L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2} Z`;
-
                         const textAngle = (startAngle + endAngle) / 2;
-                        const tx = Math.cos(textAngle) * (radius * 0.7);
-                        const ty = Math.sin(textAngle) * (radius * 0.7);
+                        const tx = Math.cos(textAngle) * (radius * 0.72);
+                        const ty = Math.sin(textAngle) * (radius * 0.72);
                         const rotateDeg = (textAngle * 180) / Math.PI;
-
                         const color = COLORES[numero];
-                        let fillColor;
-                        let textColor;
-
-                        if (color === "rojo") {
-                            fillColor = "#DC2626"; // Rojo
-                            textColor = "#FFFFFF";
-                        } else if (color === "negro") {
-                            fillColor = "#1F2937"; // Negro
-                            textColor = "#FFFFFF";
-                        } else {
-                            fillColor = "#10B981"; // Verde
-                            textColor = "#FFFFFF";
-                        }
-
+                        const fillColor = color === "rojo" ? "#C41E3A" : color === "negro" ? "#1A1A1A" : "#006400";
+                        const borderColor = color === "rojo" ? "#FF4444" : color === "negro" ? "#444" : "#00AA00";
                         return (
                             <g key={i}>
-                                <path d={path} fill={fillColor} stroke="#FFFFFF33" strokeWidth={1} />
+                                <path d={path} fill={fillColor} stroke="#DAA520" strokeWidth={1.5} />
+                                <path d={`M ${Math.cos(startAngle) * (radius - 20)} ${Math.sin(startAngle) * (radius - 20)} L ${x1} ${y1}`} stroke="#DAA520" strokeWidth={0.8} opacity="0.5" />
                                 <text
-                                    x={tx}
-                                    y={ty}
-                                    transform={`rotate(${rotateDeg} ${tx} ${ty})`}
-                                    fill={textColor}
-                                    fontSize={14}
-                                    fontWeight={700}
+                                    x={tx} y={ty}
+                                    transform={`rotate(${rotateDeg + 90} ${tx} ${ty})`}
+                                    fill="#FFFFFF"
+                                    fontSize={11}
+                                    fontWeight="900"
                                     textAnchor="middle"
-                                    alignmentBaseline="middle"
+                                    dominantBaseline="middle"
+                                    style={{ textShadow: `0 0 4px ${borderColor}` }}
                                 >
                                     {numero}
                                 </text>
@@ -664,717 +344,716 @@ export default function RuletaEuropea() {
                         );
                     })}
 
-                    {/* Círculo central */}
-                    <circle r={25} fill="#1F2937" stroke="#FFFFFF" strokeWidth={3} />
-                    <circle r={20} fill="#FFFFFF" />
-                    <text fill="#1F2937" fontSize={16} fontWeight={900} textAnchor="middle" alignmentBaseline="middle">
-                        0
-                    </text>
+                    {/* Anillo decorativo interior */}
+                    <circle r={innerRadius + 25} fill="none" stroke="#DAA520" strokeWidth={2} opacity="0.6" />
+                    <circle r={innerRadius + 15} fill="none" stroke="#DAA520" strokeWidth={1} opacity="0.3" />
+
+                    {/* Centro */}
+                    <circle r={innerRadius} fill="url(#wheelCenter)" stroke="#DAA520" strokeWidth={3} />
+                    <circle r={innerRadius - 5} fill="none" stroke="#DAA520" strokeWidth={1} opacity="0.5" />
+                    <text fill="#DAA520" fontSize={13} fontWeight="900" textAnchor="middle" dominantBaseline="middle" filter="url(#goldGlow)">★</text>
                 </g>
+
+                {/* Bolita indicadora */}
+                <g transform={`translate(${cx}, ${cy})`}>
+                    <circle cx={0} cy={-(radius - 10)} r={6} fill="white" stroke="#DAA520" strokeWidth={2} filter="url(#glow)" />
+                </g>
+
+                {/* Triángulo puntero */}
+                <polygon
+                    points={`${cx},${cy - radius - 14} ${cx - 10},${cy - radius + 4} ${cx + 10},${cy - radius + 4}`}
+                    fill="#DAA520"
+                    filter="url(#goldGlow)"
+                />
             </svg>
         );
     };
 
-    const renderTableroRuleta = () => {
-        // Organizar números en el orden del tablero real
-        const numerosTablero = [
-            [3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36],
-            [2, 5, 8, 11, 14, 17, 20, 23, 26, 29, 32, 35],
-            [1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31, 34]
-        ];
-
-        return (
-            <div className="bg-green-800 p-6 rounded-2xl border-4 border-yellow-600">
-                <div className="flex">
-                    {/* Columna del 0 */}
-                    <div className="w-16 flex flex-col">
-                        <div className="h-24 flex items-center justify-center bg-green-600 border-2 border-white rounded-lg mb-1">
-                            <span className="text-2xl font-bold text-white">0</span>
-                        </div>
-                        <div className="flex-1"></div>
+    const renderSelectorApuesta = () => {
+        const btnBase = "transition-all duration-200 font-bold rounded-lg border-2 focus:outline-none";
+        switch (tipoApuestaSeleccionado) {
+            case "numero_pleno":
+                return (
+                    <div className="grid grid-cols-7 md:grid-cols-13 gap-1.5">
+                        {[0, ...Array.from({ length: 36 }, (_, i) => i + 1)].map(numero => {
+                            const col = COLORES[numero];
+                            const isSelected = valorApuesta === numero;
+                            return (
+                                <button
+                                    key={numero}
+                                    onClick={() => setValorApuesta(numero)}
+                                    className={`${btnBase} py-2 text-sm ${isSelected
+                                        ? col === "rojo" ? "bg-red-500 border-yellow-400 text-white scale-110 shadow-lg shadow-red-500/50"
+                                            : col === "negro" ? "bg-gray-300 border-yellow-400 text-black scale-110"
+                                                : "bg-green-500 border-yellow-400 text-white scale-110 shadow-lg shadow-green-500/50"
+                                        : col === "rojo" ? "bg-red-900/70 border-red-700 text-red-200 hover:bg-red-700 hover:border-red-400"
+                                            : col === "negro" ? "bg-gray-800 border-gray-600 text-gray-200 hover:bg-gray-600"
+                                                : "bg-green-900/70 border-green-700 text-green-200 hover:bg-green-700"
+                                        }`}
+                                >
+                                    {numero}
+                                </button>
+                            );
+                        })}
                     </div>
-
-                    {/* Números principales */}
-                    <div className="flex-1">
-                        {numerosTablero.map((columna, colIndex) => (
-                            <div key={colIndex} className="flex flex-col">
-                                {columna.map((numero, rowIndex) => (
-                                    <button
-                                        key={`${colIndex}-${rowIndex}`}
-                                        onClick={() => {
-                                            setTipoApuestaSeleccionado("numero_pleno");
-                                            setValorApuesta(numero);
-                                        }}
-                                        className={`h-12 flex-1 flex items-center justify-center border border-white ${rowIndex === columna.length - 1 ? '' : 'mb-1'} ${COLORES[numero] === "rojo"
-                                            ? 'bg-red-600 hover:bg-red-700'
-                                            : 'bg-gray-900 hover:bg-gray-800'
-                                            } transition-colors`}
-                                    >
-                                        <span className="text-lg font-bold text-white">{numero}</span>
-                                    </button>
-                                ))}
-                            </div>
+                );
+            case "rojo_negro":
+                return (
+                    <div className="flex gap-4">
+                        {[
+                            { val: "rojo", label: "🔴 ROJO", bg: "from-red-700 to-red-900", border: "border-red-500", glow: "shadow-red-500/50" },
+                            { val: "negro", label: "⚫ NEGRO", bg: "from-gray-700 to-gray-900", border: "border-gray-500", glow: "shadow-gray-500/50" }
+                        ].map(({ val, label, bg, border, glow }) => (
+                            <button
+                                key={val}
+                                onClick={() => setValorApuesta(val)}
+                                className={`flex-1 py-5 rounded-xl font-bold text-xl border-2 transition-all duration-200 bg-gradient-to-br ${bg} ${border} text-white
+                                    ${valorApuesta === val ? `scale-105 shadow-xl ${glow}` : "opacity-70 hover:opacity-100"}`}
+                            >
+                                {label}
+                            </button>
                         ))}
                     </div>
-
-                    {/* Apuestas externas */}
-                    <div className="w-32 ml-4 flex flex-col space-y-2">
-                        <button
-                            onClick={() => {
-                                setTipoApuestaSeleccionado("docena");
-                                setValorApuesta(1);
-                            }}
-                            className="flex-1 bg-blue-600 hover:bg-blue-700 rounded-lg flex items-center justify-center border-2 border-white"
-                        >
-                            <span className="text-white font-bold text-sm">1st 12</span>
-                        </button>
-                        <button
-                            onClick={() => {
-                                setTipoApuestaSeleccionado("docena");
-                                setValorApuesta(2);
-                            }}
-                            className="flex-1 bg-blue-600 hover:bg-blue-700 rounded-lg flex items-center justify-center border-2 border-white"
-                        >
-                            <span className="text-white font-bold text-sm">2nd 12</span>
-                        </button>
-                        <button
-                            onClick={() => {
-                                setTipoApuestaSeleccionado("docena");
-                                setValorApuesta(3);
-                            }}
-                            className="flex-1 bg-blue-600 hover:bg-blue-700 rounded-lg flex items-center justify-center border-2 border-white"
-                        >
-                            <span className="text-white font-bold text-sm">3rd 12</span>
-                        </button>
+                );
+            case "par_impar":
+                return (
+                    <div className="flex gap-4">
+                        {[
+                            { val: "par", label: "♻️ PAR", bg: "from-blue-700 to-blue-900", border: "border-blue-500", glow: "shadow-blue-500/50" },
+                            { val: "impar", label: "⚡ IMPAR", bg: "from-yellow-700 to-yellow-900", border: "border-yellow-500", glow: "shadow-yellow-500/50" }
+                        ].map(({ val, label, bg, border, glow }) => (
+                            <button
+                                key={val}
+                                onClick={() => setValorApuesta(val)}
+                                className={`flex-1 py-5 rounded-xl font-bold text-xl border-2 transition-all duration-200 bg-gradient-to-br ${bg} ${border} text-white
+                                    ${valorApuesta === val ? `scale-105 shadow-xl ${glow}` : "opacity-70 hover:opacity-100"}`}
+                            >
+                                {label}
+                            </button>
+                        ))}
                     </div>
-                </div>
+                );
+            case "bajo_alto":
+                return (
+                    <div className="flex gap-4">
+                        {[
+                            { val: "bajo", label: "⬇️ 1-18 BAJO", bg: "from-teal-700 to-teal-900", border: "border-teal-500", glow: "shadow-teal-500/50" },
+                            { val: "alto", label: "⬆️ 19-36 ALTO", bg: "from-purple-700 to-purple-900", border: "border-purple-500", glow: "shadow-purple-500/50" }
+                        ].map(({ val, label, bg, border, glow }) => (
+                            <button
+                                key={val}
+                                onClick={() => setValorApuesta(val)}
+                                className={`flex-1 py-5 rounded-xl font-bold text-xl border-2 transition-all duration-200 bg-gradient-to-br ${bg} ${border} text-white
+                                    ${valorApuesta === val ? `scale-105 shadow-xl ${glow}` : "opacity-70 hover:opacity-100"}`}
+                            >
+                                {label}
+                            </button>
+                        ))}
+                    </div>
+                );
+            case "docena":
+                return (
+                    <div className="grid grid-cols-3 gap-4">
+                        {[
+                            { val: 1, label: "1ª Docena\n1-12" },
+                            { val: 2, label: "2ª Docena\n13-24" },
+                            { val: 3, label: "3ª Docena\n25-36" }
+                        ].map(({ val, label }) => (
+                            <button
+                                key={val}
+                                onClick={() => setValorApuesta(val)}
+                                className={`py-5 rounded-xl font-bold text-center border-2 transition-all duration-200 bg-gradient-to-br
+                                    ${valorApuesta === val
+                                        ? "from-indigo-500 to-indigo-700 border-yellow-400 text-white scale-105 shadow-xl shadow-indigo-500/50"
+                                        : "from-indigo-900/70 to-indigo-900/50 border-indigo-600 text-indigo-200 hover:border-indigo-400"
+                                    }`}
+                            >
+                                {label.split('\n').map((l, i) => <div key={i} className={i === 0 ? "text-base" : "text-xs opacity-80"}>{l}</div>)}
+                            </button>
+                        ))}
+                    </div>
+                );
+            case "columna":
+                return (
+                    <div className="grid grid-cols-3 gap-4">
+                        {[
+                            { val: 1, label: "Columna 1\n1,4,7..." },
+                            { val: 2, label: "Columna 2\n2,5,8..." },
+                            { val: 3, label: "Columna 3\n3,6,9..." }
+                        ].map(({ val, label }) => (
+                            <button
+                                key={val}
+                                onClick={() => setValorApuesta(val)}
+                                className={`py-5 rounded-xl font-bold text-center border-2 transition-all duration-200 bg-gradient-to-br
+                                    ${valorApuesta === val
+                                        ? "from-teal-500 to-teal-700 border-yellow-400 text-white scale-105 shadow-xl shadow-teal-500/50"
+                                        : "from-teal-900/70 to-teal-900/50 border-teal-600 text-teal-200 hover:border-teal-400"
+                                    }`}
+                            >
+                                {label.split('\n').map((l, i) => <div key={i} className={i === 0 ? "text-base" : "text-xs opacity-80"}>{l}</div>)}
+                            </button>
+                        ))}
+                    </div>
+                );
+            default:
+                return <div className="text-center text-gray-400 py-6">Selecciona un tipo de apuesta</div>;
+        }
+    };
 
-                {/* Apuestas inferiores */}
-                <div className="mt-4 grid grid-cols-6 gap-2">
-                    <button
-                        onClick={() => {
-                            setTipoApuestaSeleccionado("bajo_alto");
-                            setValorApuesta("bajo");
-                        }}
-                        className="py-3 bg-green-600 hover:bg-green-700 rounded-lg flex items-center justify-center border-2 border-white"
-                    >
-                        <span className="text-white font-bold">1-18</span>
-                    </button>
-                    <button
-                        onClick={() => {
-                            setTipoApuestaSeleccionado("par_impar");
-                            setValorApuesta("par");
-                        }}
-                        className="py-3 bg-blue-600 hover:bg-blue-700 rounded-lg flex items-center justify-center border-2 border-white"
-                    >
-                        <span className="text-white font-bold">PAR</span>
-                    </button>
-                    <button
-                        onClick={() => {
-                            setTipoApuestaSeleccionado("rojo_negro");
-                            setValorApuesta("rojo");
-                        }}
-                        className="py-3 bg-red-600 hover:bg-red-700 rounded-lg flex items-center justify-center border-2 border-white"
-                    >
-                        <span className="text-white font-bold">ROJO</span>
-                    </button>
-                    <button
-                        onClick={() => {
-                            setTipoApuestaSeleccionado("rojo_negro");
-                            setValorApuesta("negro");
-                        }}
-                        className="py-3 bg-gray-900 hover:bg-gray-800 rounded-lg flex items-center justify-center border-2 border-white"
-                    >
-                        <span className="text-white font-bold">NEGRO</span>
-                    </button>
-                    <button
-                        onClick={() => {
-                            setTipoApuestaSeleccionado("par_impar");
-                            setValorApuesta("impar");
-                        }}
-                        className="py-3 bg-yellow-600 hover:bg-yellow-700 rounded-lg flex items-center justify-center border-2 border-white"
-                    >
-                        <span className="text-white font-bold">IMPAR</span>
-                    </button>
-                    <button
-                        onClick={() => {
-                            setTipoApuestaSeleccionado("bajo_alto");
-                            setValorApuesta("alto");
-                        }}
-                        className="py-3 bg-purple-600 hover:bg-purple-700 rounded-lg flex items-center justify-center border-2 border-white"
-                    >
-                        <span className="text-white font-bold">19-36</span>
-                    </button>
-                </div>
-            </div>
-        );
+    const getColorNumero = (numero: number) => {
+        const c = COLORES[numero];
+        if (c === "rojo") return "bg-red-600";
+        if (c === "negro") return "bg-gray-900 border border-gray-600";
+        return "bg-green-600";
     };
 
     if (!usuario) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 flex items-center justify-center">
+            <div className="min-h-screen flex items-center justify-center" style={{ background: "radial-gradient(ellipse at center, #1a0a00 0%, #0a0500 100%)" }}>
                 <div className="text-center">
-                    <div className="w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                    <p className="text-gray-300 text-xl font-bold">Cargando ruleta...</p>
+                    <div className="w-20 h-20 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" style={{ boxShadow: "0 0 30px #DAA520" }} />
+                    <p className="text-yellow-400 text-xl font-bold tracking-widest">CARGANDO RULETA...</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-900 via-green-900 to-gray-900">
+        <div className="min-h-screen" style={{ background: "radial-gradient(ellipse at top, #1a0a00 0%, #070707 50%, #0a0500 100%)" }}>
+            <style>{`
+                @keyframes shimmer {
+                    0% { background-position: -200% center; }
+                    100% { background-position: 200% center; }
+                }
+                @keyframes pulseGold {
+                    0%, 100% { box-shadow: 0 0 15px #DAA520, 0 0 30px #DAA52040; }
+                    50% { box-shadow: 0 0 25px #DAA520, 0 0 60px #DAA52060, 0 0 80px #DAA52020; }
+                }
+                @keyframes floatUp {
+                    0% { opacity: 0; transform: translateY(20px); }
+                    100% { opacity: 1; transform: translateY(0); }
+                }
+                @keyframes resultReveal {
+                    0% { opacity: 0; transform: scale(0.5) rotate(-10deg); }
+                    60% { transform: scale(1.1) rotate(2deg); }
+                    100% { opacity: 1; transform: scale(1) rotate(0); }
+                }
+                .gold-text {
+                    background: linear-gradient(90deg, #DAA520, #FFD700, #FFA500, #FFD700, #DAA520);
+                    background-size: 200% auto;
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                    background-clip: text;
+                    animation: shimmer 3s linear infinite;
+                }
+                .casino-border {
+                    border: 2px solid transparent;
+                    background: linear-gradient(#0d0d0d, #0d0d0d) padding-box,
+                                linear-gradient(135deg, #DAA520, #8B6914, #DAA520) border-box;
+                }
+                .casino-card {
+                    background: linear-gradient(135deg, rgba(30,15,0,0.9), rgba(10,5,0,0.95));
+                    border: 1px solid rgba(218,165,32,0.3);
+                    backdrop-filter: blur(10px);
+                }
+                .pulse-gold { animation: pulseGold 2s ease-in-out infinite; }
+                .float-up { animation: floatUp 0.5s ease-out forwards; }
+                .result-reveal { animation: resultReveal 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+                .table-felt {
+                    background: radial-gradient(ellipse at center, #0d5c2e 0%, #074020 60%, #052e18 100%);
+                    border: 3px solid #DAA520;
+                    box-shadow: inset 0 0 60px rgba(0,0,0,0.5), 0 0 30px rgba(218,165,32,0.2);
+                }
+                .chip-button {
+                    transition: all 0.15s ease;
+                    transform-origin: center;
+                }
+                .chip-button:hover { transform: translateY(-4px) scale(1.05); }
+                .chip-button:active { transform: translateY(0) scale(0.95); }
+                .neon-red { text-shadow: 0 0 10px #ff0000, 0 0 20px #ff000080; }
+                .neon-green { text-shadow: 0 0 10px #00ff00, 0 0 20px #00ff0080; }
+                .scrollbar-casino::-webkit-scrollbar { width: 4px; }
+                .scrollbar-casino::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); border-radius: 2px; }
+                .scrollbar-casino::-webkit-scrollbar-thumb { background: #DAA520; border-radius: 2px; }
+            `}</style>
+
             {/* Notificación */}
             {notificacion && (
-                <div className={`fixed top-6 right-6 z-50 px-6 py-4 rounded-xl font-bold flex items-center space-x-3 shadow-2xl animate-slideIn ${notificacion.type === "success"
-                    ? "bg-gradient-to-r from-green-900/90 to-green-800/90 border border-green-500/50 text-green-200"
-                    : notificacion.type === "error"
-                        ? "bg-gradient-to-r from-red-900/90 to-red-800/90 border border-red-500/50 text-red-200"
-                        : "bg-gradient-to-r from-blue-900/90 to-blue-800/90 border border-blue-500/50 text-blue-200"
-                    }`}>
-                    <span className="text-xl">
-                        {notificacion.type === "success" ? "✅" : notificacion.type === "error" ? "❌" : "ℹ️"}
-                    </span>
+                <div className={`fixed top-6 right-6 z-50 px-6 py-4 rounded-xl font-bold flex items-center gap-3 shadow-2xl float-up
+                    ${notificacion.type === "success" ? "bg-gradient-to-r from-green-900 to-green-800 border border-green-400/50 text-green-200"
+                        : notificacion.type === "error" ? "bg-gradient-to-r from-red-900 to-red-800 border border-red-400/50 text-red-200"
+                            : "bg-gradient-to-r from-yellow-900 to-yellow-800 border border-yellow-400/50 text-yellow-200"}`}
+                    style={{ boxShadow: notificacion.type === "success" ? "0 0 30px rgba(34,197,94,0.3)" : notificacion.type === "error" ? "0 0 30px rgba(239,68,68,0.3)" : "0 0 30px rgba(234,179,8,0.3)" }}>
+                    <span className="text-2xl">{notificacion.type === "success" ? "✅" : notificacion.type === "error" ? "❌" : "ℹ️"}</span>
                     <span>{notificacion.text}</span>
                 </div>
             )}
 
-            {/* Header */}
-            <Header
-                usuario={usuario}
-                cerrarSesion={cerrarSesion}
-                setUsuario={setUsuario}
-            />
+            <Header usuario={usuario} cerrarSesion={cerrarSesion} setUsuario={setUsuario} />
 
-            {/* Hero Section */}
-            <section className="relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-yellow-500/10"></div>
-                <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-r from-green-500 to-yellow-500 rounded-full blur-3xl opacity-20"></div>
-                <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-r from-red-500 to-blue-500 rounded-full blur-3xl opacity-20"></div>
-
-                <div className="container mx-auto px-4 py-12 relative z-10">
-                    <div className="text-center max-w-4xl mx-auto">
-                        <div className="inline-block mb-6">
-                            <span className="px-4 py-2 bg-gradient-to-r from-green-600/20 to-yellow-600/20 border border-green-500/30 rounded-full text-sm font-bold text-green-400">
-                                🎡 RULETA EUROPEA
-                            </span>
+            {/* Hero Banner */}
+            <div className="relative overflow-hidden py-8 px-4" style={{ borderBottom: "1px solid rgba(218,165,32,0.3)" }}>
+                <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse at center, rgba(218,165,32,0.08) 0%, transparent 70%)" }} />
+                <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
+                    <div>
+                        <div className="flex items-center gap-3 mb-2">
+                            <span className="text-4xl">🎡</span>
+                            <h1 className="text-4xl md:text-5xl font-black tracking-tight gold-text">RULETA EUROPEA</h1>
                         </div>
-
-                        <h1 className="text-4xl md:text-5xl font-bold mb-6">
-                            <span className="bg-gradient-to-r from-green-400 via-yellow-400 to-green-400 bg-clip-text text-transparent">
-                                Casino Clásico
-                            </span>
-                            <br />
-                            <span className="text-white">Un solo cero - Mayor probabilidad de ganar</span>
-                        </h1>
-
-                        <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-                            Apuesta desde <span className="text-yellow-400 font-bold">${APUESTA_MINIMA}</span>.
-                            <span className="text-green-400 font-bold"> ¡Hasta 35x tu apuesta en número pleno!</span>
-                            <br />
-                            <span className="text-blue-400">🏆 Ventaja de la casa: Solo 2.70%</span>
-                        </p>
+                        <p className="text-gray-400 text-lg">Un solo cero · Ventaja de la casa: <span className="text-yellow-500 font-bold">2.70%</span> · Hasta <span className="text-green-400 font-bold">35x</span> tu apuesta</p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                        <div className="casino-card rounded-2xl px-6 py-4 text-center" style={{ boxShadow: "0 0 20px rgba(218,165,32,0.2)" }}>
+                            <div className="text-xs text-gray-500 uppercase tracking-widest mb-1">Saldo Disponible</div>
+                            <div className="text-3xl font-black gold-text">${usuario?.saldo?.toLocaleString() ?? 0}</div>
+                        </div>
+                        <div className="casino-card rounded-2xl px-6 py-4 text-center">
+                            <div className="text-xs text-gray-500 uppercase tracking-widest mb-1">Juegos</div>
+                            <div className="text-3xl font-black text-blue-400">{estadisticas.totalJuegos}</div>
+                        </div>
                     </div>
                 </div>
-            </section>
+            </div>
 
-            {/* Contenido Principal */}
-            <section className="container mx-auto px-4 py-8">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Ruleta y Tablero */}
-                    <div className="lg:col-span-2">
-                        <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50">
-                            <div className="max-w-4xl mx-auto">
-                                {/* Saldo */}
-                                <div className="text-center mb-8">
-                                    <div className="text-3xl font-bold text-white mb-2">
-                                        Saldo: <span className="text-yellow-400">${usuario?.saldo?.toLocaleString() ?? 0}</span>
-                                    </div>
-                                    {mensaje && (
-                                        <div className={`px-6 py-4 rounded-xl font-bold mb-4 ${mensaje.includes("¡Ganaste") || mensaje.includes("Ganaste")
-                                            ? "bg-gradient-to-r from-green-900/50 to-green-800/50 border border-green-500/50 text-green-200"
-                                            : mensaje.includes("Error") || mensaje.includes("insuficiente") || mensaje.includes("Debes")
-                                                ? "bg-gradient-to-r from-red-900/50 to-red-800/50 border border-red-500/50 text-red-200"
-                                                : "bg-gradient-to-r from-blue-900/50 to-blue-800/50 border border-blue-500/50 text-blue-200"
-                                            }`}>
-                                            {mensaje}
-                                        </div>
-                                    )}
+            {/* Main Layout */}
+            <div className="max-w-7xl mx-auto px-4 py-8">
+                <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+
+                    {/* === COLUMNA IZQUIERDA: RUEDA + TABLERO === */}
+                    <div className="xl:col-span-2 space-y-8">
+
+                        {/* Rueda de la Ruleta */}
+                        <div className="casino-card rounded-3xl p-6" style={{ boxShadow: "0 0 40px rgba(218,165,32,0.15)" }}>
+                            <div className="relative">
+                                {/* Efecto de luz ambiental */}
+                                <div className="absolute inset-0 rounded-full" style={{
+                                    background: girando
+                                        ? "radial-gradient(circle, rgba(218,165,32,0.15) 0%, transparent 70%)"
+                                        : "radial-gradient(circle, rgba(218,165,32,0.08) 0%, transparent 70%)",
+                                    transition: "all 0.5s"
+                                }} />
+                                <div className={`relative z-10 ${girando ? "pulse-gold" : ""}`} style={{ borderRadius: "50%", maxWidth: 440, margin: "0 auto" }}>
+                                    {renderRuedaRuleta()}
                                 </div>
 
-                                {/* Rueda de la Ruleta */}
-                                <div className="mb-10">
-                                    <div className="relative">
-                                        <div
-                                            ref={wheelRef}
-                                            className="w-full max-w-md mx-auto aspect-square rounded-full overflow-hidden border-8 border-gray-800 shadow-2xl"
-                                        >
-                                            {renderRuedaRuleta()}
-                                        </div>
-
-                                        {/* Indicador superior */}
-                                        <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-8 border-r-8 border-b-8 border-l-transparent border-r-transparent border-b-gray-900 z-20" />
-                                    </div>
-                                </div>
-
-                                {/* Selector de apuestas */}
-                                <div className="mb-10">
-                                    <h3 className="text-2xl font-bold text-white mb-6 text-center">💰 Configurar Apuesta</h3>
-
-                                    {/* Tipo de apuesta */}
-                                    <div className="mb-8">
-                                        <label className="block text-white text-lg font-bold mb-4">Tipo de Apuesta</label>
-                                        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                                            {TIPOS_APUESTA.map(tipo => (
-                                                <button
-                                                    key={tipo.id}
-                                                    onClick={() => {
-                                                        setTipoApuestaSeleccionado(tipo.id);
-                                                        setValorApuesta(null);
-                                                    }}
-                                                    className={`px-4 py-3 rounded-lg font-bold transition-all ${tipoApuestaSeleccionado === tipo.id
-                                                        ? `${tipo.color} text-white scale-105`
-                                                        : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                                                        }`}
-                                                >
-                                                    {tipo.nombre}
-                                                    <div className="text-xs opacity-80">x{tipo.multiplicador}</div>
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    {/* Valor de la apuesta */}
-                                    <div className="mb-8">
-                                        <label className="block text-white text-lg font-bold mb-4">
-                                            Valor: {tipoApuestaSeleccionado.replace('_', ' ').toUpperCase()}
-                                        </label>
-                                        {renderSelectorApuesta()}
-                                    </div>
-
-                                    {/* Monto de la apuesta */}
-                                    <div className="mb-8">
-                                        <label className="block text-white text-lg font-bold mb-4">Monto de la Apuesta</label>
-                                        <div className="flex flex-col items-center space-y-6">
-                                            <input
-                                                type="range"
-                                                min={APUESTA_MINIMA}
-                                                max={Math.min(usuario?.saldo || APUESTA_MINIMA, 10000)}
-                                                step={10}
-                                                value={montoApuesta}
-                                                onChange={(e) => setMontoApuesta(parseInt(e.target.value))}
-                                                className="w-full h-4 bg-gray-700 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-8 [&::-webkit-slider-thumb]:w-8 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-gradient-to-r [&::-webkit-slider-thumb]:from-green-500 [&::-webkit-slider-thumb]:to-yellow-500"
-                                            />
-                                            <div className="flex justify-between w-full text-gray-400 text-sm">
-                                                <span>${APUESTA_MINIMA}</span>
-                                                <span className="text-xl font-bold text-yellow-400">${montoApuesta}</span>
-                                                <span>${Math.min(usuario?.saldo || APUESTA_MINIMA, 10000)}</span>
-                                            </div>
-                                            <div className="flex flex-wrap justify-center gap-3">
-                                                {valoresApuesta.map((valor) => (
-                                                    <button
-                                                        key={valor}
-                                                        onClick={() => setMontoApuesta(valor)}
-                                                        disabled={valor > (usuario?.saldo || 0)}
-                                                        className={`px-4 py-3 rounded-lg font-bold transition-all duration-200 ${montoApuesta === valor
-                                                            ? 'bg-gradient-to-r from-green-600 to-yellow-600 text-white scale-105'
-                                                            : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                                                            } ${valor > (usuario?.saldo || 0) ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                                    >
-                                                        ${valor}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Botón para agregar apuesta */}
-                                    <button
-                                        onClick={agregarApuesta}
-                                        disabled={!valorApuesta || montoApuesta < APUESTA_MINIMA || montoApuesta > usuario.saldo}
-                                        className={`w-full py-4 px-8 rounded-xl font-bold text-lg transition-all duration-300 ${!valorApuesta || montoApuesta < APUESTA_MINIMA || montoApuesta > usuario.saldo
-                                            ? 'bg-gray-600 cursor-not-allowed opacity-70'
-                                            : 'bg-gradient-to-r from-green-600 to-yellow-600 hover:from-green-500 hover:to-yellow-500 hover:scale-105 active:scale-95'
-                                            }`}
-                                    >
-                                        ➕ Agregar Apuesta (${montoApuesta})
-                                    </button>
-                                </div>
-
-                                {/* Apuestas actuales */}
-                                <div className="mb-10">
-                                    <div className="flex justify-between items-center mb-4">
-                                        <h3 className="text-2xl font-bold text-white">📋 Apuestas Actuales</h3>
-                                        {apuestas.length > 0 && (
-                                            <button
-                                                onClick={limpiarApuestas}
-                                                className="px-4 py-2 bg-red-900/50 text-red-300 hover:bg-red-800/70 rounded-lg transition-colors"
-                                            >
-                                                Limpiar Todas
-                                            </button>
-                                        )}
-                                    </div>
-
-                                    {apuestas.length === 0 ? (
-                                        <div className="text-center py-8 bg-gray-800/30 rounded-2xl border border-gray-700/50">
-                                            <div className="text-4xl mb-3">🎯</div>
-                                            <p className="text-gray-400">No hay apuestas agregadas</p>
-                                            <p className="text-sm text-gray-500 mt-1">Configura y agrega apuestas para comenzar</p>
-                                        </div>
-                                    ) : (
-                                        <div className="space-y-3">
-                                            {apuestas.map((apuesta, index) => (
-                                                <div key={index} className="p-4 bg-gray-800/50 rounded-xl border border-gray-700/50">
-                                                    <div className="flex justify-between items-center">
-                                                        <div>
-                                                            <div className="text-white font-bold text-lg">
-                                                                {apuesta.tipo.replace('_', ' ').toUpperCase()}
-                                                            </div>
-                                                            <div className="text-gray-400">
-                                                                Valor: {JSON.stringify(apuesta.valor)}
-                                                            </div>
-                                                        </div>
-                                                        <div className="flex items-center space-x-4">
-                                                            <div className="text-right">
-                                                                <div className="text-xl font-bold text-yellow-400">${apuesta.monto}</div>
-                                                                <div className="text-sm text-gray-400">
-                                                                    Posible ganancia: ${apuesta.monto *
-                                                                        (TIPOS_APUESTA.find(t => t.id === apuesta.tipo)?.multiplicador || 1)}
-                                                                </div>
-                                                            </div>
-                                                            <button
-                                                                onClick={() => eliminarApuesta(index)}
-                                                                className="px-3 py-1 bg-red-900/30 text-red-300 hover:bg-red-800/40 rounded-lg transition-colors"
-                                                            >
-                                                                ✕
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))}
-
-                                            <div className="p-4 bg-gradient-to-r from-gray-800 to-gray-900 rounded-xl border border-yellow-500/30">
-                                                <div className="flex justify-between items-center">
-                                                    <div className="text-white font-bold text-lg">TOTAL APOSTADO</div>
-                                                    <div className="text-2xl font-bold text-yellow-400">${calcularTotalApostado()}</div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Botón de jugar */}
-                                <button
-                                    onClick={realizarJugada}
-                                    disabled={girando || apuestas.length === 0 || calcularTotalApostado() > usuario.saldo}
-                                    className={`w-full py-5 px-8 rounded-xl font-bold text-xl transition-all duration-300 ${girando || apuestas.length === 0 || calcularTotalApostado() > usuario.saldo
-                                        ? 'bg-gray-600 cursor-not-allowed opacity-70'
-                                        : 'bg-gradient-to-r from-green-600 to-yellow-600 hover:from-green-500 hover:to-yellow-500 hover:scale-105 active:scale-95 shadow-lg shadow-green-500/20'
-                                        }`}
-                                >
-                                    {girando ? (
-                                        <span className="flex items-center justify-center">
-                                            <svg className="animate-spin h-6 w-6 mr-3 text-white" viewBox="0 0 24 24">
-                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                                            </svg>
-                                            Girando ruleta...
-                                        </span>
-                                    ) : (
-                                        `🎡 Girar Ruleta ($${calcularTotalApostado()})`
-                                    )}
-                                </button>
-
-                                {/* Resultado */}
-                                {resultado && (
-                                    <div className="mt-10 p-8 bg-gradient-to-r from-gray-800/70 to-gray-900/70 border-4 border-yellow-500/30 rounded-3xl">
-                                        <div className="text-center">
-                                            <div className="text-4xl font-bold text-white mb-6">
-                                                ¡NÚMERO GANADOR!
-                                            </div>
-
-                                            <div className="flex items-center justify-center space-x-8 mb-8">
-                                                <div className={`text-center p-6 rounded-2xl ${COLORES[resultado.numero_ganador] === "rojo"
-                                                    ? 'bg-red-600'
-                                                    : COLORES[resultado.numero_ganador] === "negro"
-                                                        ? 'bg-gray-900'
-                                                        : 'bg-green-600'
-                                                    }`}>
-                                                    <div className="text-6xl font-bold text-white">{resultado.numero_ganador}</div>
-                                                    <div className="text-xl text-gray-200 mt-2">
-                                                        {COLORES[resultado.numero_ganador].toUpperCase()}
-                                                    </div>
-                                                </div>
-
-                                                <div className="text-left">
-                                                    <div className="text-gray-300">
-                                                        <div>Par: {resultado.es_par ? '✅' : '❌'}</div>
-                                                        <div>Impar: {resultado.es_impar ? '✅' : '❌'}</div>
-                                                        <div>Bajo (1-18): {resultado.es_bajo ? '✅' : '❌'}</div>
-                                                        <div>Alto (19-36): {resultado.es_alto ? '✅' : '❌'}</div>
-                                                        <div>Docena: {resultado.docena}</div>
-                                                        <div>Columna: {resultado.columna}</div>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div className="grid grid-cols-2 gap-6 mb-8">
-                                                <div className="bg-gray-800/50 p-6 rounded-xl">
-                                                    <div className="text-sm text-gray-400">Total Apostado</div>
-                                                    <div className="text-3xl font-bold text-yellow-400">${resultado.total_apostado}</div>
-                                                </div>
-                                                <div className="bg-gray-800/50 p-6 rounded-xl">
-                                                    <div className="text-sm text-gray-400">Ganancia Total</div>
-                                                    <div className={`text-3xl font-bold ${resultado.ganancia_total > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                                        ${resultado.ganancia_total}
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div className="text-xl text-gray-400">{resultado.mensaje}</div>
-
-                                            {/* Apuestas ganadoras */}
-                                            {resultado.apuestas_ganadoras && resultado.apuestas_ganadoras.length > 0 && (
-                                                <div className="mt-8">
-                                                    <div className="text-2xl font-bold text-green-400 mb-4">🎉 Apuestas Ganadoras</div>
-                                                    <div className="space-y-3">
-                                                        {resultado.apuestas_ganadoras.map((apuesta: any, index: number) => (
-                                                            <div key={index} className="p-4 bg-green-900/20 rounded-xl border border-green-500/30">
-                                                                <div className="flex justify-between items-center">
-                                                                    <div>
-                                                                        <div className="text-white font-bold">
-                                                                            {apuesta.tipo.replace('_', ' ').toUpperCase()}
-                                                                        </div>
-                                                                        <div className="text-gray-300">Valor: {JSON.stringify(apuesta.valor)}</div>
-                                                                    </div>
-                                                                    <div className="text-right">
-                                                                        <div className="text-2xl font-bold text-green-400">
-                                                                            +${apuesta.ganancia}
-                                                                        </div>
-                                                                        <div className="text-sm text-gray-300">
-                                                                            Apuesta: ${apuesta.monto}
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
+                                {/* Estado de giro */}
+                                {girando && (
+                                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-6 py-2 rounded-full font-bold text-sm tracking-widest float-up"
+                                        style={{ background: "rgba(218,165,32,0.2)", border: "1px solid rgba(218,165,32,0.5)", color: "#DAA520" }}>
+                                        ● GIRANDO...
                                     </div>
                                 )}
                             </div>
-                        </div>
-                    </div>
 
-                    {/* Panel Lateral */}
-                    <div className="space-y-6">
-                        {/* Estadísticas */}
-                        <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-xl font-bold text-white">📊 Tus Estadísticas</h3>
-                                <button
-                                    onClick={limpiarTodasEstadisticas}
-                                    className="px-3 py-1 text-sm bg-red-900/30 text-red-300 hover:bg-red-800/40 rounded-lg transition-colors"
-                                    title="Reiniciar todas las estadísticas"
-                                >
-                                    Reiniciar
-                                </button>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="text-center p-4 bg-gray-800/40 rounded-xl border border-gray-700/50">
-                                    <div className="text-sm text-gray-400">Total Juegos</div>
-                                    <div className="text-2xl font-bold text-blue-400">{estadisticas.totalJuegos}</div>
-                                </div>
-                                <div className="text-center p-4 bg-gray-800/40 rounded-xl border border-gray-700/50">
-                                    <div className="text-sm text-gray-400">Ganancia Total</div>
-                                    <div className="text-2xl font-bold text-green-400">${estadisticas.gananciaTotal}</div>
-                                </div>
-                                <div className="text-center p-4 bg-gray-800/40 rounded-xl border border-gray-700/50">
-                                    <div className="text-sm text-gray-400">Gasto Total</div>
-                                    <div className="text-2xl font-bold text-red-400">${estadisticas.gastoTotal}</div>
-                                </div>
-                                <div className="text-center p-4 bg-gray-800/40 rounded-xl border border-gray-700/50">
-                                    <div className="text-sm text-gray-400">Balance</div>
-                                    <div className={`text-2xl font-bold ${estadisticas.balance >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                        ${estadisticas.balance}
+                            {/* Historial rápido de últimos números */}
+                            {historial.length > 0 && (
+                                <div className="mt-6">
+                                    <div className="text-xs text-gray-500 text-center mb-3 uppercase tracking-widest">Últimas tiradas</div>
+                                    <div className="flex items-center justify-center gap-2 flex-wrap">
+                                        {historial.slice(0, 12).map((j, i) => (
+                                            <div key={j.id}
+                                                className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-black text-white border-2
+                                                    ${getColorNumero(j.numero_ganador)} 
+                                                    ${i === 0 ? "border-yellow-400 scale-125" : "border-transparent opacity-70"}`}
+                                                style={i === 0 ? { boxShadow: "0 0 12px rgba(218,165,32,0.6)" } : {}}>
+                                                {j.numero_ganador}
+                                            </div>
+                                        ))}
                                     </div>
-                                </div>
-                            </div>
-                            <div className="mt-6">
-                                <h4 className="text-lg font-bold text-white mb-3">🎯 Números Más Frecuentes</h4>
-                                <div className="space-y-2">
-                                    {estadisticas.numerosMasFrecuentes.length > 0 ? (
-                                        estadisticas.numerosMasFrecuentes.map(({ numero, frecuencia }) => (
-                                            <div key={numero} className="flex items-center justify-between p-3 bg-gray-800/40 rounded-lg">
-                                                <div className="flex items-center space-x-3">
-                                                    <div className={`w-3 h-3 rounded-full ${COLORES[numero] === "rojo" ? 'bg-red-500' : COLORES[numero] === "negro" ? 'bg-gray-500' : 'bg-green-500'}`} />
-                                                    <span className="text-white font-medium">Número {numero}</span>
-                                                </div>
-                                                <div className="text-right">
-                                                    <div className="text-white font-bold">{frecuencia} veces</div>
-                                                    <div className="text-xs text-gray-400">
-                                                        {estadisticas.totalJuegos > 0
-                                                            ? `${((frecuencia / estadisticas.totalJuegos) * 100).toFixed(1)}%`
-                                                            : '0%'}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <div className="text-center py-4 text-gray-400">
-                                            No hay datos suficientes
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Probabilidades */}
-                        <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50">
-                            <h3 className="text-xl font-bold text-white mb-4">📈 Probabilidades</h3>
-                            <div className="space-y-4 max-h-80 overflow-y-auto pr-2">
-                                {Object.entries(probabilidades).map(([tipo, datos]) => (
-                                    <div key={tipo} className="p-4 bg-gray-800/40 rounded-xl border border-gray-700/50">
-                                        <div className="flex justify-between items-center mb-2">
-                                            <div className="text-white font-bold">
-                                                {tipo.replace('_', ' ').toUpperCase()}
-                                            </div>
-                                            <div className="text-yellow-400 font-bold">x{datos.multiplicador}</div>
-                                        </div>
-                                        <div className="flex justify-between mb-1">
-                                            <span className="text-gray-400 text-sm">Probabilidad</span>
-                                            <span className="text-blue-400">{datos.probabilidad}%</span>
-                                        </div>
-                                        <div className="w-full bg-gray-700 rounded-full h-2">
-                                            <div
-                                                className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full"
-                                                style={{ width: `${datos.probabilidad}%` }}
-                                            ></div>
-                                        </div>
-                                        <div className="text-xs text-gray-500 mt-2">{datos.descripcion}</div>
-                                    </div>
-                                ))}
-                            </div>
-                            <div className="mt-4 pt-4 border-t border-gray-700/30">
-                                <div className="text-center text-gray-400">
-                                    <span className="text-red-400">⚠️ Ventaja de la casa: 2.70%</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Historial */}
-                        <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-xl font-bold text-white">📝 Historial de Tiradas</h3>
-                                {historial.length > 0 && (
-                                    <button
-                                        onClick={limpiarHistorial}
-                                        className="px-3 py-1 text-sm bg-red-900/30 text-red-300 hover:bg-red-800/40 rounded-lg transition-colors"
-                                    >
-                                        Limpiar
-                                    </button>
-                                )}
-                            </div>
-
-                            {historial.length === 0 ? (
-                                <div className="text-center py-8">
-                                    <div className="text-4xl mb-3">🎡</div>
-                                    <p className="text-gray-400">No hay tiradas registradas</p>
-                                    <p className="text-sm text-gray-500 mt-1">Gira la ruleta para comenzar</p>
-                                </div>
-                            ) : (
-                                <div className="space-y-3 max-h-80 overflow-y-auto pr-2">
-                                    {historial.map((juego) => (
-                                        <div key={juego.id} className={`p-4 rounded-xl border ${juego.ganancia_total > 0
-                                            ? 'bg-gradient-to-r from-green-900/20 to-green-800/10 border-green-500/30'
-                                            : 'bg-gradient-to-r from-red-900/20 to-red-800/10 border-red-500/30'
-                                            }`}>
-                                            <div className="flex justify-between items-center">
-                                                <div>
-                                                    <div className="flex items-center space-x-3">
-                                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${COLORES[juego.numero_ganador] === "rojo"
-                                                            ? 'bg-red-600'
-                                                            : COLORES[juego.numero_ganador] === "negro"
-                                                                ? 'bg-gray-900'
-                                                                : 'bg-green-600'
-                                                            }`}>
-                                                            <span className="text-white font-bold">{juego.numero_ganador}</span>
-                                                        </div>
-                                                        <div className="text-white font-medium">{juego.color_ganador}</div>
-                                                    </div>
-                                                    <div className="text-sm text-gray-400 mt-1">{juego.fecha}</div>
-                                                    <div className="text-xs text-gray-500">Apostado: ${juego.total_apostado}</div>
-                                                </div>
-                                                <div className={`text-right ${juego.ganancia_total > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                                    <div className="text-2xl font-bold">
-                                                        {juego.ganancia_total > 0 ? `+$${juego.ganancia_total}` : `-$${juego.total_apostado}`}
-                                                    </div>
-                                                    <div className="text-xs text-gray-400">
-                                                        {juego.ganancia_total > 0
-                                                            ? `Neto: $${juego.ganancia_total - juego.total_apostado}`
-                                                            : 'Pérdida total'}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
                                 </div>
                             )}
                         </div>
 
-                        {/* Información */}
-                        <div className="bg-gradient-to-r from-green-600/20 to-yellow-600/20 border border-green-500/30 rounded-2xl p-6">
-                            <h4 className="text-lg font-bold text-white mb-3">💡 Cómo jugar</h4>
-                            <ul className="space-y-3 text-gray-300">
-                                <li className="flex items-start space-x-2">
-                                    <span className="text-green-400">•</span>
-                                    <span>Selecciona un tipo de apuesta</span>
-                                </li>
-                                <li className="flex items-start space-x-2">
-                                    <span className="text-green-400">•</span>
-                                    <span>Elige el valor de la apuesta</span>
-                                </li>
-                                <li className="flex items-start space-x-2">
-                                    <span className="text-green-400">•</span>
-                                    <span>Configura el monto (mínimo ${APUESTA_MINIMA})</span>
-                                </li>
-                                <li className="flex items-start space-x-2">
-                                    <span className="text-green-400">•</span>
-                                    <span>Agrega múltiples apuestas antes de girar</span>
-                                </li>
-                                <li className="flex items-start space-x-2">
-                                    <span className="text-green-400">•</span>
-                                    <span>La ruleta gira y determina el número ganador</span>
-                                </li>
-                                <li className="flex items-start space-x-2">
-                                    <span className="text-green-400">•</span>
-                                    <span>Ganas según los multiplicadores de cada apuesta</span>
-                                </li>
-                                <li className="flex items-start space-x-2">
-                                    <span className="text-green-400">•</span>
-                                    <span>¡Juega con responsabilidad!</span>
-                                </li>
-                            </ul>
+                        {/* Tablero de Apuestas */}
+                        <div className="casino-card rounded-3xl p-6" style={{ boxShadow: "0 0 30px rgba(218,165,32,0.1)" }}>
+                            <h2 className="text-xl font-black gold-text mb-5 uppercase tracking-widest">🎰 Mesa de Apuestas</h2>
+
+                            {/* Tipo de apuesta */}
+                            <div className="mb-6">
+                                <div className="text-xs text-gray-500 uppercase tracking-widest mb-3">Tipo de Apuesta</div>
+                                <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+                                    {TIPOS_APUESTA.map(tipo => (
+                                        <button
+                                            key={tipo.id}
+                                            onClick={() => { setTipoApuestaSeleccionado(tipo.id); setValorApuesta(null); }}
+                                            className="py-3 px-2 rounded-xl font-bold text-center text-xs transition-all duration-200 border-2"
+                                            style={tipoApuestaSeleccionado === tipo.id
+                                                ? { background: tipo.color, borderColor: "#DAA520", color: "white", transform: "scale(1.05)", boxShadow: `0 0 20px ${tipo.color}80` }
+                                                : { background: "rgba(255,255,255,0.04)", borderColor: "rgba(218,165,32,0.2)", color: "#9CA3AF" }}
+                                        >
+                                            <div className="text-lg mb-1">{tipo.icon}</div>
+                                            <div>{tipo.nombre}</div>
+                                            <div className="text-yellow-400/80 text-xs mt-0.5">×{tipo.multiplicador}</div>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Selector de valor */}
+                            <div className="mb-6">
+                                <div className="text-xs text-gray-500 uppercase tracking-widest mb-3">
+                                    Selección: <span className="text-yellow-400">{tipoApuestaSeleccionado.replace(/_/g, ' ').toUpperCase()}</span>
+                                    {valorApuesta !== null && <span className="ml-2 text-green-400">✓ {JSON.stringify(valorApuesta)}</span>}
+                                </div>
+                                <div className="p-4 rounded-2xl" style={{ background: "rgba(0,0,0,0.4)", border: "1px solid rgba(218,165,32,0.15)" }}>
+                                    {renderSelectorApuesta()}
+                                </div>
+                            </div>
+
+                            {/* Fichas de apuesta */}
+                            <div className="mb-6">
+                                <div className="text-xs text-gray-500 uppercase tracking-widest mb-3">
+                                    Monto de Ficha: <span className="text-yellow-400 font-bold text-base">${montoApuesta}</span>
+                                </div>
+                                <div className="flex flex-wrap gap-3 justify-center">
+                                    {FICHAS.map(ficha => {
+                                        const disabled = ficha.valor > (usuario?.saldo || 0);
+                                        return (
+                                            <button
+                                                key={ficha.valor}
+                                                onClick={() => !disabled && setMontoApuesta(ficha.valor)}
+                                                disabled={disabled}
+                                                className="chip-button relative w-14 h-14 rounded-full flex items-center justify-center font-black text-sm text-white"
+                                                style={{
+                                                    background: disabled ? "#374151" : ficha.color,
+                                                    border: `3px solid ${disabled ? "#4B5563" : ficha.borde}`,
+                                                    boxShadow: montoApuesta === ficha.valor && !disabled
+                                                        ? `0 0 20px ${ficha.color}, 0 4px 15px rgba(0,0,0,0.5)`
+                                                        : disabled ? "none" : `0 4px 10px rgba(0,0,0,0.4)`,
+                                                    opacity: disabled ? 0.4 : 1,
+                                                    outline: montoApuesta === ficha.valor ? `3px solid #DAA520` : "none",
+                                                    outlineOffset: "2px"
+                                                }}
+                                            >
+                                                <span className="drop-shadow">{ficha.label}</span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* Botón agregar apuesta */}
+                            <button
+                                onClick={agregarApuesta}
+                                disabled={!valorApuesta || montoApuesta < APUESTA_MINIMA || montoApuesta > usuario.saldo}
+                                className="w-full py-4 rounded-xl font-black text-lg tracking-widest uppercase transition-all duration-200 mb-4"
+                                style={!valorApuesta || montoApuesta < APUESTA_MINIMA || montoApuesta > usuario.saldo
+                                    ? { background: "rgba(55,65,81,0.5)", color: "#6B7280", cursor: "not-allowed", border: "2px solid rgba(75,85,99,0.3)" }
+                                    : { background: "linear-gradient(135deg, #DAA520, #FFA500)", color: "#0a0500", border: "2px solid #FFD700", boxShadow: "0 0 25px rgba(218,165,32,0.4)", cursor: "pointer" }
+                                }
+                            >
+                                ➕ Agregar Apuesta ${montoApuesta}
+                            </button>
+
+                            {/* Mensaje */}
+                            {mensaje && (
+                                <div className={`p-4 rounded-xl text-center font-bold mb-4 float-up ${
+                                    mensaje.includes("Ganaste") || mensaje.includes("ganaste")
+                                        ? "bg-green-900/40 border border-green-500/50 text-green-300"
+                                        : mensaje.includes("Error") || mensaje.includes("insuficiente") || mensaje.includes("Debes") || mensaje.includes("Selecciona")
+                                            ? "bg-red-900/40 border border-red-500/50 text-red-300"
+                                            : "bg-yellow-900/40 border border-yellow-500/50 text-yellow-300"
+                                }`}>
+                                    {mensaje}
+                                </div>
+                            )}
+
+                            {/* Apuestas activas */}
+                            {apuestas.length > 0 && (
+                                <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid rgba(218,165,32,0.3)" }}>
+                                    <div className="flex items-center justify-between px-4 py-3" style={{ background: "rgba(218,165,32,0.1)", borderBottom: "1px solid rgba(218,165,32,0.2)" }}>
+                                        <span className="text-yellow-400 font-bold text-sm uppercase tracking-widest">📋 Mis Apuestas ({apuestas.length})</span>
+                                        <button onClick={limpiarApuestas} className="text-red-400 text-xs hover:text-red-300 font-bold uppercase">Limpiar</button>
+                                    </div>
+                                    <div className="divide-y divide-gray-800/50">
+                                        {apuestas.map((apuesta, i) => (
+                                            <div key={i} className="flex items-center justify-between px-4 py-3" style={{ background: "rgba(0,0,0,0.3)" }}>
+                                                <div>
+                                                    <div className="text-white font-bold text-sm">{apuesta.tipo.replace(/_/g, ' ').toUpperCase()}</div>
+                                                    <div className="text-gray-500 text-xs">{JSON.stringify(apuesta.valor)}</div>
+                                                </div>
+                                                <div className="flex items-center gap-3">
+                                                    <div className="text-right">
+                                                        <div className="text-yellow-400 font-black">${apuesta.monto}</div>
+                                                        <div className="text-gray-500 text-xs">→ ${apuesta.monto * (TIPOS_APUESTA.find(t => t.id === apuesta.tipo)?.multiplicador || 1)}</div>
+                                                    </div>
+                                                    <button onClick={() => eliminarApuesta(i)}
+                                                        className="w-7 h-7 rounded-full flex items-center justify-center text-red-400 hover:bg-red-900/40 transition-colors text-sm font-bold">✕</button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        <div className="flex justify-between items-center px-4 py-3" style={{ background: "rgba(218,165,32,0.08)" }}>
+                                            <span className="text-gray-300 font-bold uppercase text-sm">Total</span>
+                                            <span className="text-2xl font-black gold-text">${calcularTotalApostado()}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Botón GIRAR */}
+                            <button
+                                onClick={realizarJugada}
+                                disabled={girando || apuestas.length === 0 || calcularTotalApostado() > usuario.saldo}
+                                className="w-full mt-4 py-5 rounded-2xl font-black text-2xl tracking-widest uppercase transition-all duration-300"
+                                style={girando || apuestas.length === 0 || calcularTotalApostado() > usuario.saldo
+                                    ? { background: "rgba(55,65,81,0.5)", color: "#6B7280", cursor: "not-allowed", border: "2px solid rgba(75,85,99,0.3)" }
+                                    : { background: "linear-gradient(135deg, #7c0a02, #C41E3A, #7c0a02)", color: "white", border: "3px solid #DAA520", boxShadow: "0 0 40px rgba(196,30,58,0.5), 0 0 80px rgba(218,165,32,0.2)", cursor: "pointer" }
+                                }
+                            >
+                                {girando ? (
+                                    <span className="flex items-center justify-center gap-3">
+                                        <span className="inline-block w-7 h-7 border-3 border-white border-t-transparent rounded-full animate-spin" style={{ borderWidth: 3 }} />
+                                        GIRANDO...
+                                    </span>
+                                ) : (
+                                    `🎡 GIRAR RULETA · $${calcularTotalApostado() || 0}`
+                                )}
+                            </button>
                         </div>
 
-                        {/* Tipos de apuestas */}
-                        <div className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 rounded-2xl p-6">
-                            <h4 className="text-lg font-bold text-white mb-3">🎯 Tipos de Apuestas</h4>
-                            <div className="space-y-3">
-                                {TIPOS_APUESTA.slice(0, 5).map(tipo => (
-                                    <div key={tipo.id} className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
-                                        <span className="text-white">{tipo.nombre}</span>
-                                        <span className="text-yellow-400 font-bold">x{tipo.multiplicador}</span>
+                        {/* Resultado */}
+                        {resultado && (
+                            <div className="casino-card rounded-3xl p-8 result-reveal" style={{
+                                border: resultado.ganancia_total > 0 ? "2px solid rgba(34,197,94,0.5)" : "2px solid rgba(239,68,68,0.3)",
+                                boxShadow: resultado.ganancia_total > 0 ? "0 0 60px rgba(34,197,94,0.2)" : "0 0 30px rgba(239,68,68,0.1)"
+                            }}>
+                                <div className="text-center mb-8">
+                                    <div className="text-xs text-gray-500 uppercase tracking-widest mb-3">Resultado de la Tirada</div>
+                                    <div className="flex items-center justify-center gap-6">
+                                        <div className={`w-28 h-28 rounded-full flex flex-col items-center justify-center font-black border-4 ${getColorNumero(resultado.numero_ganador)}`}
+                                            style={{ borderColor: "#DAA520", boxShadow: "0 0 40px rgba(218,165,32,0.5)" }}>
+                                            <span className="text-5xl text-white">{resultado.numero_ganador}</span>
+                                            <span className="text-xs text-gray-300 uppercase">{resultado.color_ganador}</span>
+                                        </div>
+                                        <div className="text-left space-y-1.5">
+                                            {[
+                                                { label: "Par", val: resultado.es_par },
+                                                { label: "Impar", val: resultado.es_impar },
+                                                { label: "Bajo (1-18)", val: resultado.es_bajo },
+                                                { label: "Alto (19-36)", val: resultado.es_alto },
+                                            ].map(({ label, val }) => (
+                                                <div key={label} className="flex items-center gap-2 text-sm">
+                                                    <span className={val ? "text-green-400" : "text-gray-600"}>{val ? "✓" : "✗"}</span>
+                                                    <span className={val ? "text-gray-200" : "text-gray-600"}>{label}</span>
+                                                </div>
+                                            ))}
+                                            <div className="text-sm text-gray-400">Docena {resultado.docena} · Col. {resultado.columna}</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4 mb-6">
+                                    <div className="rounded-2xl p-4 text-center" style={{ background: "rgba(0,0,0,0.4)", border: "1px solid rgba(218,165,32,0.2)" }}>
+                                        <div className="text-xs text-gray-500 uppercase tracking-widest mb-1">Total Apostado</div>
+                                        <div className="text-3xl font-black text-yellow-400">${resultado.total_apostado}</div>
+                                    </div>
+                                    <div className="rounded-2xl p-4 text-center" style={{
+                                        background: resultado.ganancia_total > 0 ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)",
+                                        border: `1px solid ${resultado.ganancia_total > 0 ? "rgba(34,197,94,0.3)" : "rgba(239,68,68,0.3)"}`
+                                    }}>
+                                        <div className="text-xs text-gray-500 uppercase tracking-widest mb-1">
+                                            {resultado.ganancia_total > 0 ? "🎉 Ganancia" : "Pérdida"}
+                                        </div>
+                                        <div className={`text-3xl font-black ${resultado.ganancia_total > 0 ? "text-green-400 neon-green" : "text-red-400 neon-red"}`}>
+                                            {resultado.ganancia_total > 0 ? `+$${resultado.ganancia_total}` : `-$${resultado.total_apostado}`}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {resultado.apuestas_ganadoras?.length > 0 && (
+                                    <div>
+                                        <div className="text-sm text-green-400 font-bold uppercase tracking-widest mb-3">🏆 Apuestas Ganadoras</div>
+                                        <div className="space-y-2">
+                                            {resultado.apuestas_ganadoras.map((a: any, i: number) => (
+                                                <div key={i} className="flex justify-between items-center px-4 py-3 rounded-xl"
+                                                    style={{ background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.2)" }}>
+                                                    <div>
+                                                        <div className="text-white font-bold text-sm">{a.tipo.replace(/_/g, ' ').toUpperCase()}</div>
+                                                        <div className="text-gray-500 text-xs">{JSON.stringify(a.valor)} · ${a.monto}</div>
+                                                    </div>
+                                                    <div className="text-green-400 font-black text-xl">+${a.ganancia}</div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* === COLUMNA DERECHA: PANEL LATERAL === */}
+                    <div className="space-y-6">
+
+                        {/* Tabs */}
+                        <div className="casino-card rounded-2xl overflow-hidden" style={{ boxShadow: "0 0 20px rgba(218,165,32,0.1)" }}>
+                            <div className="flex" style={{ borderBottom: "1px solid rgba(218,165,32,0.2)" }}>
+                                {([
+                                    { id: "historial", label: "📜 Historial" },
+                                    { id: "estadisticas", label: "📊 Stats" },
+                                    { id: "probabilidades", label: "📈 Odds" }
+                                ] as const).map(tab => (
+                                    <button
+                                        key={tab.id}
+                                        onClick={() => setActiveTab(tab.id)}
+                                        className="flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-all duration-200"
+                                        style={activeTab === tab.id
+                                            ? { background: "rgba(218,165,32,0.15)", color: "#DAA520", borderBottom: "2px solid #DAA520" }
+                                            : { color: "#6B7280" }}
+                                    >
+                                        {tab.label}
+                                    </button>
+                                ))}
+                            </div>
+
+                            <div className="p-4">
+                                {/* HISTORIAL */}
+                                {activeTab === "historial" && (
+                                    <div>
+                                        <div className="flex justify-between items-center mb-4">
+                                            <span className="text-xs text-gray-500 uppercase tracking-widest">Últimas {historial.length} tiradas</span>
+                                            {historial.length > 0 && (
+                                                <button onClick={limpiarHistorial} className="text-red-400 text-xs hover:text-red-300">Limpiar</button>
+                                            )}
+                                        </div>
+                                        {historial.length === 0 ? (
+                                            <div className="text-center py-10">
+                                                <div className="text-5xl mb-3 opacity-30">🎡</div>
+                                                <p className="text-gray-600 text-sm">Aún no hay tiradas</p>
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-2 max-h-96 overflow-y-auto scrollbar-casino pr-1">
+                                                {historial.map((j, i) => (
+                                                    <div key={j.id} className="flex items-center gap-3 p-3 rounded-xl transition-colors"
+                                                        style={{
+                                                            background: j.ganancia_total > 0 ? "rgba(34,197,94,0.07)" : "rgba(239,68,68,0.07)",
+                                                            border: `1px solid ${j.ganancia_total > 0 ? "rgba(34,197,94,0.2)" : "rgba(239,68,68,0.15)"}`,
+                                                            opacity: i === 0 ? 1 : 0.8
+                                                        }}>
+                                                        <div className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center font-black text-white text-sm ${getColorNumero(j.numero_ganador)}`}
+                                                            style={i === 0 ? { border: "2px solid #DAA520", boxShadow: "0 0 10px rgba(218,165,32,0.4)" } : {}}>
+                                                            {j.numero_ganador}
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="text-white text-sm font-bold capitalize">{j.color_ganador}</div>
+                                                            <div className="text-gray-500 text-xs">{j.fecha} · ${j.total_apostado}</div>
+                                                        </div>
+                                                        <div className={`text-right font-black ${j.ganancia_total > 0 ? "text-green-400" : "text-red-400"}`}>
+                                                            {j.ganancia_total > 0 ? `+$${j.ganancia_total}` : `-$${j.total_apostado}`}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* ESTADÍSTICAS */}
+                                {activeTab === "estadisticas" && (
+                                    <div>
+                                        <div className="flex justify-end mb-4">
+                                            <button onClick={limpiarTodasEstadisticas} className="text-red-400 text-xs hover:text-red-300 font-bold uppercase">Reiniciar</button>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-3 mb-6">
+                                            {[
+                                                { label: "Partidas", val: estadisticas.totalJuegos, color: "#60A5FA" },
+                                                { label: "Ganancias", val: `$${estadisticas.gananciaTotal}`, color: "#34D399" },
+                                                { label: "Gastado", val: `$${estadisticas.gastoTotal}`, color: "#F87171" },
+                                                { label: "Balance", val: `$${estadisticas.balance}`, color: estadisticas.balance >= 0 ? "#34D399" : "#F87171" },
+                                            ].map(({ label, val, color }) => (
+                                                <div key={label} className="rounded-xl p-4 text-center" style={{ background: "rgba(0,0,0,0.4)", border: `1px solid ${color}30` }}>
+                                                    <div className="text-xs text-gray-500 uppercase tracking-widest mb-1">{label}</div>
+                                                    <div className="text-xl font-black" style={{ color }}>{val}</div>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        <div className="text-xs text-gray-500 uppercase tracking-widest mb-3">🎯 Números más frecuentes</div>
+                                        {estadisticas.numerosMasFrecuentes.length > 0 ? (
+                                            <div className="space-y-2">
+                                                {estadisticas.numerosMasFrecuentes.slice(0, 8).map(({ numero, frecuencia }) => (
+                                                    <div key={numero} className="flex items-center gap-3">
+                                                        <div className={`w-8 h-8 flex-shrink-0 rounded-full flex items-center justify-center text-white text-xs font-black ${getColorNumero(numero)}`}>{numero}</div>
+                                                        <div className="flex-1">
+                                                            <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.1)" }}>
+                                                                <div className="h-full rounded-full" style={{
+                                                                    width: `${estadisticas.totalJuegos > 0 ? (frecuencia / estadisticas.totalJuegos) * 100 : 0}%`,
+                                                                    background: "linear-gradient(90deg, #DAA520, #FFA500)"
+                                                                }} />
+                                                            </div>
+                                                        </div>
+                                                        <div className="text-gray-400 text-xs w-10 text-right">{frecuencia}×</div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="text-center py-6 text-gray-600 text-sm">Juega para ver estadísticas</div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* PROBABILIDADES */}
+                                {activeTab === "probabilidades" && (
+                                    <div>
+                                        <div className="space-y-3 max-h-96 overflow-y-auto scrollbar-casino pr-1">
+                                            {Object.entries(probabilidades).map(([tipo, datos]) => (
+                                                <div key={tipo} className="p-3 rounded-xl" style={{ background: "rgba(0,0,0,0.4)", border: "1px solid rgba(218,165,32,0.15)" }}>
+                                                    <div className="flex justify-between items-center mb-2">
+                                                        <div className="text-white font-bold text-xs uppercase">{tipo.replace(/_/g, ' ')}</div>
+                                                        <div className="text-yellow-400 font-black text-sm">×{datos.multiplicador}</div>
+                                                    </div>
+                                                    <div className="h-1.5 rounded-full overflow-hidden mb-1.5" style={{ background: "rgba(255,255,255,0.1)" }}>
+                                                        <div className="h-full rounded-full" style={{
+                                                            width: `${datos.probabilidad}%`,
+                                                            background: "linear-gradient(90deg, #3B82F6, #60A5FA)"
+                                                        }} />
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-500 text-xs">{datos.descripcion}</span>
+                                                        <span className="text-blue-400 text-xs font-bold">{datos.probabilidad}%</span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="mt-4 pt-3 text-center text-xs text-red-400/70" style={{ borderTop: "1px solid rgba(218,165,32,0.1)" }}>
+                                            ⚠️ Ventaja de la casa: 2.70%
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Info rápida */}
+                        <div className="casino-card rounded-2xl p-5" style={{ border: "1px solid rgba(218,165,32,0.2)" }}>
+                            <h4 className="text-sm font-black gold-text uppercase tracking-widest mb-4">💡 Cómo Jugar</h4>
+                            <div className="space-y-3 text-xs text-gray-400">
+                                {[
+                                    { icon: "1️⃣", text: "Elige el tipo de apuesta y tu selección" },
+                                    { icon: "2️⃣", text: "Selecciona una ficha (monto)" },
+                                    { icon: "3️⃣", text: "Haz clic en \"Agregar Apuesta\"" },
+                                    { icon: "4️⃣", text: "Añade más apuestas si quieres" },
+                                    { icon: "5️⃣", text: "Pulsa GIRAR RULETA para jugar" },
+                                ].map(({ icon, text }) => (
+                                    <div key={icon} className="flex items-start gap-2">
+                                        <span className="flex-shrink-0">{icon}</span>
+                                        <span>{text}</span>
                                     </div>
                                 ))}
+                            </div>
+                            <div className="mt-4 pt-3 grid grid-cols-2 gap-2 text-xs" style={{ borderTop: "1px solid rgba(218,165,32,0.1)" }}>
+                                <div className="text-center p-2 rounded-lg" style={{ background: "rgba(218,165,32,0.08)" }}>
+                                    <div className="text-yellow-400 font-black">35×</div>
+                                    <div className="text-gray-500">Número Pleno</div>
+                                </div>
+                                <div className="text-center p-2 rounded-lg" style={{ background: "rgba(218,165,32,0.08)" }}>
+                                    <div className="text-yellow-400 font-black">2×</div>
+                                    <div className="text-gray-500">Color / Docena</div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </section>
+            </div>
 
-            {/* Footer */}
             <Footer />
         </div>
     );

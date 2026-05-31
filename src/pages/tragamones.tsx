@@ -1,727 +1,526 @@
-// src/pages/tragamonedas.tsx
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import confetti from "canvas-confetti";
-import Header from '../components/header'; // Añadir esta línea
-import Footer from '../components/footer'; // Añadir esta línea
+import Header from "../components/header";
+import Footer from "../components/footer";
 import { API_URL } from "../api/auth";
 
 interface Usuario {
-    id: number;
-    username: string;
-    saldo: number;
-    verificado: boolean;
-    nivel?: string;
-    verificado_pendiente?: boolean;
+  id: number; username: string; saldo: number; verificado: boolean; nivel?: string; verificado_pendiente?: boolean;
 }
-
 interface HistorialGiro {
-    id: number;
-    resultado: string[];
-    ganancia: number;
-    fecha: string;
-    apuesta: number;
+  id: number; resultado: string[]; ganancia: number; fecha: string; apuesta: number;
 }
 
 export default function Tragamonedas() {
-    const navigate = useNavigate();
-    const [usuario, setUsuario] = useState<Usuario | null>(null);
-    const [reels, setReels] = useState<string[]>(["❔", "❔", "❔"]);
-    const [girando, setGirando] = useState(false);
-    const [mensaje, setMensaje] = useState<string | null>(null);
-    const [gananciaMostrar, setGananciaMostrar] = useState<number>(0);
-    const [efectoGanancia, setEfectoGanancia] = useState(false);
-    const [historial, setHistorial] = useState<HistorialGiro[]>([]);
-    
-    // Nuevos estados para apuestas variables
-    const [apuestaSeleccionada, setApuestaSeleccionada] = useState<number>(500);
-    const [apuestasPermitidas, setApuestasPermitidas] = useState<number[]>([100, 500, 1000, 2000, 5000]);
-    
-    // Estados para estadísticas
-    const [estadisticas, setEstadisticas] = useState({
-        totalTiradas: 0,
-        gananciaTotal: 0,
-        gastoTotal: 0,
-        balance: 0,
-        premiosObtenidos: 0
-    });
-    
-    const [estadisticasAcumulativas, setEstadisticasAcumulativas] = useState({
-        totalTiradasAcum: 0,
-        gananciaTotalAcum: 0,
-        gastoTotalAcum: 0,
-        premiosObtenidosAcum: 0
-    });
-    
-    const [notificacion, setNotificacion] = useState<{ text: string; type?: "success" | "error" | "info" } | null>(null);
-    
-    const reelRefs = useRef<Array<HTMLDivElement | null>>([null, null, null]);
+  const navigate = useNavigate();
+  const [usuario, setUsuario] = useState<Usuario | null>(null);
+  const [reels, setReels] = useState<string[]>(["❔", "❔", "❔"]);
+  const [girando, setGirando] = useState(false);
+  const [mensaje, setMensaje] = useState<string | null>(null);
+  const [gananciaMostrar, setGananciaMostrar] = useState<number>(0);
+  const [efectoGanancia, setEfectoGanancia] = useState(false);
+  const [historial, setHistorial] = useState<HistorialGiro[]>([]);
+  const [apuestaSeleccionada, setApuestaSeleccionada] = useState<number>(500);
+  const [apuestasPermitidas, setApuestasPermitidas] = useState<number[]>([100, 500, 1000, 2000, 5000]);
+  const [estadisticas, setEstadisticas] = useState({ totalTiradas: 0, gananciaTotal: 0, gastoTotal: 0, balance: 0, premiosObtenidos: 0 });
+  const [estadisticasAcumulativas, setEstadisticasAcumulativas] = useState({ totalTiradasAcum: 0, gananciaTotalAcum: 0, gastoTotalAcum: 0, premiosObtenidosAcum: 0 });
+  const [notificacion, setNotificacion] = useState<{ text: string; type?: "success" | "error" | "info" } | null>(null);
+  const reelRefs = useRef<Array<HTMLDivElement | null>>([null, null, null]);
 
-    const SYMBOLS = ["🍒", "🍋", "🍊", "🍉", "⭐", "🔔", "🍇", "7️⃣"];
-    const TABLA_PAGOS = {
-        "7️⃣": 100,
-        "🍇": 50,
-        "🔔": 25,
-        "⭐": 5,
-        "🍉": 4,
-        "🍊": 3,
-        "🍋": 2,
-        "🍒": 1,
-    };
+  const SYMBOLS = ["🍒", "🍋", "🍊", "🍉", "⭐", "🔔", "🍇", "7️⃣"];
+  const TABLA_PAGOS: Record<string, number> = { "7️⃣": 100, "🍇": 50, "🔔": 25, "⭐": 5, "🍉": 4, "🍊": 3, "🍋": 2, "🍒": 1 };
+  const SYMBOL_COLORS: Record<string, string> = { "7️⃣": "#EF4444", "🍇": "#A855F7", "🔔": "#EAB308", "⭐": "#F59E0B", "🍉": "#22C55E", "🍊": "#F97316", "🍋": "#FDE047", "🍒": "#F43F5E", "❔": "#6B7280" };
 
-    // Obtener usuario al cargar
-    useEffect(() => {
-            if (!usuario) {
-                const token = localStorage.getItem("token");
-                if (!token) {
-                    navigate('/login');
-                    return;
-                }
-                // Si hay token pero usuario es null, intenta cargarlo desde localStorage
-                const usuarioGuardado = localStorage.getItem('usuario');
-                if (usuarioGuardado) {
-                    try {
-                        const usuarioParsed = JSON.parse(usuarioGuardado);
-                        setUsuario(usuarioParsed);
-                        console.log('Usuario cargado desde localStorage:', usuarioParsed);
-                    } catch (error) {
-                        console.error('Error al parsear usuario:', error);
-                    }
-                }
-            }
-        }, [navigate, usuario, setUsuario]);
-
-    // Cargar configuración del juego
-    useEffect(() => {
-        const cargarConfiguracion = async () => {
-            try {
-                const res = await axios.get(`${API_URL}/juegos/tragamonedas/juegos/tragamonedas/apuestas-permitidas`);
-                setApuestasPermitidas(res.data.apuestas_permitidas);
-                setApuestaSeleccionada(res.data.apuestas_permitidas[1] || 500);
-            } catch (error) {
-                console.error("Error al cargar configuración:", error);
-            }
-        };
-        
-        cargarConfiguracion();
-    }, []);
-
-    // Cargar historial y estadísticas del localStorage
-    useEffect(() => {
-        // Cargar historial de últimos 10 giros
-        const historialGuardado = localStorage.getItem('historial_tragamonedas');
-        if (historialGuardado) {
-            const historialParsed = JSON.parse(historialGuardado);
-            setHistorial(historialParsed);
-        }
-
-        // Cargar estadísticas acumulativas
-        const statsAcum = localStorage.getItem("estadisticas_acumulativas_tragamonedas");
-        if (statsAcum) {
-            const parsedStats = JSON.parse(statsAcum);
-            setEstadisticasAcumulativas(parsedStats);
-            
-            // Calcular estadísticas iniciales basadas en las acumulativas
-            const balance = parsedStats.gananciaTotalAcum - parsedStats.gastoTotalAcum;
-            setEstadisticas({
-                totalTiradas: parsedStats.totalTiradasAcum,
-                gananciaTotal: parsedStats.gananciaTotalAcum,
-                gastoTotal: parsedStats.gastoTotalAcum,
-                balance: balance,
-                premiosObtenidos: parsedStats.premiosObtenidosAcum
-            });
-        }
-    }, []);
-
-    // Guardar historial en localStorage
-    useEffect(() => {
-        if (historial.length > 0) {
-            localStorage.setItem('historial_tragamonedas', JSON.stringify(historial.slice(0, 10)));
-        }
-    }, [historial]);
-
-    // Guardar estadísticas acumulativas en localStorage
-    useEffect(() => {
-        if (estadisticasAcumulativas.totalTiradasAcum > 0) {
-            localStorage.setItem("estadisticas_acumulativas_tragamonedas", JSON.stringify(estadisticasAcumulativas));
-        }
-    }, [estadisticasAcumulativas]);
-
-    const actualizarEstadisticas = (nuevoGiro: HistorialGiro) => {
-        const esPremio = nuevoGiro.ganancia > 0;
-        
-        // Actualizar estadísticas acumulativas
-        setEstadisticasAcumulativas(prev => {
-            const nuevoTotalTiradas = prev.totalTiradasAcum + 1;
-            const nuevaGananciaTotal = prev.gananciaTotalAcum + (nuevoGiro.ganancia || 0);
-            const nuevoGastoTotal = prev.gastoTotalAcum + nuevoGiro.apuesta;
-            const nuevosPremiosObtenidos = prev.premiosObtenidosAcum + (esPremio ? 1 : 0);
-            
-            return {
-                totalTiradasAcum: nuevoTotalTiradas,
-                gananciaTotalAcum: nuevaGananciaTotal,
-                gastoTotalAcum: nuevoGastoTotal,
-                premiosObtenidosAcum: nuevosPremiosObtenidos
-            };
-        });
-        
-        // Actualizar estadísticas visibles
-        setEstadisticas(prev => {
-            const nuevoTotalTiradas = prev.totalTiradas + 1;
-            const nuevaGananciaTotal = prev.gananciaTotal + (nuevoGiro.ganancia || 0);
-            const nuevoGastoTotal = prev.gastoTotal + nuevoGiro.apuesta;
-            const nuevosPremiosObtenidos = prev.premiosObtenidos + (esPremio ? 1 : 0);
-            const nuevoBalance = nuevaGananciaTotal - nuevoGastoTotal;
-            
-            return {
-                totalTiradas: nuevoTotalTiradas,
-                gananciaTotal: nuevaGananciaTotal,
-                gastoTotal: nuevoGastoTotal,
-                balance: nuevoBalance,
-                premiosObtenidos: nuevosPremiosObtenidos
-            };
-        });
-    };
-
-    const agregarAlHistorial = (resultado: string[], ganancia: number, apuesta: number) => {
-        const nuevoGiro: HistorialGiro = {
-            id: Date.now(),
-            resultado,
-            ganancia,
-            apuesta,
-            fecha: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        };
-        
-        // Agregar al historial (máximo 10 registros)
-        const nuevoHistorial = [nuevoGiro, ...historial.slice(0, 9)];
-        setHistorial(nuevoHistorial);
-        
-        // Actualizar estadísticas
-        actualizarEstadisticas(nuevoGiro);
-    };
-
-    const animarRodillo = (index: number, duracion: number) => {
-        return new Promise<void>((resolve) => {
-            const rodillo = reelRefs.current[index];
-            if (!rodillo) return resolve();
-
-            let contador = 0;
-            const maxGiros = Math.floor(duracion / 100);
-
-            const interval = setInterval(() => {
-                const simboloAleatorio = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
-                setReels(prev => {
-                    const nuevos = [...prev];
-                    nuevos[index] = simboloAleatorio;
-                    return nuevos;
-                });
-
-                rodillo.style.transform = `rotateY(${contador * 180}deg)`;
-
-                contador++;
-                if (contador >= maxGiros) {
-                    clearInterval(interval);
-                    rodillo.style.transform = 'rotateY(0deg)';
-                    resolve();
-                }
-            }, 100);
-        });
-    };
-
-    const animarConfetti = () => {
-        confetti({
-            particleCount: 150,
-            spread: 100,
-            origin: { y: 0.6 }
-        });
-    };
-
-    const girarTragamonedas = async () => {
-        if (!usuario) {
-            setMensaje("Debes iniciar sesión para jugar.");
-            return;
-        }
-        if (girando) return;
-        if (usuario.saldo < apuestaSeleccionada) {
-            setMensaje("Saldo insuficiente para apostar.");
-            return;
-        }
-
-        setMensaje(null);
-        setGananciaMostrar(0);
-        setGirando(true);
-        setEfectoGanancia(false);
-
-        try {
-            const token = localStorage.getItem("token");
-            const res = await axios.post(
-                `${API_URL}/juegos/tragamonedas/juegos/tragamonedas?apuesta=${apuestaSeleccionada}`,
-                {},
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-
-            const resultado: string[] = res.data?.resultado ?? [SYMBOLS[0], SYMBOLS[0], SYMBOLS[0]];
-            const ganancia = res.data?.ganancia ?? 0;
-            const mensajeServidor = res.data?.mensaje ?? "Resultado procesado";
-
-            // Animación de los rodillos
-            const promesasAnimacion = [
-                animarRodillo(0, 2000),
-                animarRodillo(1, 2000),
-                animarRodillo(2, 2000)
-            ];
-
-            await Promise.all(promesasAnimacion);
-            
-            // Mostrar resultado final
-            setReels(resultado);
-            setGananciaMostrar(ganancia);
-            setMensaje(mensajeServidor);
-            setUsuario((prev) =>
-                prev ? { ...prev, saldo: res.data.nuevo_saldo } : prev
-            );
-            
-            // Animación de confetti para premios
-            if (ganancia > 0) {
-                setEfectoGanancia(true);
-                animarConfetti();
-            }
-            
-            // Guardar en historial
-            agregarAlHistorial(resultado, ganancia, apuestaSeleccionada);
-            
-            setGirando(false);
-        } catch (err: any) {
-            console.error("Error al girar las tragamonedas:", err);
-            setMensaje(err.response?.data?.detail || "Error al girar las tragamonedas");
-            setGirando(false);
-        }
-    };
-
-    const limpiarHistorial = () => {
-        setHistorial([]);
-        localStorage.removeItem('historial_tragamonedas');
-        // No limpiamos las estadísticas acumulativas
-        // Solo reseteamos las estadísticas visibles a las acumulativas
-        setEstadisticas({
-            totalTiradas: estadisticasAcumulativas.totalTiradasAcum,
-            gananciaTotal: estadisticasAcumulativas.gananciaTotalAcum,
-            gastoTotal: estadisticasAcumulativas.gastoTotalAcum,
-            balance: estadisticasAcumulativas.gananciaTotalAcum - estadisticasAcumulativas.gastoTotalAcum,
-            premiosObtenidos: estadisticasAcumulativas.premiosObtenidosAcum
-        });
-    };
-
-    const limpiarTodasEstadisticas = () => {
-        setHistorial([]);
-        setEstadisticas({
-            totalTiradas: 0,
-            gananciaTotal: 0,
-            gastoTotal: 0,
-            balance: 0,
-            premiosObtenidos: 0
-        });
-        setEstadisticasAcumulativas({
-            totalTiradasAcum: 0,
-            gananciaTotalAcum: 0,
-            gastoTotalAcum: 0,
-            premiosObtenidosAcum: 0
-        });
-        localStorage.removeItem('historial_tragamonedas');
-        localStorage.removeItem("estadisticas_acumulativas_tragamonedas");
-        showMsg("Estadísticas reiniciadas completamente", "info");
-    };
-
-    const showMsg = (text: string, type: "success" | "error" | "info" = "info") => {
-        setNotificacion({ text, type });
-        setTimeout(() => setNotificacion(null), 5000);
-    };
-
-    // Función para calcular el pago potencial según la apuesta
-    const calcularPagoPotencial = (simbolo: string) => {
-        const multiplicador = TABLA_PAGOS[simbolo as keyof typeof TABLA_PAGOS] || 0;
-        return multiplicador * apuestaSeleccionada;
-    };
-
-    const cerrarSesion = () => {
-        // Limpiar localStorage
-        localStorage.removeItem("token");
-        localStorage.removeItem("usuario");
-        localStorage.removeItem("comprobante_enviado");
-        localStorage.removeItem("intentos_envio_comprobante");
-        localStorage.removeItem("ultimo_intento_envio_comprobante");
-        localStorage.removeItem("comprobante_verificado");
-        localStorage.removeItem("verificacion_pendiente");
-        localStorage.removeItem("monto_deposito_inicial");
-        localStorage.removeItem("bono_deposito_inicial");
-        localStorage.removeItem("deposito_inicial_realizado");
-        localStorage.removeItem("fecha_deposito_inicial");
-        localStorage.removeItem("ultimo_retiro");
-        localStorage.removeItem("retiro_pendiente");
-        localStorage.removeItem("ultimo_bono_referidos");
-        localStorage.removeItem('paso_verificacion');
-        localStorage.removeItem('ultimo_usuario_id');
-        localStorage.removeItem("fecha_envio_comprobante");
-        localStorage.removeItem("historial_tragamonedas");
-        localStorage.removeItem("estadisticas_acumulativas_tragamonedas");
-        
-        setUsuario(null);
-        showMsg("Sesión cerrada correctamente", "success");
-        setTimeout(() => navigate('/login'), 1500);
-    };
-
+  useEffect(() => {
     if (!usuario) {
-        return (
-            <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 flex items-center justify-center">
-                <div className="text-center">
-                    <div className="w-16 h-16 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                    <p className="text-gray-300 text-xl font-bold">Cargando tragamonedas...</p>
-                </div>
-            </div>
-        );
+      const token = localStorage.getItem("token");
+      if (!token) { navigate("/login"); return; }
+      const u = localStorage.getItem("usuario");
+      if (u) try { setUsuario(JSON.parse(u)); } catch {}
     }
+  }, [navigate, usuario]);
 
-    return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900">
-            {/* Notificación */}
-            {notificacion && (
-                <div className={`fixed top-6 right-6 z-50 px-6 py-4 rounded-xl font-bold flex items-center space-x-3 shadow-2xl animate-slideIn ${
-                    notificacion.type === "success" 
-                        ? "bg-gradient-to-r from-green-900/90 to-green-800/90 border border-green-500/50 text-green-200" 
-                        : notificacion.type === "error" 
-                        ? "bg-gradient-to-r from-red-900/90 to-red-800/90 border border-red-500/50 text-red-200" 
-                        : "bg-gradient-to-r from-blue-900/90 to-blue-800/90 border border-blue-500/50 text-blue-200"
-                }`}>
-                    <span className="text-xl">
-                        {notificacion.type === "success" ? "✅" : notificacion.type === "error" ? "❌" : "ℹ️"}
-                    </span>
-                    <span>{notificacion.text}</span>
-                </div>
-            )}
+  useEffect(() => {
+    const cargar = async () => {
+      try {
+        const res = await axios.get(`${API_URL}/juegos/tragamonedas/juegos/tragamonedas/apuestas-permitidas`);
+        setApuestasPermitidas(res.data.apuestas_permitidas);
+        setApuestaSeleccionada(res.data.apuestas_permitidas[1] || 500);
+      } catch {}
+    };
+    cargar();
+  }, []);
 
-            {/* Header - Usando el componente */}
-            <Header 
-                usuario={usuario}
-                cerrarSesion={cerrarSesion}
-                setUsuario={setUsuario}
-            />
+  useEffect(() => {
+    const h = localStorage.getItem("historial_tragamonedas");
+    if (h) setHistorial(JSON.parse(h));
+    const s = localStorage.getItem("estadisticas_acumulativas_tragamonedas");
+    if (s) {
+      const p = JSON.parse(s);
+      setEstadisticasAcumulativas(p);
+      setEstadisticas({ totalTiradas: p.totalTiradasAcum, gananciaTotal: p.gananciaTotalAcum, gastoTotal: p.gastoTotalAcum, balance: p.gananciaTotalAcum - p.gastoTotalAcum, premiosObtenidos: p.premiosObtenidosAcum });
+    }
+  }, []);
 
-            {/* Hero Section */}
-            <section className="relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 to-orange-500/10"></div>
-                <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-r from-red-500 to-orange-500 rounded-full blur-3xl opacity-20"></div>
-                <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full blur-3xl opacity-20"></div>
-                
-                <div className="container mx-auto px-4 py-12 relative z-10">
-                    <div className="text-center max-w-4xl mx-auto">
-                        <div className="inline-block mb-6">
-                            <span className="px-4 py-2 bg-gradient-to-r from-red-600/20 to-orange-600/20 border border-red-500/30 rounded-full text-sm font-bold text-red-400">
-                                🎰 TRAGAMONEDAS DELUXE
-                            </span>
-                        </div>
-                        
-                        <h1 className="text-4xl md:text-5xl font-bold mb-6">
-                            <span className="bg-gradient-to-r from-red-400 via-orange-400 to-red-400 bg-clip-text text-transparent">
-                                Gira y Gana
-                            </span>
-                            <br />
-                            <span className="text-white">¡Hasta 100x tu apuesta!</span>
-                        </h1>
-                        
-                        <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-                            Apuesta desde <span className="text-red-400 font-bold">${apuestasPermitidas[0]}</span> hasta <span className="text-red-400 font-bold">${apuestasPermitidas[apuestasPermitidas.length - 1]}</span>.
-                            <span className="text-green-400 font-bold"> ¡Tres 7️⃣ pagan 100x tu apuesta!</span>
-                        </p>
-                    </div>
-                </div>
-            </section>
+  useEffect(() => { if (historial.length > 0) localStorage.setItem("historial_tragamonedas", JSON.stringify(historial.slice(0, 10))); }, [historial]);
+  useEffect(() => { if (estadisticasAcumulativas.totalTiradasAcum > 0) localStorage.setItem("estadisticas_acumulativas_tragamonedas", JSON.stringify(estadisticasAcumulativas)); }, [estadisticasAcumulativas]);
 
-            {/* Contenido Principal */}
-            <section className="container mx-auto px-4 py-8">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Máquina de Tragamonedas */}
-                    <div className="lg:col-span-2">
-                        <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50">
-                            <div className="relative w-full max-w-md mx-auto">
-                                {/* Selector de apuesta */}
-                                {!girando && (
-                                    <div className="mb-8">
-                                        <h3 className="text-xl font-bold text-white mb-4 text-center">💰 Selecciona tu apuesta</h3>
-                                        <div className="flex gap-3 justify-center flex-wrap mb-4">
-                                            {apuestasPermitidas.map((apuesta) => (
-                                                <button
-                                                    key={apuesta}
-                                                    onClick={() => setApuestaSeleccionada(apuesta)}
-                                                    disabled={usuario.saldo < apuesta}
-                                                    className={`px-4 py-2 rounded-xl font-bold transition-all duration-300 ${
-                                                        apuestaSeleccionada === apuesta
-                                                            ? 'bg-gradient-to-r from-red-600 to-orange-600 text-white shadow-lg scale-105'
-                                                            : usuario.saldo < apuesta
-                                                            ? 'bg-gray-800/50 text-gray-500 cursor-not-allowed border border-gray-700'
-                                                            : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/70 hover:text-white border border-gray-700'
-                                                    }`}
-                                                >
-                                                    ${apuesta.toLocaleString()}
-                                                </button>
-                                            ))}
-                                        </div>
-                                        <div className="text-center text-gray-400">
-                                            Apuesta seleccionada: <span className="text-red-400 font-bold">${apuestaSeleccionada.toLocaleString()}</span>
-                                        </div>
-                                    </div>
-                                )}
+  const actualizarEstadisticas = (g: HistorialGiro) => {
+    const ep = g.ganancia > 0;
+    setEstadisticasAcumulativas(prev => ({ totalTiradasAcum: prev.totalTiradasAcum + 1, gananciaTotalAcum: prev.gananciaTotalAcum + (g.ganancia || 0), gastoTotalAcum: prev.gastoTotalAcum + g.apuesta, premiosObtenidosAcum: prev.premiosObtenidosAcum + (ep ? 1 : 0) }));
+    setEstadisticas(prev => { const gT = prev.gananciaTotal + (g.ganancia || 0); const gsT = prev.gastoTotal + g.apuesta; return { totalTiradas: prev.totalTiradas + 1, gananciaTotal: gT, gastoTotal: gsT, balance: gT - gsT, premiosObtenidos: prev.premiosObtenidos + (ep ? 1 : 0) }; });
+  };
 
-                                {/* Tragamonedas */}
-                                <div className="mb-8">
-                                    <div className="flex justify-center gap-8 mb-8">
-                                        {reels.map((r, i) => (
-                                            <div
-                                                key={i}
-                                                ref={el => { reelRefs.current[i] = el }}
-                                                className={`flex items-center justify-center w-24 h-24 bg-gradient-to-br from-gray-900 to-black border-4 border-yellow-500 rounded-xl text-6xl transition-all duration-300 ${
-                                                    efectoGanancia && gananciaMostrar > 0 ? 'animate-pulse shadow-lg shadow-yellow-500/50' : ''
-                                                } ${girando ? 'animate-bounce' : ''}`}
-                                                style={{
-                                                    animationDelay: i * 100 + 'ms'
-                                                }}
-                                            >
-                                                {r}
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
+  const agregarAlHistorial = (resultado: string[], ganancia: number, apuesta: number) => {
+    const nuevo: HistorialGiro = { id: Date.now(), resultado, ganancia, apuesta, fecha: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) };
+    const nuevos = [nuevo, ...historial.slice(0, 9)];
+    setHistorial(nuevos);
+    actualizarEstadisticas(nuevo);
+  };
 
-                                {/* Botón de girar */}
-                                <div className="text-center">
-                                    <div className="mb-4">
-                                        <div className="text-2xl font-bold text-white mb-2">
-                                            Saldo: <span className="text-yellow-400">${usuario?.saldo?.toLocaleString() ?? 0}</span>
-                                        </div>
-                                        {mensaje && (
-                                            <div className={`px-4 py-3 rounded-xl font-bold mb-4 ${
-                                                mensaje.includes("Error") || mensaje.includes("insuficiente")
-                                                    ? "bg-gradient-to-r from-red-900/50 to-red-800/50 border border-red-500/50 text-red-200" 
-                                                    : gananciaMostrar > 0
-                                                    ? "bg-gradient-to-r from-green-900/50 to-green-800/50 border border-green-500/50 text-green-200"
-                                                    : "bg-gradient-to-r from-yellow-900/50 to-yellow-800/50 border border-yellow-500/50 text-yellow-200"
-                                            }`}>
-                                                {mensaje}
-                                            </div>
-                                        )}
-                                    </div>
-                                    
-                                    <button
-                                        onClick={girarTragamonedas}
-                                        disabled={girando || !usuario || (usuario && usuario.saldo < apuestaSeleccionada)}
-                                        className={`w-full max-w-xs py-4 px-8 rounded-xl font-bold text-lg transition-all duration-300 ${
-                                            girando 
-                                                ? 'bg-gray-600 cursor-not-allowed opacity-70' 
-                                                : 'bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 hover:scale-105 active:scale-95'
-                                        } ${(!usuario || (usuario && usuario.saldo < apuestaSeleccionada)) ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                    >
-                                        {girando ? (
-                                            <span className="flex items-center justify-center">
-                                                <svg className="animate-spin h-5 w-5 mr-3 text-white" viewBox="0 0 24 24">
-                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                                                </svg>
-                                                Girando...
-                                            </span>
-                                        ) : (
-                                            `🎰 Girar por $${apuestaSeleccionada.toLocaleString()}`
-                                        )}
-                                    </button>
-                                    
-                                    {gananciaMostrar > 0 && (
-                                        <div className="mt-6 p-6 bg-gradient-to-r from-gray-800/70 to-gray-900/70 border border-green-500/30 rounded-2xl">
-                                            <div className="text-2xl font-bold text-white mb-2">¡Premio Ganado!</div>
-                                            <div className="text-3xl text-green-400 font-bold">
-                                                +${gananciaMostrar.toLocaleString()}
-                                            </div>
-                                            <div className="text-lg text-gray-300 mt-2">
-                                                {reels[0]} {reels[1]} {reels[2]}
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    {/* Panel Lateral */}
-                    <div className="space-y-6">
-                        {/* Estadísticas */}
-                        <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-xl font-bold text-white">📊 Tus Estadísticas</h3>
-                                <button
-                                    onClick={limpiarTodasEstadisticas}
-                                    className="px-3 py-1 text-sm bg-red-900/30 text-red-300 hover:bg-red-800/40 rounded-lg transition-colors"
-                                    title="Reiniciar todas las estadísticas"
-                                >
-                                    Reiniciar
-                                </button>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="text-center p-4 bg-gray-800/40 rounded-xl border border-gray-700/50">
-                                    <div className="text-sm text-gray-400">Total Tiradas</div>
-                                    <div className="text-2xl font-bold text-blue-400">{estadisticas.totalTiradas}</div>
-                                    <div className="text-xs text-gray-500 mt-1">Acumulativo</div>
-                                </div>
-                                <div className="text-center p-4 bg-gray-800/40 rounded-xl border border-gray-700/50">
-                                    <div className="text-sm text-gray-400">Premios Obtenidos</div>
-                                    <div className="text-2xl font-bold text-green-400">{estadisticas.premiosObtenidos}</div>
-                                    <div className="text-xs text-gray-500 mt-1">Giros con ganancia</div>
-                                </div>
-                                <div className="text-center p-4 bg-gray-800/40 rounded-xl border border-gray-700/50">
-                                    <div className="text-sm text-gray-400">Ganancia Total</div>
-                                    <div className="text-2xl font-bold text-green-400">${estadisticas.gananciaTotal}</div>
-                                    <div className="text-xs text-gray-500 mt-1">Ganancias brutas</div>
-                                </div>
-                                <div className="text-center p-4 bg-gray-800/40 rounded-xl border border-gray-700/50">
-                                    <div className="text-sm text-gray-400">Balance</div>
-                                    <div className={`text-2xl font-bold ${estadisticas.balance >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                        ${estadisticas.balance}
-                                    </div>
-                                    <div className="text-xs text-gray-500 mt-1">
-                                        {estadisticas.balance >= 0 ? 'Ganancia neta' : 'Pérdida neta'}
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="mt-4 pt-4 border-t border-gray-700/30">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="text-center">
-                                        <div className="text-sm text-gray-400">Gasto Total</div>
-                                        <div className="text-xl font-bold text-red-400">${estadisticas.gastoTotal}</div>
-                                    </div>
-                                    <div className="text-center">
-                                        <div className="text-sm text-gray-400">Ratio de Premios</div>
-                                        <div className="text-xl font-bold text-blue-400">
-                                            {estadisticas.totalTiradas > 0 
-                                                ? `${((estadisticas.premiosObtenidos / estadisticas.totalTiradas) * 100).toFixed(1)}%` 
-                                                : '0%'}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        {/* Tabla de Pagos */}
-                        <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50">
-                            <h3 className="text-xl font-bold text-white mb-4">💎 Tabla de Pagos</h3>
-                            <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
-                                {Object.entries(TABLA_PAGOS).map(([symbol, multiplicador]) => (
-                                    <div key={symbol} className="p-3 bg-gray-800/40 rounded-lg border border-gray-700/50">
-                                        <div className="flex justify-between items-center">
-                                            <div className="flex items-center space-x-3">
-                                                <div className="text-2xl">{symbol}</div>
-                                                <div className="text-2xl">{symbol}</div>
-                                                <div className="text-2xl">{symbol}</div>
-                                            </div>
-                                            <div className="text-right">
-                                                <div className="text-sm text-gray-400">{multiplicador}x apuesta</div>
-                                                <div className="text-white font-bold">
-                                                    ${calcularPagoPotencial(symbol).toLocaleString()}
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="mt-2 text-xs text-gray-400">
-                                            Paga {multiplicador}x = ${apuestaSeleccionada} × {multiplicador}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                            <div className="mt-4 text-sm text-gray-400">
-                                <div className="text-center">
-                                    Combinación ganadora: 3 símbolos iguales
-                                </div>
-                            </div>
-                        </div>
-                        
-                        {/* Historial */}
-                        <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-xl font-bold text-white">📝 Historial de Giros</h3>
-                                {historial.length > 0 && (
-                                    <button
-                                        onClick={limpiarHistorial}
-                                        className="px-3 py-1 text-sm bg-red-900/30 text-red-300 hover:bg-red-800/40 rounded-lg transition-colors"
-                                    >
-                                        Limpiar
-                                    </button>
-                                )}
-                            </div>
-                            
-                            {historial.length === 0 ? (
-                                <div className="text-center py-8">
-                                    <div className="text-4xl mb-3">🎰</div>
-                                    <p className="text-gray-400">No hay giros registrados</p>
-                                    <p className="text-sm text-gray-500 mt-1">Gira las tragamonedas para comenzar</p>
-                                </div>
-                            ) : (
-                                <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
-                                    {historial.map((giro) => (
-                                        <div key={giro.id} className="p-3 bg-gray-800/40 rounded-lg border border-gray-700/50">
-                                            <div className="flex justify-between items-center">
-                                                <div>
-                                                    <div className="text-white font-medium flex items-center space-x-2">
-                                                        <span className="text-xl">{giro.resultado[0]} {giro.resultado[1]} {giro.resultado[2]}</span>
-                                                    </div>
-                                                    <div className="text-sm text-gray-400">{giro.fecha}</div>
-                                                    <div className="text-xs text-gray-500">
-                                                        Apuesta: ${giro.apuesta.toLocaleString()}
-                                                    </div>
-                                                </div>
-                                                <div className={`text-right ${giro.ganancia > 0 ? 'text-green-400' : 'text-gray-400'}`}>
-                                                    <div className="font-bold">
-                                                        {giro.ganancia > 0 ? `+$${giro.ganancia}` : '$0'}
-                                                    </div>
-                                                    <div className="text-xs text-gray-400">
-                                                        {giro.ganancia > 0 
-                                                            ? `Neto: $${giro.ganancia - giro.apuesta}` 
-                                                            : `Pérdida: $${giro.apuesta}`}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                        
-                        {/* Información */}
-                        <div className="bg-gradient-to-r from-red-600/20 to-orange-600/20 border border-red-500/30 rounded-2xl p-6">
-                            <h4 className="text-lg font-bold text-white mb-3">💡 Consejos</h4>
-                            <ul className="space-y-2 text-gray-300">
-                                <li className="flex items-start space-x-2">
-                                    <span className="text-red-400">•</span>
-                                    <span>Los premios se pagan por 3 símbolos iguales</span>
-                                </li>
-                                <li className="flex items-start space-x-2">
-                                    <span className="text-red-400">•</span>
-                                    <span>El premio mayor (7️⃣7️⃣7️⃣) paga 100x tu apuesta</span>
-                                </li>
-                                <li className="flex items-start space-x-2">
-                                    <span className="text-red-400">•</span>
-                                    <span>Los símbolos más comunes pagan menos</span>
-                                </li>
-                                <li className="flex items-start space-x-2">
-                                    <span className="text-red-400">•</span>
-                                    <span>Ajusta tu apuesta según tu saldo disponible</span>
-                                </li>
-                                <li className="flex items-start space-x-2">
-                                    <span className="text-red-400">•</span>
-                                    <span>Juega responsablemente</span>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </section>
+  const animarRodillo = (index: number, duracion: number) => {
+    return new Promise<void>((resolve) => {
+      const rodillo = reelRefs.current[index];
+      if (!rodillo) return resolve();
+      let contador = 0;
+      const maxGiros = Math.floor(duracion / 80);
+      const interval = setInterval(() => {
+        const s = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
+        setReels(prev => { const n = [...prev]; n[index] = s; return n; });
+        contador++;
+        if (contador >= maxGiros) { clearInterval(interval); resolve(); }
+      }, 80);
+    });
+  };
 
-            {/* Footer - Usando el componente */}
-            <Footer />
+  const animarConfetti = () => {
+    confetti({ particleCount: 200, spread: 100, origin: { y: 0.5 }, colors: ["#DAA520", "#FFD700", "#FFA500", "#F59E0B"] });
+    setTimeout(() => confetti({ particleCount: 100, angle: 60, spread: 60, origin: { x: 0 }, colors: ["#EF4444", "#EC4899"] }), 200);
+    setTimeout(() => confetti({ particleCount: 100, angle: 120, spread: 60, origin: { x: 1 }, colors: ["#22C55E", "#10B981"] }), 400);
+  };
+
+  const showMsg = (text: string, type: "success" | "error" | "info" = "info") => {
+    setNotificacion({ text, type });
+    setTimeout(() => setNotificacion(null), 5000);
+  };
+
+  const girarTragamonedas = async () => {
+    if (!usuario) return showMsg("Debes iniciar sesión.", "error");
+    if (girando) return;
+    if (usuario.saldo < apuestaSeleccionada) return showMsg("Saldo insuficiente.", "error");
+    setMensaje(null); setGananciaMostrar(0); setGirando(true); setEfectoGanancia(false);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await axios.post(`${API_URL}/juegos/tragamonedas/juegos/tragamonedas?apuesta=${apuestaSeleccionada}`, {}, { headers: { Authorization: `Bearer ${token}` } });
+      const resultado: string[] = res.data?.resultado ?? SYMBOLS.slice(0, 3);
+      const ganancia = res.data?.ganancia ?? 0;
+      const mensajeServidor = res.data?.mensaje ?? "Resultado procesado";
+      await Promise.all([animarRodillo(0, 1800), animarRodillo(1, 2000), animarRodillo(2, 2200)]);
+      setReels(resultado); setGananciaMostrar(ganancia); setMensaje(mensajeServidor);
+      setUsuario(prev => prev ? { ...prev, saldo: res.data.nuevo_saldo } : prev);
+      if (ganancia > 0) { setEfectoGanancia(true); animarConfetti(); }
+      agregarAlHistorial(resultado, ganancia, apuestaSeleccionada);
+    } catch (err: any) { showMsg(err.response?.data?.detail || "Error al girar.", "error"); }
+    finally { setGirando(false); }
+  };
+
+  const limpiarHistorial = () => {
+    setHistorial([]); localStorage.removeItem("historial_tragamonedas");
+    setEstadisticas({ totalTiradas: estadisticasAcumulativas.totalTiradasAcum, gananciaTotal: estadisticasAcumulativas.gananciaTotalAcum, gastoTotal: estadisticasAcumulativas.gastoTotalAcum, balance: estadisticasAcumulativas.gananciaTotalAcum - estadisticasAcumulativas.gastoTotalAcum, premiosObtenidos: estadisticasAcumulativas.premiosObtenidosAcum });
+  };
+
+  const limpiarTodasEstadisticas = () => {
+    setHistorial([]); localStorage.removeItem("historial_tragamonedas"); localStorage.removeItem("estadisticas_acumulativas_tragamonedas");
+    setEstadisticas({ totalTiradas: 0, gananciaTotal: 0, gastoTotal: 0, balance: 0, premiosObtenidos: 0 });
+    setEstadisticasAcumulativas({ totalTiradasAcum: 0, gananciaTotalAcum: 0, gastoTotalAcum: 0, premiosObtenidosAcum: 0 });
+    showMsg("Estadísticas reiniciadas", "info");
+  };
+
+  const calcularPago = (simbolo: string) => (TABLA_PAGOS[simbolo] || 0) * apuestaSeleccionada;
+
+  if (!usuario) return (
+    <div className="min-h-screen flex items-center justify-center" style={{ background: "radial-gradient(ellipse at center, #0a0018 0%, #05000f 100%)" }}>
+      <div className="text-center">
+        <div className="w-20 h-20 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" style={{ boxShadow: "0 0 30px #DAA520" }} />
+        <p className="font-bold tracking-widest" style={{ color: "#DAA520" }}>CARGANDO TRAGAMONEDAS...</p>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen" style={{ background: "radial-gradient(ellipse at top, #0a0018 0%, #050010 55%, #08000a 100%)" }}>
+      <style>{`
+        @keyframes shimmerGold {
+          0% { background-position: -200% center; }
+          100% { background-position: 200% center; }
+        }
+        @keyframes shimmerPurple {
+          0% { background-position: -200% center; }
+          100% { background-position: 200% center; }
+        }
+        @keyframes spinReel {
+          0% { filter: blur(0px); transform: scaleY(1); }
+          50% { filter: blur(3px); transform: scaleY(1.04); }
+          100% { filter: blur(0px); transform: scaleY(1); }
+        }
+        @keyframes floatUp {
+          0% { opacity:0; transform:translateY(20px); }
+          100% { opacity:1; transform:translateY(0); }
+        }
+        @keyframes jackpotPulse {
+          0%, 100% { text-shadow: 0 0 20px #DAA520, 0 0 40px #DAA520; transform: scale(1); }
+          50% { text-shadow: 0 0 40px #FFD700, 0 0 80px #FFD700, 0 0 120px #FFA500; transform: scale(1.04); }
+        }
+        @keyframes winReveal {
+          0% { opacity:0; transform: scale(0.5) rotate(-5deg); }
+          60% { transform: scale(1.15) rotate(2deg); }
+          100% { opacity:1; transform: scale(1) rotate(0deg); }
+        }
+        @keyframes reelGlow {
+          0%, 100% { box-shadow: inset 0 0 20px rgba(218,165,32,0.15), 0 0 20px rgba(218,165,32,0.1); }
+          50% { box-shadow: inset 0 0 40px rgba(218,165,32,0.3), 0 0 50px rgba(218,165,32,0.25); }
+        }
+        @keyframes pulseGold {
+          0%, 100% { box-shadow: 0 0 20px rgba(218,165,32,0.4), 0 0 40px rgba(168,85,247,0.2); }
+          50% { box-shadow: 0 0 50px rgba(218,165,32,0.8), 0 0 80px rgba(168,85,247,0.4); }
+        }
+        @keyframes lightBlink {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.3; }
+        }
+        @keyframes marquee {
+          0% { transform: translateX(100%); }
+          100% { transform: translateX(-100%); }
+        }
+        .gold-text {
+          background: linear-gradient(90deg, #DAA520, #FFD700, #FFA500, #FFD700, #DAA520);
+          background-size: 200% auto;
+          -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+          background-clip: text; animation: shimmerGold 3s linear infinite;
+        }
+        .purple-text {
+          background: linear-gradient(90deg, #7C3AED, #A855F7, #C084FC, #A855F7, #7C3AED);
+          background-size: 200% auto;
+          -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+          background-clip: text; animation: shimmerPurple 3s linear infinite;
+        }
+        .slot-card {
+          background: linear-gradient(135deg, rgba(10,0,24,0.97), rgba(5,0,18,0.99));
+          border: 1px solid rgba(168,85,247,0.12);
+        }
+        .spin-anim { animation: spinReel 0.15s ease-in-out infinite; }
+        .win-reveal { animation: winReveal 0.7s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+        .float-up { animation: floatUp 0.4s ease-out forwards; }
+        .jackpot-text { animation: jackpotPulse 2s ease-in-out infinite; }
+        .reel-win { animation: reelGlow 0.8s ease-in-out infinite; }
+        .spin-btn {
+          transition: all 0.15s; border: none; cursor: pointer; font-weight: 900;
+          letter-spacing: 0.06em; border-radius: 16px; font-size: 18px;
+          text-transform: uppercase; color: white;
+        }
+        .spin-btn:hover:not(:disabled) { transform: translateY(-3px) scale(1.03); filter: brightness(1.2); }
+        .spin-btn:active:not(:disabled) { transform: scale(0.97); }
+        .spin-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        .scrollbar-slot::-webkit-scrollbar { width: 3px; }
+        .scrollbar-slot::-webkit-scrollbar-thumb { background: #7C3AED; border-radius: 2px; }
+        .cab-light { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+      `}</style>
+
+      {notificacion && (
+        <div className={`fixed top-6 right-6 z-50 px-6 py-4 rounded-xl font-bold flex items-center gap-3 shadow-2xl float-up`}
+          style={{ background: notificacion.type === "success" ? "linear-gradient(135deg,#14532d,#166534)" : notificacion.type === "error" ? "linear-gradient(135deg,#7f1d1d,#991b1b)" : "linear-gradient(135deg,#1e1b4b,#3730a3)", border: `1px solid ${notificacion.type === "success" ? "rgba(34,197,94,0.5)" : notificacion.type === "error" ? "rgba(239,68,68,0.5)" : "rgba(168,85,247,0.5)"}`, color: notificacion.type === "success" ? "#86efac" : notificacion.type === "error" ? "#fca5a5" : "#C4B5FD" }}>
+          <span style={{ fontSize: 20 }}>{notificacion.type === "success" ? "✅" : notificacion.type === "error" ? "❌" : "🎰"}</span>
+          <span>{notificacion.text}</span>
         </div>
-    );
+      )}
+
+      <Header usuario={usuario} cerrarSesion={() => { localStorage.clear(); navigate("/login"); }} setUsuario={setUsuario} />
+
+      {/* Banner */}
+      <div className="relative overflow-hidden py-6 px-4" style={{ borderBottom: "1px solid rgba(168,85,247,0.15)", background: "radial-gradient(ellipse at center, rgba(168,85,247,0.06) 0%, transparent 70%)" }}>
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 relative z-10">
+          <div>
+            <div className="flex items-center gap-3 mb-1">
+              <span style={{ fontSize: 32 }}>🎰</span>
+              <h1 className="text-4xl md:text-5xl font-black tracking-tight gold-text">TRAGAMONEDAS CLÁSICO</h1>
+            </div>
+            <p style={{ color: "#6B7280" }}>
+              3 rodillos · Jackpot <span style={{ color: "#EF4444", fontWeight: 700 }}>7️⃣7️⃣7️⃣</span> paga{" "}
+              <span style={{ color: "#FFD700", fontWeight: 700 }}>100×</span> tu apuesta
+            </p>
+          </div>
+          <div className="flex gap-4">
+            <div className="slot-card rounded-2xl px-5 py-4 text-center" style={{ border: "1px solid rgba(218,165,32,0.2)" }}>
+              <div style={{ fontSize: 10, color: "#374151", textTransform: "uppercase", letterSpacing: "0.12em" }}>Saldo</div>
+              <div className="text-2xl font-black gold-text">${usuario?.saldo?.toLocaleString() ?? 0}</div>
+            </div>
+            <div className="slot-card rounded-2xl px-5 py-4 text-center">
+              <div style={{ fontSize: 10, color: "#374151", textTransform: "uppercase", letterSpacing: "0.12em" }}>Premios</div>
+              <div style={{ fontSize: 22, fontWeight: 900, color: "#A855F7" }}>{estadisticas.premiosObtenidos}</div>
+            </div>
+            <div className="slot-card rounded-2xl px-5 py-4 text-center">
+              <div style={{ fontSize: 10, color: "#374151", textTransform: "uppercase", letterSpacing: "0.12em" }}>Balance</div>
+              <div style={{ fontSize: 20, fontWeight: 900, color: estadisticas.balance >= 0 ? "#4ADE80" : "#F87171" }}>
+                {estadisticas.balance >= 0 ? "+" : ""}${estadisticas.balance}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Contenido */}
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+
+          {/* MÁQUINA */}
+          <div className="xl:col-span-2 space-y-5">
+
+            {/* Selector apuesta */}
+            <div className="slot-card rounded-3xl p-6" style={{ border: "1px solid rgba(218,165,32,0.15)" }}>
+              <h2 className="text-sm font-black gold-text uppercase tracking-widest mb-5 text-center">💰 Apuesta por Giro</h2>
+              <div className="flex flex-wrap gap-3 justify-center mb-5">
+                {apuestasPermitidas.map((ap, i) => {
+                  const cols = ["#7f1d1d:#DC2626", "#1e1b4b:#7C3AED", "#14532d:#16A34A", "#78350f:#D97706", "#0c4a6e:#0284C7"].map(c => c.split(":"));
+                  const [bg, border] = cols[i % cols.length];
+                  const sel = apuestaSeleccionada === ap;
+                  const dis = usuario.saldo < ap;
+                  return (
+                    <button key={ap} onClick={() => setApuestaSeleccionada(ap)} disabled={dis}
+                      style={{
+                        padding: "10px 20px", borderRadius: 12, fontWeight: 900, fontSize: 14,
+                        background: sel ? border : bg, border: `2px solid ${border}`,
+                        color: sel ? "white" : "rgba(255,255,255,0.5)",
+                        boxShadow: sel ? `0 0 20px ${border}60, 0 6px 16px rgba(0,0,0,0.4)` : "0 4px 10px rgba(0,0,0,0.3)",
+                        transform: sel ? "translateY(-3px) scale(1.05)" : "scale(1)",
+                        transition: "all 0.15s", cursor: dis ? "not-allowed" : "pointer", opacity: dis ? 0.3 : 1,
+                      }}>
+                      ${ap >= 1000 ? `${ap / 1000}K` : ap}
+                    </button>
+                  );
+                })}
+              </div>
+              <div style={{ textAlign: "center", fontSize: 13, color: "#6B7280" }}>
+                Apuesta: <span style={{ color: "#FFD700", fontWeight: 900, fontSize: 18 }}>${apuestaSeleccionada.toLocaleString()}</span>
+                <span style={{ margin: "0 8px", color: "#374151" }}>·</span>
+                Premio máx: <span style={{ color: "#EF4444", fontWeight: 700 }}>${(apuestaSeleccionada * 100).toLocaleString()}</span>
+              </div>
+            </div>
+
+            {/* Slot Machine Cabinet */}
+            <div className="slot-card rounded-3xl overflow-hidden" style={{ border: "2px solid rgba(218,165,32,0.4)", boxShadow: "0 0 60px rgba(168,85,247,0.1), 0 0 30px rgba(218,165,32,0.08)" }}>
+
+              {/* Cabinet top lights */}
+              <div style={{ background: "linear-gradient(135deg, #1a0030, #0d0020)", padding: "12px 24px", borderBottom: "1px solid rgba(218,165,32,0.2)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  {["#EF4444", "#EAB308", "#22C55E"].map((c, i) => (
+                    <div key={i} className="cab-light" style={{ background: c, boxShadow: `0 0 8px ${c}`, animation: `lightBlink ${1 + i * 0.3}s ease-in-out infinite`, animationDelay: `${i * 0.2}s` }} />
+                  ))}
+                </div>
+                <div className="gold-text font-black tracking-widest" style={{ fontSize: 13, overflow: "hidden", flex: 1, margin: "0 16px" }}>
+                  <span style={{ display: "inline-block", animation: "marquee 10s linear infinite", whiteSpace: "nowrap" }}>
+                    ★ JACKPOT 7️⃣7️⃣7️⃣ PAGA 100× ★ GIRA Y GANA ★ TRAGAMONEDAS DELUXE ★
+                  </span>
+                </div>
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  {["#22C55E", "#EAB308", "#EF4444"].map((c, i) => (
+                    <div key={i} className="cab-light" style={{ background: c, boxShadow: `0 0 8px ${c}`, animation: `lightBlink ${1.2 + i * 0.25}s ease-in-out infinite`, animationDelay: `${i * 0.15}s` }} />
+                  ))}
+                </div>
+              </div>
+
+              {/* Reel window */}
+              <div style={{ padding: "32px 40px", display: "flex", flexDirection: "column", alignItems: "center" }}>
+                <div style={{
+                  display: "flex", gap: 16, justifyContent: "center", alignItems: "center",
+                  padding: "20px 24px", borderRadius: 20,
+                  background: "linear-gradient(135deg, #060010, #0a0018)",
+                  border: "3px solid rgba(218,165,32,0.6)",
+                  boxShadow: "inset 0 4px 20px rgba(0,0,0,0.8), 0 0 40px rgba(218,165,32,0.15)",
+                  marginBottom: 24,
+                }}>
+                  {reels.map((simbolo, i) => (
+                    <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                      <div
+                        ref={el => { reelRefs.current[i] = el; }}
+                        className={girando ? "spin-anim" : ""}
+                        style={{
+                          width: 100, height: 100, borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: 56, background: "linear-gradient(135deg, #0e0020, #160028)",
+                          border: `3px solid ${efectoGanancia && !girando && simbolo !== "❔" ? (SYMBOL_COLORS[simbolo] || "#DAA520") : "rgba(218,165,32,0.35)"}`,
+                          boxShadow: efectoGanancia && !girando && simbolo !== "❔"
+                            ? `0 0 30px ${SYMBOL_COLORS[simbolo] || "#DAA520"}60, inset 0 0 20px rgba(218,165,32,0.1)`
+                            : "inset 0 4px 12px rgba(0,0,0,0.6)",
+                          transition: "border-color 0.3s, box-shadow 0.3s",
+                        }}
+                      >
+                        {simbolo}
+                      </div>
+                      {i < 2 && (
+                        <div style={{ position: "absolute", right: -8, width: 4, height: 80, background: "rgba(218,165,32,0.2)", borderRadius: 2 }} />
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Payline indicator */}
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
+                  <div style={{ flex: 1, height: 2, background: "linear-gradient(to right, transparent, rgba(218,165,32,0.6), transparent)" }} />
+                  <span style={{ fontSize: 10, color: "rgba(218,165,32,0.5)", fontWeight: 700, letterSpacing: "0.15em" }}>LÍNEA DE PAGO</span>
+                  <div style={{ flex: 1, height: 2, background: "linear-gradient(to left, transparent, rgba(218,165,32,0.6), transparent)" }} />
+                </div>
+
+                {/* WIN Result */}
+                {!girando && gananciaMostrar > 0 && mensaje && (
+                  <div className="win-reveal" style={{ marginBottom: 20, textAlign: "center", padding: "20px 32px", borderRadius: 20, background: "rgba(218,165,32,0.1)", border: "2px solid rgba(218,165,32,0.5)", boxShadow: "0 0 40px rgba(218,165,32,0.2)" }}>
+                    <div style={{ fontSize: 12, color: "#DAA520", fontWeight: 700, letterSpacing: "0.2em", marginBottom: 4 }}>🏆 PREMIO</div>
+                    <div className="jackpot-text" style={{ fontSize: 40, fontWeight: 900, color: "#FFD700", lineHeight: 1 }}>+${gananciaMostrar.toLocaleString()}</div>
+                    <div style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", marginTop: 4 }}>
+                      {reels[0]} {reels[1]} {reels[2]}
+                    </div>
+                    <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>{mensaje}</div>
+                  </div>
+                )}
+
+                {/* No win message */}
+                {!girando && gananciaMostrar === 0 && mensaje && !mensaje.includes("Error") && (
+                  <div style={{ marginBottom: 16, textAlign: "center", padding: "10px 24px", borderRadius: 12, background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.2)" }}>
+                    <span style={{ fontSize: 13, color: "rgba(168,85,247,0.7)" }}>{mensaje}</span>
+                  </div>
+                )}
+
+                {/* Spin Button */}
+                <button
+                  onClick={girarTragamonedas}
+                  disabled={girando || usuario.saldo < apuestaSeleccionada}
+                  className="spin-btn"
+                  style={{
+                    padding: "20px 56px", width: "100%", maxWidth: 380, fontSize: 20,
+                    background: girando || usuario.saldo < apuestaSeleccionada
+                      ? "rgba(30,10,50,0.5)"
+                      : "linear-gradient(135deg, #5B21B6, #7C3AED, #6D28D9)",
+                    border: "3px solid rgba(218,165,32,0.6)",
+                    boxShadow: girando || usuario.saldo < apuestaSeleccionada ? "none" : "0 0 40px rgba(124,58,237,0.4), 0 0 60px rgba(218,165,32,0.1)",
+                    animation: girando || usuario.saldo < apuestaSeleccionada ? "none" : "pulseGold 2s ease-in-out infinite",
+                  }}
+                >
+                  {girando ? (
+                    <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
+                      <svg className="animate-spin" style={{ width: 22, height: 22 }} viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                      GIRANDO...
+                    </span>
+                  ) : `🎰 GIRAR · $${apuestaSeleccionada.toLocaleString()}`}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* PANEL LATERAL */}
+          <div className="space-y-5">
+
+            {/* Stats */}
+            <div className="slot-card rounded-2xl p-5" style={{ border: "1px solid rgba(168,85,247,0.15)" }}>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-black gold-text uppercase tracking-widest">📊 Estadísticas</h3>
+                <button onClick={limpiarTodasEstadisticas} style={{ fontSize: 11, color: "#F87171", background: "none", border: "none", cursor: "pointer", fontWeight: 700 }}>Reiniciar</button>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { label: "Tiradas", val: estadisticas.totalTiradas, color: "#60A5FA" },
+                  { label: "Premios 🏆", val: estadisticas.premiosObtenidos, color: "#FFD700" },
+                  { label: "Ganancias", val: `$${estadisticas.gananciaTotal.toLocaleString()}`, color: "#4ADE80" },
+                  { label: "Balance", val: `${estadisticas.balance >= 0 ? "+" : ""}$${estadisticas.balance}`, color: estadisticas.balance >= 0 ? "#4ADE80" : "#F87171" },
+                ].map(({ label, val, color }) => (
+                  <div key={label} style={{ padding: "12px 8px", borderRadius: 12, textAlign: "center", background: "rgba(0,0,0,0.4)", border: `1px solid ${color}18` }}>
+                    <div style={{ fontSize: 9, color: "#374151", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 3 }}>{label}</div>
+                    <div style={{ fontSize: 18, fontWeight: 900, color }}>{val}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ marginTop: 10, padding: "10px", borderRadius: 10, background: "rgba(0,0,0,0.3)" }}>
+                <div className="flex justify-between">
+                  <span style={{ fontSize: 11, color: "#374151" }}>Hit Rate</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: "#A855F7" }}>
+                    {estadisticas.totalTiradas > 0 ? `${((estadisticas.premiosObtenidos / estadisticas.totalTiradas) * 100).toFixed(1)}%` : "0%"}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Paytable */}
+            <div className="slot-card rounded-2xl p-5">
+              <h3 className="text-sm font-black gold-text uppercase tracking-widest mb-4">💎 Tabla de Pagos</h3>
+              <div className="space-y-2 max-h-72 overflow-y-auto scrollbar-slot pr-1">
+                {Object.entries(TABLA_PAGOS).map(([sym, mult]) => (
+                  <div key={sym} style={{ padding: "8px 12px", borderRadius: 10, background: "rgba(0,0,0,0.4)", border: `1px solid ${SYMBOL_COLORS[sym] || "#374151"}22`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                      <span style={{ fontSize: 18 }}>{sym}</span>
+                      <span style={{ fontSize: 18 }}>{sym}</span>
+                      <span style={{ fontSize: 18 }}>{sym}</span>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ fontSize: 13, fontWeight: 900, color: SYMBOL_COLORS[sym] || "#DAA520" }}>{mult}×</div>
+                      <div style={{ fontSize: 10, color: "#374151" }}>${calcularPago(sym).toLocaleString()}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Historial */}
+            <div className="slot-card rounded-2xl p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-black gold-text uppercase tracking-widest">📜 Historial</h3>
+                {historial.length > 0 && <button onClick={limpiarHistorial} style={{ fontSize: 11, color: "#F87171", background: "none", border: "none", cursor: "pointer", fontWeight: 700 }}>Limpiar</button>}
+              </div>
+              {historial.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "24px 0" }}>
+                  <div style={{ fontSize: 36, opacity: 0.1 }}>🎰</div>
+                  <div style={{ color: "#374151", fontSize: 12, marginTop: 8 }}>Sin giros aún</div>
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-64 overflow-y-auto scrollbar-slot pr-1">
+                  {historial.map((g, i) => (
+                    <div key={g.id} style={{ padding: "8px 12px", borderRadius: 10, background: g.ganancia > 0 ? "rgba(218,165,32,0.07)" : "rgba(0,0,0,0.4)", border: `1px solid ${g.ganancia > 0 ? "rgba(218,165,32,0.25)" : "rgba(255,255,255,0.04)"}`, opacity: i === 0 ? 1 : 0.8 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div>
+                          <div style={{ fontSize: 16 }}>{g.resultado[0]} {g.resultado[1]} {g.resultado[2]}</div>
+                          <div style={{ fontSize: 10, color: "#374151" }}>{g.fecha} · ${g.apuesta}</div>
+                        </div>
+                        <div style={{ fontSize: 14, fontWeight: 900, color: g.ganancia > 0 ? "#FFD700" : "#374151" }}>
+                          {g.ganancia > 0 ? `+$${g.ganancia}` : "—"}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Tips */}
+            <div className="slot-card rounded-2xl p-5" style={{ border: "1px solid rgba(218,165,32,0.1)" }}>
+              <h4 className="text-sm font-black gold-text uppercase tracking-widest mb-3">💡 Tips</h4>
+              {[
+                "3 símbolos iguales = premio",
+                "7️⃣7️⃣7️⃣ = jackpot 100×",
+                "Símbolos raros pagan más",
+                "Gestiona tu saldo con paciencia",
+              ].map((t, i) => (
+                <div key={i} style={{ display: "flex", gap: 8, fontSize: 12, color: "#6B7280", marginBottom: 6 }}>
+                  <span style={{ color: "#A855F7", fontWeight: 900 }}>→</span>
+                  <span>{t}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <Footer />
+    </div>
+  );
 }
