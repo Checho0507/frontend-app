@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 5173,
-    allowedHosts: 'all'
+    allowedHosts: true  // Fixed: changed from 'all' to true
   },
   build: {
     assetsDir: 'assets',
@@ -20,6 +20,6 @@ export default defineConfig({
     }
   },
   preview: {
-    allowedHosts: ['betref.up.railway.app']
+    allowedHosts: ['betref.up.railway.app']  // This is correct as an array
   }
 });
