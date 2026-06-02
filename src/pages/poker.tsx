@@ -588,7 +588,7 @@ export default function Poker() {
                 )}
 
                 {/* Controles */}
-                {enPartida && ronda !== "terminada" && (
+                {enPartida && (
                   <div className="casino-card rounded-3xl p-5 mt-4">
                     {/* Info para actuar */}
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, fontSize: 13 }}>
