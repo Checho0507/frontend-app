@@ -126,11 +126,19 @@ export default function Poker() {
     if (data.fichas_jugador !== undefined) setFichasJ(data.fichas_jugador);
     if (data.fichas_banca   !== undefined) setFichasB(data.fichas_banca);
     if (data.bote           !== undefined) setBote(data.bote);
-    if (data.apuesta_minima !== undefined) setToCall(data.apuesta_minima);
     if (data.cartas_comunitarias)          setComun(data.cartas_comunitarias);
     if (data.accion_banca)                 setMensajeB(data.accion_banca);
-    if (data.small_blind)                  setSmallBlind(data.small_blind);
-    if (data.big_blind)                    setBigBlind(data.big_blind);
+
+    const nuevoBB = data.big_blind ?? bigBlind;
+    if (data.big_blind)   setBigBlind(nuevoBB);
+    if (data.small_blind) setSmallBlind(data.small_blind);
+
+    if (data.apuesta_minima !== undefined) {
+      const tc = data.apuesta_minima as number;
+      setToCall(tc);
+      // Resetear montoSubir al mínimo válido para esta ronda
+      setMontoSubir(tc + nuevoBB);
+    }
 
     const nuevaRonda = (data.ronda_actual || data.estado) as Ronda;
     if (nuevaRonda && nuevaRonda !== "terminada") {
